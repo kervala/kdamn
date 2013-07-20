@@ -31,36 +31,6 @@ static const QString s_exprParameter = "([A-Za-z0-9_.~ -]*)";
 static const QString s_exprProperty = "([a-z]+)";
 static const QString s_exprTablump = "((/?)([a-z/]+))";
 
-static Tablump s_tablumps[] = {
-	{ "emote", 5 , "" },
-	{ "thumb", 6 , "" },
-	{ "avatar", 2, "" },
-	{ "dev", 2, "" },
-	{ "b", 0, "b" },
-	{ "i", 0, "em" },
-	{ "u", 0, "u" },
-	{ "sub", 0, "sub" },
-	{ "sup", 0, "sup" },
-	{ "s", 0, "del" },
-	{ "p", 0, "p" },
-	{ "br", 0, "br" },
-	{ "code", 0, "code" },
-	{ "bcode", 0, "pre code" },
-	{ "li", 0, "li" },
-	{ "ul", 0, "ul" },
-	{ "ol", 0, "ol" },
-//	{ "iframe", 3, "iframe" },
-	{ "iframe", 3, "a" },
-	{ "link", 2, "a" },
-	{ "a", 1, "a" },
-	{ "", -1 }
-};
-
-/*
-/abbr:		</abbr>
-/acro:		</acronym>
-/embed:		</embed>
-*/
 DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_manager(NULL), m_step(eStepNone), m_readbuffer(NULL), m_buffersize(8192)
 {
 	m_readbuffer = new char[m_buffersize];
@@ -206,11 +176,9 @@ void DAmn::onReply(QNetworkReply *reply)
 	{
 	}
 
-	// get returned cookies
-//	QString cookies = QUrl::fromPercentEncoding(reply->rawHeader("Set-Cookie"));
-
-	if (/*!cookies.isEmpty() && */ m_step == eStepNone)
+	if (m_step == eStepNone)
 	{
+		// use returned cookies for other requests
 		m_step = eStepCookies;
 
 		requestAuthToken();
@@ -235,7 +203,6 @@ void DAmn::onReply(QNetworkReply *reply)
 	}
 	else if (m_step == eStepConnected)
 	{
-//		QString redirect = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
 		QByteArray content = reply->readAll();
 		QString url = reply->url().toString();
 		QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
@@ -301,280 +268,41 @@ void DAmn::onAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth)
 bool DAmn::read()
 {
 	qint64 size = 0;
-	bool end = false;
 
 	do
 	{
 		size += m_socket->read(m_readbuffer + size, m_buffersize - size);
 
+		// no data
+		if (size == 0) return false;
+
+		// to much data
 		if (size >= m_buffersize)
 		{
 			qDebug() << "buffer too large";
 		}
-
-		char c = m_readbuffer[size-1];
-
-		end = (c == '\0');
 	}
-	while(!end);
+	while(m_readbuffer[size-1]);
 
 //	QString data = QString::fromUtf8(m_socket->readAll());
-	QString data = QString::fromLatin1(m_readbuffer, size);
+	QString data = QString::fromLatin1(m_readbuffer, size-1);
 
-	qDebug() << data;
+	// split all packets
+	QStringList packets = data.split(QChar(0));
 
-	QStringList lines = data.split("\n");
-
-	// at least one line
-	if (lines.size() < 1) return false;
-
-	return parseAllMessages(lines);
-}
-
-bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QStringList &images)
-{
-	int pos1 = 0, pos2 = 0;
-
-	QRegExp reg("&" + s_exprTablump + "\t");
-
-	while((pos1 = reg.indexIn(data, pos2)) > -1)
+	foreach(const QString &packet, packets)
 	{
-		// copy all text from last position
-		html += data.mid(pos2, pos1 - pos2);
-		text += data.mid(pos2, pos1 - pos2);
+		qDebug() << packet;
 
-		pos2 = pos1 + reg.matchedLength();
+		QStringList lines = packet.split("\n");
 
-		QString id = reg.cap(3);
-		bool close = reg.cap(2) == "/";
+		// at least one line
+		if (lines.size() < 1) return false;
 
-		Tablump tab;
-
-		QStringList tokens;
-		bool found = false;
-
-		for(int i = 0; s_tablumps[i].count != -1; ++i)
-		{
-			tab = s_tablumps[i];
-
-			if (id == tab.id)
-			{
-				found = true;
-
-				if (tab.count > 0 && !close)
-				{
-					// only open tags have parameters
-					QString regStr = QString("([^\t]*)\t").repeated(tab.count);
-					QRegExp regTab(regStr);
-
-					if (regTab.indexIn(data, pos2) == pos2)
-					{
-						tokens = regTab.capturedTexts();
-
-						pos2 += regTab.matchedLength();
-					}
-					else
-					{
-						qDebug() << "bad regexp";
-					}
-				}
-
-				break;
-			}
-		}
-
-		if (!found)
-		{
-			qDebug() << id << "not found";
-		}
-		else
-		{
-			if (!close && tokens.size() == tab.count)
-			{
-				if (id == "emote")
-				{
-					QString alt = tokens[1];
-					QString width = tokens[2];
-					QString height = tokens[3];
-					QString title = tokens[4];
-					QString url = "http://e.deviantart.net/emoticons/" + tokens[5];
-
-					QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
-					QString file = "cache/" + md5;
-
-					if (!QFile::exists(file))
-					{
-						downloadImage(url);
-
-						images << md5;
-					}
-
-					html += QString("<img alt=\"%1\" width=\"%2\" height=\"%3\" title=\"%4\" src=\"%5\" />").arg(alt).arg(width).arg(height).arg(title).arg(file);
-					text += alt;
-				}
-				else if (id == "dev")
-				{
-					QChar symbol = tokens[1][0];
-					QString name = tokens[2];
-
-					html += QString("%1<a href=\"http://%3.deviantart.com\">%2</a>").arg(symbol).arg(name).arg(name.toLower());
-					text += symbol+name;
-				}
-				else if (id == "avatar")
-				{
-					QString name = tokens[1].toLower();
-					int format = tokens[2].toInt();
-
-					QString ext;
-				
-					if (format == 11 || format == 15 || format == 35 || format == 7 || format == 27 || format == 23 || format == 31 || format == 59)
-					{
-						ext = "png";
-					}
-					else if (format == 13 || format == 33 || format == 5 || format == 41 || format == 25 || format == 45 || format == 49 || format == 37 || format == 9 || format == 17 || format == 21)
-					{
-						ext = "gif";
-					}
-					else if (format == 42 || format == 22 || format == 6 || format == 62 || format == 30 || format == 26 || format == 14 || format == 34)
-					{
-						ext = "jpg";
-					}
-					else
-					{
-						qDebug() << name << format;
-					}
-
-					QString first = name[0];
-					QString second = name[1];
-
-					QRegExp reg2("^([a-z0-9_])$");
-
-					if (reg2.indexIn(first))
-					{
-						first = "_";
-					}
-
-					if (reg2.indexIn(second))
-					{
-						second = "_";
-					}
-
-					QString url = QString("http://a.deviantart.net/avatars/%1/%2/%3.%4").arg(first).arg(second).arg(name).arg(ext);
-
-					QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
-					QString file = "cache/" + md5;
-
-					if (!QFile::exists(file))
-					{
-						downloadImage(url);
-
-						images << md5;
-					}
-
-					html += QString("<a href=\"http://%1.deviantart.com\"><img alt=\"%1\" width=\"50\" height=\"50\" title=\"%1\" src=\"%2\" /></a>").arg(name).arg(file);
-					text += QString(":icon%1:").arg(name);
-				}
-				else if (id == "thumb")
-				{
-					QString id = tokens[1];
-					QString title = tokens[2];
-					QString resolution = tokens[3];
-					QString nimp1 = tokens[4]; // 4
-					QString url = tokens[5];
-					QString nimp2 = tokens[6]; // 0:2:0
-
-					QStringList tokens = url.split(':');
-
-					url = QString("http://th02.deviantart.net/%1/150/%2").arg(tokens[0]).arg(tokens[1]); // PRE
-
-					QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
-					QString file = "cache/" + md5;
-
-					if (!QFile::exists(file))
-					{
-						downloadImage(url);
-
-						images << md5;
-					}
-
-					QString link = QString("http://www.deviantart.com/art/%1-%2").arg(title.replace(" ", "-")).arg(id);
-
-					html += QString("<a href=\"%3\"><img alt=\"%1\" src=\"%2\" /></a>").arg(title).arg(file).arg(link);
-					text += QString(":thumb%1:").arg(id);
-				}
-				else if (id == "iframe")
-				{
-					QString url = tokens[1];
-					QString width = tokens[2];
-					QString height = tokens[3];
-
-//					html += QString("<iframe src=\"%1\" width=\"%2\" height=\"%3\">").arg(url).arg(width).arg(height);
-					html += QString("<a href=\"%1\">%1").arg(url);
-					text += url;
-				}
-				else if (id == "img")
-				{
-					QString url = tokens[1];
-					QString width = tokens[2];
-					QString height = tokens[3];
-
-					html += QString("<img src=\"%1\" alt=\"\" width=\"%2\" height=\"%3\" />").arg(url).arg(width).arg(height);
-					text += url;
-				}
-				else if (id == "link")
-				{
-					QString url = tokens[1];
-					QString title = tokens[2];
-
-					if (title == "&")
-					{
-						html += QString("<a href=\"%1\">%1</a>").arg(url);
-					}
-					else
-					{
-						html += QString("<a href=\"%1\" title=\"%2\">%2</a>").arg(url).arg(title);
-						pos2 += 2; // skip following "&\t"
-					}
-
-					text += url;
-				}
-				else if (id == "a")
-				{
-					QString url = tokens[1];
-
-					html += QString("<a href=\"%1\">").arg(url);
-					text += url;
-				}
-				else if (!tab.tag.isEmpty() && !tab.count)
-				{
-					QStringList tags = tab.tag.split(' ');
-
-					for(int i = 0; i < tags.size(); ++i)
-					{
-						html += QString("<%1>").arg(tags[i]);
-					}
-				}
-				else
-				{
-					qDebug() << id << "not recognized";
-				}
-			}
-			else
-			{
-				// closed tags don't need parameters
-				QStringList tags = tab.tag.split(' ');
-
-				for(int i = tags.size()-1; i >= 0; --i)
-				{
-					html += QString("</%1>").arg(tags[i]);
-				}
-			}
-		}
+		if (!parseAllMessages(lines)) return false;
 	}
 
-	html += data.mid(pos2);
-
-	return images.isEmpty();
+	return true;
 }
 
 bool DAmn::downloadImage(const QString &url)
