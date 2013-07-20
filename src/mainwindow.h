@@ -23,6 +23,7 @@
 #include "ui_mainwindow.h"
 
 class DAmn;
+struct DAmnMember;
 
 class MainWindow : public QMainWindow, public Ui::MainWindow
 {
@@ -39,21 +40,33 @@ public slots:
 	// channel menu
 	void onJoin();
 
+	// help menu
 	void onAbout();
 	void onAboutQt();
+
+	// slots activated from DAmn signals
 	void onText(const QString &channel, const QString &user, const QString &text);
-	void onSend();
 	void onImage(const QString &md5);
-	void onUrl(const QUrl &url);
 	void onReceiveAuthtoken(const QString &authtoken);
 	void onConnectServer();
+	void onTopic(const QString &channel, const QString &topic);
+	void onTitle(const QString &channel, const QString &title);
+	void onMembers(const QString &channel, const QList<DAmnMember> &members);
+	void onJoinChannel(const QString &channel);
+
+	// when user press enter
+	void onSend();
+
+	// when user click on a link
+	void onUrl(const QUrl &url);
 
 protected:
 	void closeEvent(QCloseEvent *event);
 
 private:
 	DAmn *m_damn;
-	QList<QString> m_waitingMessages;
+	QStringListModel *m_usersModel;
+	QString m_channel;
 };
 
 #endif

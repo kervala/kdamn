@@ -44,8 +44,10 @@ bool DAmn::login()
 	return true;
 }
 
-bool DAmn::joinChat(const QString &channel)
+bool DAmn::join(const QString &channel)
 {
+	if (channel.isEmpty()) return false;
+
 	begin();
 	writeLine(QString("join chat:%1").arg(channel));
 	end();
@@ -53,8 +55,10 @@ bool DAmn::joinChat(const QString &channel)
 	return true;
 }
 
-bool DAmn::joinPrivateChat(const QString &channel, const QStringList &users)
+bool DAmn::joinPrivate(const QStringList &users)
 {
+	if (users.isEmpty()) return false;
+
 	begin();
 	writeLine("join pchat:" + users.join(":"));
 	end();
@@ -62,7 +66,7 @@ bool DAmn::joinPrivateChat(const QString &channel, const QStringList &users)
 	return true;
 }
 
-bool DAmn::partChat(const QString &channel)
+bool DAmn::part(const QString &channel)
 {
 	begin();
 	writeLine(QString("part chat:%1").arg(channel));
@@ -71,7 +75,7 @@ bool DAmn::partChat(const QString &channel)
 	return true;
 }
 
-bool DAmn::partPrivateChat(const QString &channel, const QStringList &users)
+bool DAmn::partPrivate(const QString &channel, const QStringList &users)
 {
 	begin();
 	writeLine("part pchat:" + users.join(":"));
@@ -89,7 +93,7 @@ bool DAmn::pong()
 	return true;
 }
 
-bool DAmn::sendChatMessage(const QString &channel, const QString &text)
+bool DAmn::sendMessage(const QString &channel, const QString &text)
 {
 	sendChat(channel);
 
@@ -101,7 +105,7 @@ bool DAmn::sendChatMessage(const QString &channel, const QString &text)
 	return true;
 }
 
-bool DAmn::sendChatAction(const QString &channel, const QString &text)
+bool DAmn::sendAction(const QString &channel, const QString &text)
 {
 	sendChat(channel);
 
@@ -113,7 +117,7 @@ bool DAmn::sendChatAction(const QString &channel, const QString &text)
 	return true;
 }
 
-bool DAmn::sendChatNonParsedMessage(const QString &channel, const QString &text)
+bool DAmn::sendNonParsedMessage(const QString &channel, const QString &text)
 {
 	sendChat(channel);
 
@@ -125,7 +129,7 @@ bool DAmn::sendChatNonParsedMessage(const QString &channel, const QString &text)
 	return true;
 }
 
-bool DAmn::sendChatPromote(const QString &channel, const QString &username, const QString &privclass)
+bool DAmn::promote(const QString &channel, const QString &username, const QString &privclass)
 {
 	sendChat(channel);
 
@@ -142,7 +146,7 @@ bool DAmn::sendChatPromote(const QString &channel, const QString &username, cons
 	return true;
 }
 
-bool DAmn::sendChatDemote(const QString &channel, const QString &username, const QString &privclass)
+bool DAmn::demote(const QString &channel, const QString &username, const QString &privclass)
 {
 	sendChat(channel);
 
@@ -159,7 +163,7 @@ bool DAmn::sendChatDemote(const QString &channel, const QString &username, const
 	return true;
 }
 
-bool DAmn::sendChatBan(const QString &channel, const QString &username)
+bool DAmn::ban(const QString &channel, const QString &username)
 {
 	sendChat(channel);
 
@@ -169,7 +173,7 @@ bool DAmn::sendChatBan(const QString &channel, const QString &username)
 	return true;
 }
 
-bool DAmn::sendChatUnban(const QString &channel, const QString &username)
+bool DAmn::unban(const QString &channel, const QString &username)
 {
 	sendChat(channel);
 
@@ -179,7 +183,7 @@ bool DAmn::sendChatUnban(const QString &channel, const QString &username)
 	return true;
 }
 
-bool DAmn::kickChat(const QString &channel, const QString &username, const QString &reason)
+bool DAmn::kick(const QString &channel, const QString &username, const QString &reason)
 {
 	begin();
 	writeLine("kick chat:" + channel);
@@ -230,7 +234,7 @@ bool DAmn::setChatProperty(const QString &channel, const QString &prop, const QS
 	return true;
 }
 
-bool DAmn::sendChatAdmin(const QString &channel, const QString &command)
+bool DAmn::admin(const QString &channel, const QString &command)
 {
 	sendChat(channel);
 
@@ -287,11 +291,19 @@ bool DAmn::send(const QString &channel, const QString &text)
 			QString cmd(reg.cap(1));
 			QString msg(reg.cap(3));
 
-			if (cmd == "me") return sendChatAction(channel, msg);
-			if (cmd == "part") return partChat(channel);
+			if (cmd == "me") return sendAction(channel, msg);
+			if (cmd == "part") return part(channel);
 			if (cmd == "whois") return getUserInfo(msg);
 			if (cmd == "topic") return setChatProperty(channel, "topic", msg);
 			if (cmd == "title") return setChatProperty(channel, "title", msg);
+			if (cmd == "join") return join(msg);
+			if (cmd == "part") return part(msg.isEmpty() ? channel:msg);
+			if (cmd == "demote") return demote(channel, msg); // TODO: parse 3rd parameter
+			if (cmd == "promote") return promote(channel, msg); // TODO: parse 3rd parameter
+			if (cmd == "kick") return kick(channel, msg); // TODO: parse 3rd parameter
+			if (cmd == "ban") return ban(channel, msg);
+			if (cmd == "unban") return unban(channel, msg);
+			if (cmd == "admin") return admin(channel, msg);
 			if (cmd == "clear") return true;
 
 			if (cmd == "raw")
@@ -306,13 +318,13 @@ bool DAmn::send(const QString &channel, const QString &text)
 				return true;
 			}
 
-			// help join note demote promote kick ban unban
+			// help note
 			// /admin show users [GroupName]
 			// /admin show privclass
 		}
 	}
 
-	return sendChatMessage(channel, text);
+	return sendMessage(channel, text);
 }
 
 bool DAmn::begin()

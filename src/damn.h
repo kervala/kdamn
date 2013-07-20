@@ -40,6 +40,8 @@ struct DAmnMember
 {
 	QString name;
 	QString pc;
+
+	bool operator == (const DAmnMember &other) { return other.name == name; }
 };
 
 struct DAmnPrivClass
@@ -115,23 +117,23 @@ public slots:
 	// dAmn commands
 	bool client();
 	bool login();
-	bool joinChat(const QString &channel);
-	bool joinPrivateChat(const QString &channel, const QStringList &users);
-	bool partChat(const QString &channel);
-	bool partPrivateChat(const QString &channel, const QStringList &users);
+	bool join(const QString &channel);
+	bool joinPrivate(const QStringList &users);
+	bool part(const QString &channel);
+	bool partPrivate(const QString &channel, const QStringList &users);
 	bool pong();
-	bool sendChatMessage(const QString &channel, const QString &text);
-	bool sendChatAction(const QString &channel, const QString &text);
-	bool sendChatNonParsedMessage(const QString &channel, const QString &text);
-	bool sendChatPromote(const QString &channel, const QString &username, const QString &privclass = "");
-	bool sendChatDemote(const QString &channel, const QString &username, const QString &privclass = "");
-	bool sendChatBan(const QString &channel, const QString &username);
-	bool sendChatUnban(const QString &channel, const QString &username);
-	bool kickChat(const QString &channel, const QString &username, const QString &reason = "");
+	bool sendMessage(const QString &channel, const QString &text);
+	bool sendAction(const QString &channel, const QString &text);
+	bool sendNonParsedMessage(const QString &channel, const QString &text);
+	bool promote(const QString &channel, const QString &username, const QString &privclass = "");
+	bool demote(const QString &channel, const QString &username, const QString &privclass = "");
+	bool ban(const QString &channel, const QString &username);
+	bool unban(const QString &channel, const QString &username);
+	bool kick(const QString &channel, const QString &username, const QString &reason = "");
 	bool getChatProperty(const QString &channel, const QString &prop);
 	bool getUserInfo(const QString &username);
 	bool setChatProperty(const QString &channel, const QString &prop, const QString &value);
-	bool sendChatAdmin(const QString &channel, const QString &command);
+	bool admin(const QString &channel, const QString &command);
 	bool disconnect();
 	bool kill(const QString &username, const QString &reason);
 
@@ -149,6 +151,8 @@ signals:
 	void authtokenReceived(const QString &authtoken);
 	void authenticationRequired();
 	void serverConnected();
+	void topicReceived(const QString &channel, const QString &topic);
+	void titleReceived(const QString &channel, const QString &title);
 	void htmlMessageReceived(const QString &channel, const QString &user, const QString &html);
 	void textMessageReceived(const QString &channel, const QString &user, const QString &text);
 	void htmlActionReceived(const QString &channel, const QString &user, const QString &html);
@@ -157,6 +161,7 @@ signals:
 	void channelJoined(const QString &channel);
 	void userJoined(const QString &user);
 	void userParted(const QString &user, const QString &reason);
+	void membersReceived(const QString &channel, const QList<DAmnMember> &members);
 
 private:
 	enum eStep

@@ -275,10 +275,14 @@ bool DAmn::parseChannelProperty(const QString &channel, const DAmnProperties &pr
 	if (prop.name == "topic")
 	{
 		chan->topic = prop;
+
+		emit topicReceived(channel, prop.value);
 	}
 	else if (prop.name == "title")
 	{
 		chan->title = prop;
+
+		emit titleReceived(channel, prop.value);
 	}
 	else
 	{
@@ -302,6 +306,8 @@ bool DAmn::parseChannelMembers(const QString &channel, const QStringList &lines,
 
 	while(i < lines.size())
 	{
+		if (lines[i].isEmpty()) break;
+
 		DAmnPacket p;
 		if (!parsePacket("member", lines, i, p)) return false;
 
@@ -318,8 +324,10 @@ bool DAmn::parseChannelMembers(const QString &channel, const QStringList &lines,
 		member.name = p.params[0];
 		member.pc = p.args["pc"];
 
-		chan->users << member;
+		if (chan->users.indexOf(member) < 0) chan->users << member;
 	}
+
+	emit membersReceived(channel, chan->users);
 
 	return true;
 }
@@ -406,13 +414,17 @@ bool DAmn::parseProperty(const QStringList &lines)
 
 	if (p.params[0] == "chat")
 	{
+		// extract all arguments
 		if (p.args["p"] == "members") return parseChannelMembers(p.params[1], lines, i);
 		if (p.args["p"] == "privclasses") return parseChannelPrivClasses(p.params[1], lines, i);
-
-		return parseChannelProperty(p.params[1], p.args, lines, i);
+		if (p.args["p"] == "topic" || p.args["p"] == "title") return parseChannelProperty(p.params[1], p.args, lines, i);
+	}
+	else if (p.params[0] == "login")
+	{
+		if (p.args["p"] == "info") return parseUserProperties(p.params[1], lines, i);
 	}
 
-	if (p.params[0] == "login" && p.args["p"] == "info") return parseUserProperties(p.params[1], lines, i);
+	qDebug() << "arg" << p.args["p"];
 
 	return false;
 }
