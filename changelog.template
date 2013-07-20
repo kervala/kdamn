@@ -1,0 +1,5 @@
+# To generate changelog files use these commands :
+# hg log -M --style ./changelog.template > changelog
+
+header = '\n{date|shortdate}  {author}\n\n'
+changeset = '\t* {desc|fill68|tabindent|strip} [r{rev}]\n'

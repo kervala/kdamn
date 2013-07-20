@@ -1,0 +1,224 @@
+/*
+ *  kdAmn is a deviantART Messaging Network client
+ *  Copyright (C) 2013  Cedric OCHS
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+#ifndef DAMN_H
+#define DAMN_H
+
+typedef QMap<QString, QString> DAmnProperties;
+
+struct DAmnPacket
+{
+	QString cmd;
+	QStringList params;
+	DAmnProperties args;
+};
+
+struct DAmnConnection
+{
+	QString channel;
+	int online;
+	int idle;
+};
+
+struct DAmnMember
+{
+	QString name;
+	QString pc;
+};
+
+struct DAmnPrivClass
+{
+	int id;
+	QString name;
+};
+
+struct DAmnUser
+{
+	QString name;
+	int usericon;
+	QChar symbol;
+	QString realname;
+	QString gpc;
+
+	QMap<QString, DAmnConnection> connections;
+};
+
+struct DAmnChannelProperty
+{
+	QString name;
+	QString value;
+	QString by;
+	QString ts;
+};
+
+struct DAmnChannel
+{
+	QString name;
+	DAmnChannelProperty topic;
+	DAmnChannelProperty title;
+
+	QList<DAmnPrivClass> privclasses;
+	QList<DAmnMember> users;
+};
+
+struct WaitingMessage
+{
+	QString channel;
+	QString from;
+	QString html;
+	QStringList images;
+	bool action;
+};
+
+struct Tablump
+{
+	QString id;
+	int count;
+	QString tag;
+};
+
+class DAmn : public QObject
+{
+	Q_OBJECT
+
+public:
+	DAmn(QObject *parent);
+	virtual ~DAmn();
+
+	bool begin();
+	bool writeLine(const QString &line = "");
+	bool end();
+
+	void setLogin(const QString &login);
+	void setPassword(const QString &password);
+	void setAuthtoken(const QString &authtoken);
+
+	bool connectToDA();
+
+public slots:
+	// dAmn commands
+	bool client();
+	bool login();
+	bool joinChat(const QString &channel);
+	bool joinPrivateChat(const QString &channel, const QStringList &users);
+	bool partChat(const QString &channel);
+	bool partPrivateChat(const QString &channel, const QStringList &users);
+	bool pong();
+	bool sendChatMessage(const QString &channel, const QString &text);
+	bool sendChatAction(const QString &channel, const QString &text);
+	bool sendChatNonParsedMessage(const QString &channel, const QString &text);
+	bool sendChatPromote(const QString &channel, const QString &username, const QString &privclass = "");
+	bool sendChatDemote(const QString &channel, const QString &username, const QString &privclass = "");
+	bool sendChatBan(const QString &channel, const QString &username);
+	bool sendChatUnban(const QString &channel, const QString &username);
+	bool kickChat(const QString &channel, const QString &username, const QString &reason = "");
+	bool getChatProperty(const QString &channel, const QString &prop);
+	bool getUserInfo(const QString &username);
+	bool setChatProperty(const QString &channel, const QString &prop, const QString &value);
+	bool sendChatAdmin(const QString &channel, const QString &command);
+	bool disconnect();
+	bool kill(const QString &username, const QString &reason);
+
+	// implemented
+	bool send(const QString &channel, const QString &text);
+	bool connectToChat();
+	void onError(QAbstractSocket::SocketError error);
+	void onReplyError(QNetworkReply::NetworkError error);
+	void onReply(QNetworkReply *reply);
+	void onSslErrors(const QList<QSslError> &errors);
+	void onAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth);
+	bool read();
+
+signals:
+	void authtokenReceived(const QString &authtoken);
+	void authenticationRequired();
+	void serverConnected();
+	void htmlMessageReceived(const QString &channel, const QString &user, const QString &html);
+	void textMessageReceived(const QString &channel, const QString &user, const QString &text);
+	void htmlActionReceived(const QString &channel, const QString &user, const QString &html);
+	void textActionReceived(const QString &channel, const QString &user, const QString &text);
+	void imageDownloaded(const QString &md5);
+	void channelJoined(const QString &channel);
+	void userJoined(const QString &user);
+	void userParted(const QString &user, const QString &reason);
+
+private:
+	enum eStep
+	{
+		eStepNone,
+		eStepCookies,
+		eStepAuthToken,
+		eStepConnected
+	};
+
+	bool requestCookies();
+	bool requestAuthToken();
+	bool sendChat(const QString &channel);
+	bool replaceTablumps(const QString &data, QString &html, QString &text, QStringList &images);
+
+	bool downloadImage(const QString &url);
+	bool updateWaitingMessages(const QString &md5);
+
+	DAmnChannel* createChannel(const QString &channel);
+	DAmnChannel* getChannel(const QString &channel);
+
+	DAmnUser* createUser(const QString &user);
+	DAmnUser* getUser(const QString &user);
+
+	// parser helpers
+	bool parseAllMessages(const QStringList &lines);
+	bool parsePacket(const QString &cmd, const QStringList &lines, int &i, DAmnPacket &apcket);
+	bool parseProperties(const QStringList &lines, int &i, DAmnProperties &props);
+	bool parseUserInfo(const QStringList &lines, int &i, DAmnUser &user);
+	bool parseChannelProperty(const QString &channel, const DAmnProperties &props, const QStringList &lines, int &i);
+	bool parseChannelMembers(const QString &channel, const QStringList &lines, int &i);
+	bool parseChannelPrivClasses(const QString &channel, const QStringList &lines, int &i);
+	bool parseUserProperties(const QString &user, const QStringList &lines, int &i);
+	bool parseConn(const QStringList &lines, int &i, DAmnConnection &conn);
+	bool parseText(const QString &channel, const QString &from, bool action, const QStringList &lines, int &i);
+	bool parseJoin(const QString &user, bool show, const QStringList &lines, int &i);
+	bool parsePart(const QString &user, bool show, const QString &reason, const QStringList &lines, int &i);
+
+	// parse message sent from server
+	bool parseServer(const QStringList &lines);
+	bool parseLogin(const QStringList &lines);
+	bool parsePing(const QStringList &lines);
+	bool parseRecv(const QStringList &lines);
+	bool parseJoin(const QStringList &lines);
+	bool parseProperty(const QStringList &lines);
+	bool parseGet(const QStringList &lines);
+
+	QTcpSocket *m_socket;
+	QNetworkAccessManager *m_manager;
+	QString m_login;
+	QString m_password;
+	eStep m_step;
+	QString m_authtoken;
+	QByteArray m_writebuffer;
+	char *m_readbuffer;
+	qint64 m_buffersize;
+	QString m_serverversion;
+
+	QList<DAmnUser*> m_users;
+	QList<DAmnChannel*> m_channels;
+
+	QList<WaitingMessage*> m_waitingMessages;
+};
+
+#endif

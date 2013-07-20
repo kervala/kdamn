@@ -1,0 +1,7 @@
+<RCC>
+  <qresource prefix="icons">
+    <file>kdamn.svg</file>
+  </qresource>
+  <qresource prefix="images">
+  </qresource>
+</RCC>

@@ -1,0 +1,15 @@
+[Desktop Entry]
+Version=1.0
+Name=${PRODUCT}
+Type=Application
+GenericName=${PRODUCT}
+Comment=DAmn chat client
+Comment[fr_FR]=Client de chat DAmn
+TryExec=${BIN_ABSOLUTE_PREFIX}/${TARGET}
+Exec=${BIN_ABSOLUTE_PREFIX}/${TARGET}
+Icon=${TARGET}
+Terminal=false
+Hidden=false
+Categories=Network;Qt
+StartupWMClass=${TARGET}
+X-AppInstall-Package=${TARGET}
