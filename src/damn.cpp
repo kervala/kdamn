@@ -24,6 +24,8 @@
 	#define new DEBUG_NEW
 #endif
 
+DAmn *DAmn::s_instance = NULL;
+
 static const QString s_exprUser = "([A-Za-z0-9_-]+)";
 static const QString s_exprChannel = "([A-Za-z0-9_.-]+)";
 static const QString s_exprCommand = "([a-zA-Z]+)";
@@ -33,6 +35,8 @@ static const QString s_exprTablump = "((/?)([a-z/]+))";
 
 DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_manager(NULL), m_step(eStepNone), m_readbuffer(NULL), m_buffersize(8192)
 {
+	if (s_instance == NULL) s_instance = this;
+
 	m_readbuffer = new char[m_buffersize];
 
 	m_manager = new QNetworkAccessManager(this);
@@ -59,6 +63,8 @@ DAmn::~DAmn()
 	}
 
 	delete [] m_readbuffer;
+
+	s_instance = NULL;
 }
 
 bool DAmn::connectToDA()
@@ -163,11 +169,32 @@ void DAmn::setAuthtoken(const QString &authtoken)
 void DAmn::onError(QAbstractSocket::SocketError error)
 {
 	qDebug() << "Error:" << error;
+
+	emit errorReceived(tr("Socket error: %1").arg(error));
 }
 
 void DAmn::onReplyError(QNetworkReply::NetworkError error)
 {
 	qDebug() << "Error:" << error;
+
+	emit errorReceived(tr("Network error: %1").arg(error));
+}
+
+void DAmn::onSslErrors(const QList<QSslError> &errors)
+{
+	qDebug() << "SSL Errors:" << errors;
+
+	foreach(const QSslError &error, errors)
+	{
+		emit errorReceived(tr("SSL errors: %1").arg(error.errorString()));
+	}
+}
+
+void DAmn::onAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth)
+{
+	qDebug() << "auth";
+
+	emit errorReceived(tr("Authentication required"));
 }
 
 void DAmn::onReply(QNetworkReply *reply)
@@ -185,7 +212,7 @@ void DAmn::onReply(QNetworkReply *reply)
 	}
 	else if (m_step == eStepCookies)
 	{
-		QRegExp reg("dAmn_Login\\( \"" + s_exprUser + "\", \"([a-f0-9]{32})\"");
+		QRegExp reg("dAmn_Login\\( \"([A-Za-z0-9_-]+)\", \"([a-f0-9]{32})\"");
 
 		QString html = reply->readAll();
 
@@ -196,7 +223,7 @@ void DAmn::onReply(QNetworkReply *reply)
 
 			m_step = eStepAuthToken;
 
-			emit authtokenReceived(m_authtoken);
+			emit authtokenReceived(m_login, m_authtoken);
 
 			connectToChat();
 		}
@@ -255,16 +282,6 @@ bool DAmn::updateWaitingMessages(const QString &md5)
 	return true;
 }
 
-void DAmn::onSslErrors(const QList<QSslError> &errors)
-{
-	qDebug() << "SSL Errors:" << errors;
-}
-
-void DAmn::onAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth)
-{
-	qDebug() << "auth";
-}
-
 bool DAmn::read()
 {
 	qint64 size = 0;
@@ -279,7 +296,7 @@ bool DAmn::read()
 		// to much data
 		if (size >= m_buffersize)
 		{
-			qDebug() << "buffer too large";
+			emit errorReceived(tr("Buffer too large (> 8192)"));
 		}
 	}
 	while(m_readbuffer[size-1]);
@@ -292,8 +309,6 @@ bool DAmn::read()
 
 	foreach(const QString &packet, packets)
 	{
-		qDebug() << packet;
-
 		QStringList lines = packet.split("\n");
 
 		// at least one line
