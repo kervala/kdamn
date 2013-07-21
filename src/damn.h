@@ -113,6 +113,8 @@ public:
 
 	bool connectToDA();
 
+	static DAmn* getInstance() { return s_instance; }
+
 public slots:
 	// dAmn commands
 	bool client();
@@ -148,7 +150,7 @@ public slots:
 	bool read();
 
 signals:
-	void authtokenReceived(const QString &authtoken);
+	void authtokenReceived(const QString &login, const QString &authtoken);
 	void authenticationRequired();
 	void serverConnected();
 	void topicReceived(const QString &channel, const QString &topic);
@@ -162,6 +164,7 @@ signals:
 	void userJoined(const QString &user);
 	void userParted(const QString &user, const QString &reason);
 	void membersReceived(const QString &channel, const QList<DAmnMember> &members);
+	void errorReceived(const QString &error);
 
 private:
 	enum eStep
@@ -189,7 +192,7 @@ private:
 	// parser helpers
 	bool parseAllMessages(const QStringList &lines);
 	bool parsePacket(const QString &cmd, const QStringList &lines, int &i, DAmnPacket &apcket);
-	bool parseProperties(const QStringList &lines, int &i, DAmnProperties &props);
+	void parseProperties(const QStringList &lines, int &i, DAmnProperties &props);
 	bool parseUserInfo(const QStringList &lines, int &i, DAmnUser &user);
 	bool parseChannelProperty(const QString &channel, const DAmnProperties &props, const QStringList &lines, int &i);
 	bool parseChannelMembers(const QString &channel, const QStringList &lines, int &i);
@@ -199,6 +202,7 @@ private:
 	bool parseText(const QString &channel, const QString &from, bool action, const QStringList &lines, int &i);
 	bool parseJoin(const QString &user, bool show, const QStringList &lines, int &i);
 	bool parsePart(const QString &user, bool show, const QString &reason, const QStringList &lines, int &i);
+	bool parseError(const QString &error);
 
 	// parse message sent from server
 	bool parseServer(const QStringList &lines);
@@ -208,6 +212,7 @@ private:
 	bool parseJoin(const QStringList &lines);
 	bool parseProperty(const QStringList &lines);
 	bool parseGet(const QStringList &lines);
+	bool parseDisconnect(const QStringList &lines);
 
 	QTcpSocket *m_socket;
 	QNetworkAccessManager *m_manager;
@@ -224,6 +229,8 @@ private:
 	QList<DAmnChannel*> m_channels;
 
 	QList<WaitingMessage*> m_waitingMessages;
+
+	static DAmn *s_instance;
 };
 
 #endif
