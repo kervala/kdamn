@@ -30,6 +30,8 @@ public:
 	InputEdit(QWidget *parent);
 	
 	void validate();
+	void setUsers(const QStringList &users);
+
 signals:
 	
 public slots:
@@ -40,6 +42,7 @@ protected:
 	QStringList m_history;
 	int m_index;
 	QString m_current;
+	QStringList m_users;
 };
 
 #endif

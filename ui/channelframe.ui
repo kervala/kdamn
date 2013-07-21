@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>ChannelFrame</class>
  <widget class="QFrame" name="ChannelFrame">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>516</width>
+    <height>228</height>
+   </rect>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
     <number>5</number>
@@ -42,7 +50,11 @@
     </widget>
    </item>
    <item>
-    <widget class="InputEdit" name="inputEdit"/>
+    <widget class="InputEdit" name="inputEdit">
+     <property name="maxLength">
+      <number>1024</number>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

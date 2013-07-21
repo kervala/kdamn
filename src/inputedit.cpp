@@ -38,9 +38,18 @@ void InputEdit::validate()
 	clear();
 }
 
+void InputEdit::setUsers(const QStringList &users)
+{
+	m_users = users;
+
+	QCompleter *completer = new QCompleter(m_users, this);
+	completer->setCaseSensitivity(Qt::CaseInsensitive);
+	setCompleter(completer);
+}
+
 void InputEdit::keyPressEvent(QKeyEvent *event)
 {
-	if(event->key() == Qt::Key_Up)
+	if (event->key() == Qt::Key_Up)
 	{
 		// move back in history
 		if (!m_history.isEmpty() && (m_index > 0 || m_index == -1))
@@ -58,7 +67,7 @@ void InputEdit::keyPressEvent(QKeyEvent *event)
 			setText(m_history[m_index]);
 		}
 	}
-	else if(event->key() == Qt::Key_Down)
+	else if (event->key() == Qt::Key_Down)
 	{
 		// move forward in history
 		if (!m_history.isEmpty() && m_index != -1)
@@ -76,6 +85,26 @@ void InputEdit::keyPressEvent(QKeyEvent *event)
 				setText(m_history[m_index]);
 			}
 		}
+	}
+	else if (event->key() == Qt::Key_Tab)
+	{
+		QString str = text();
+		int pos2 = cursorPosition();
+
+		int pos1 = str.lastIndexOf(' ', pos2)+1;
+
+		QString prefix = str.mid(pos1, pos2-pos1).toLower();
+
+		foreach(const QString &user, m_users)
+		{
+			if (user.toLower().startsWith(prefix))
+			{
+				setText(str.left(pos1) + user + str.mid(pos2));
+
+				break;
+			}
+		}
+
 	}
 	else
 	{

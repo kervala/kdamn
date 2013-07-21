@@ -79,6 +79,8 @@ void ChannelFrame::setUsers(const QList<DAmnMember> &users)
 
 	usersView->setMinimumWidth(min);
 	usersView->setMaximumWidth(max);
+
+	inputEdit->setUsers(list);
 }
 
 void ChannelFrame::onSend()
