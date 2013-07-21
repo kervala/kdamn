@@ -24,6 +24,12 @@
 	#define new DEBUG_NEW
 #endif
 
+struct DAmnError
+{
+	QString name;
+	QString description;
+};
+
 bool DAmn::parseAllMessages(const QStringList &lines)
 {
 	if (parseServer(lines)) return true;
@@ -33,6 +39,7 @@ bool DAmn::parseAllMessages(const QStringList &lines)
 	if (parseJoin(lines)) return true;
 	if (parseProperty(lines)) return true;
 	if (parseGet(lines)) return true;
+	if (parseSet(lines)) return true;
 	if (parseDisconnect(lines)) return true;
 
 	emit errorReceived(tr("Unable to recognize message: %1").arg(lines[0]));
@@ -136,7 +143,23 @@ bool DAmn::parseError(const QString &error)
 {
 	if (error == "ok") return true;
 
-	emit errorReceived(error);
+	static DAmnError s_errors[] = {
+		{ "bad parameter", tr("Bad parameter") },
+		{ "unknown property", tr("Unknown property") },
+		{ "", "" }
+	};
+
+	for(int i = 0; !s_errors[i].name.isEmpty(); ++i)
+	{
+		if (error == s_errors[i].name)
+		{
+			emit errorReceived(s_errors[i].description);
+
+			return false;
+		}
+	}
+
+	emit errorReceived(tr("Error \"%1\" not recognized").arg(error));
 
 	return false;
 }
@@ -461,6 +484,21 @@ bool DAmn::parseGet(const QStringList &lines)
 	DAmnPacket p;
 
 	if (!parsePacket("get", lines, i, p)) return false;
+
+//	if (p.param1 == "login" && p.args["p"] == "info") return parseUserProperties(p.param2, lines, i);
+
+	if (!parseError(p.args["e"])) return false;
+
+	return true;
+}
+
+bool DAmn::parseSet(const QStringList &lines)
+{
+	int i = 0;
+
+	DAmnPacket p;
+
+	if (!parsePacket("set", lines, i, p)) return false;
 
 //	if (p.param1 == "login" && p.args["p"] == "info") return parseUserProperties(p.param2, lines, i);
 

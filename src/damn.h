@@ -212,6 +212,7 @@ private:
 	bool parseJoin(const QStringList &lines);
 	bool parseProperty(const QStringList &lines);
 	bool parseGet(const QStringList &lines);
+	bool parseSet(const QStringList &lines);
 	bool parseDisconnect(const QStringList &lines);
 
 	QTcpSocket *m_socket;
