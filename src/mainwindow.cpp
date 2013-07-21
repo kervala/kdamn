@@ -21,6 +21,7 @@
 #include "mainwindow.h"
 #include "moc_mainwindow.cpp"
 #include "connectdialog.h"
+#include "channelframe.h"
 #include "damn.h"
 
 #ifdef HAVE_CONFIG_H
@@ -31,7 +32,7 @@
 	#define new DEBUG_NEW
 #endif
 
-MainWindow::MainWindow():QMainWindow()
+MainWindow::MainWindow():QMainWindow(), m_damn(NULL), m_trayIcon(NULL)
 {
 	setupUi(this);
 
@@ -46,24 +47,30 @@ MainWindow::MainWindow():QMainWindow()
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
 	connect(actionAboutQt, SIGNAL(triggered()), this, SLOT(onAboutQt()));
 
-	connect(inputEdit, SIGNAL(returnPressed()), this, SLOT(onSend()));
-
-	connect(outputBrowser, SIGNAL(anchorClicked(QUrl)), this, SLOT(onUrl(QUrl)));
-
-	m_usersModel = new QStringListModel(this);
-	usersView->setModel(m_usersModel);
-
-	outputBrowser->document()->setDefaultStyleSheet(".timestamp { color: #999; }\n.username { font-weight: bold; }\n");
-
 	m_damn = new DAmn(this);
 	connect(m_damn, SIGNAL(serverConnected()), this, SLOT(onConnectServer()));
 	connect(m_damn, SIGNAL(htmlMessageReceived(QString, QString, QString)), this, SLOT(onText(QString, QString, QString)));
-	connect(m_damn, SIGNAL(authtokenReceived(QString)), this, SLOT(onReceiveAuthtoken(QString)));
+	connect(m_damn, SIGNAL(authtokenReceived(QString, QString)), this, SLOT(onReceiveAuthtoken(QString, QString)));
 	connect(m_damn, SIGNAL(authenticationRequired()), this, SLOT(onConnect()));
 	connect(m_damn, SIGNAL(topicReceived(QString, QString)), this, SLOT(onTopic(QString, QString)));
 	connect(m_damn, SIGNAL(titleReceived(QString, QString)), this, SLOT(onTitle(QString, QString)));
 	connect(m_damn, SIGNAL(membersReceived(QString, QList<DAmnMember>)), this, SLOT(onMembers(QString, QList<DAmnMember>)));
 	connect(m_damn, SIGNAL(channelJoined(QString)), this, SLOT(onJoinChannel(QString)));
+	connect(m_damn, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
+
+	if (QSystemTrayIcon::isSystemTrayAvailable())
+	{
+		QMenu * trayMenu = new QMenu(this);
+		QAction *restoreAction = trayMenu->addAction(tr("Restore"));
+		connect(restoreAction, SIGNAL(triggered()), this, SLOT(trayActivated()));
+		QAction *quitAction = trayMenu->addAction(tr("Quit"));
+		connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
+
+		m_trayIcon = new QSystemTrayIcon(QIcon(":/icons/kdamn.svg"), this);
+		m_trayIcon->setContextMenu(trayMenu);
+		connect(m_trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayActivated(QSystemTrayIcon::ActivationReason)));
+		m_trayIcon->show();
+	}
 }
 
 MainWindow::~MainWindow()
@@ -85,14 +92,6 @@ void MainWindow::onAbout()
 void MainWindow::onAboutQt()
 {
 	QMessageBox::aboutQt(this);
-}
-
-void MainWindow::onSend()
-{
-	if (!m_channel.isEmpty() && m_damn->send(m_channel, inputEdit->text()))
-	{
-		inputEdit->clear();
-	}
 }
 
 void MainWindow::onConnect()
@@ -123,14 +122,10 @@ void MainWindow::onImage(const QString &md5)
 {
 }
 
-void MainWindow::onUrl(const QUrl &url)
-{
-	QDesktopServices::openUrl(url);
-}
-
-void MainWindow::onReceiveAuthtoken(const QString &authtoken)
+void MainWindow::onReceiveAuthtoken(const QString &login, const QString &authtoken)
 {
 	QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
+	settings.setValue("login", login);
 	settings.setValue("authtoken", authtoken);
 }
 
@@ -149,6 +144,8 @@ void MainWindow::onJoin()
 
 void MainWindow::onConnectServer()
 {
+	setSystem(tr("Connected to server"));
+
 	QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
 
 	settings.beginGroup("channels");
@@ -164,47 +161,62 @@ void MainWindow::onConnectServer()
 
 void MainWindow::onText(const QString &channel, const QString &user, const QString &text)
 {
-	QString timestamp = QTime::currentTime().toString();
+	ChannelFrame *frame = getChannelFrame(channel);
 
-	outputBrowser->append(QString("<div class=\"normal\"><span class=\"timestamp\">%1</span> <span class=\"username\">&lt;%2&gt;</span> %3</div>").arg(timestamp).arg(user).arg(text));
+	if (frame) frame->setText(user, text);
 }
 
 void MainWindow::onTopic(const QString &channel, const QString &topic)
 {
-	outputBrowser->append(tr("<div class=\"title\">Topic is %1</div>").arg(topic));
+	ChannelFrame *frame = getChannelFrame(channel);
+
+	if (frame) frame->setTopic(topic);
 }
 
 void MainWindow::onTitle(const QString &channel, const QString &title)
 {
-	outputBrowser->append(tr("<div class=\"title\">Title is %1</div>").arg(title));
+	ChannelFrame *frame = getChannelFrame(channel);
+
+	if (frame) frame->setTitle(title);
 }
 
 void MainWindow::onMembers(const QString &channel, const QList<DAmnMember> &members)
 {
-	QStringList list;
-	int min = 65536;
-	int max = 0;
+	ChannelFrame *frame = getChannelFrame(channel);
 
-	foreach(const DAmnMember &member, members)
-	{
-//		int width = usersView->fontMetrics().boundingRect(member.name).width();
-		int width = usersView->fontMetrics().width(member.name)+10;
-
-		if (width < min) min = width;
-		if (width > max) max = width;
-
-		list << member.name;
-	}
-
-	m_usersModel->setStringList(list);
-
-	usersView->setMinimumWidth(min);
-	usersView->setMaximumWidth(max);
+	if (frame) frame->setUsers(members);
 }
 
 void MainWindow::onJoinChannel(const QString &channel)
 {
-	m_channel = channel;
+	int id = channelsWidget->addTab(new ChannelFrame(this, channel), channel);
 
-	// TODO: tabbar there
+	channelsWidget->setCurrentIndex(id);
+
+	setSystem(tr("You joined channel <b>%1</b>").arg(channel));
+}
+
+void MainWindow::onError(const QString &error)
+{
+	serverBrowser->append(QString("<div class=\"error\">%1</div>").arg(error));
+}
+
+ChannelFrame* MainWindow::getChannelFrame(const QString &channel, bool *focused)
+{
+	for(int i = 0; i < channelsWidget->count(); ++i)
+	{
+		if (channelsWidget->tabText(i) == channel)
+		{
+			if (focused) *focused = channelsWidget->currentIndex() == i;
+
+			return qobject_cast<ChannelFrame*>(channelsWidget->widget(i));
+		}
+	}
+
+	return NULL;
+}
+
+void MainWindow::setSystem(const QString &text)
+{
+	serverBrowser->append(QString("<div class=\"system\">%1</div>").arg(text));
 }
