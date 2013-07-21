@@ -103,7 +103,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 					}
 					else
 					{
-						qDebug() << "bad regexp";
+						emit errorReceived(tr("Unable to parse tablump: %1").arg(data));
 					}
 				}
 
@@ -113,7 +113,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 
 		if (!found)
 		{
-			qDebug() << id << "not found";
+			emit errorReceived(tr("Tablump %1 not found in table").arg(id));
 		}
 		else
 		{
@@ -169,22 +169,22 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 					}
 					else
 					{
-						qDebug() << name << format;
+						emit errorReceived(tr("Image format %1 not recognized").arg(format));
 					}
 
-					QString first = name[0];
-					QString second = name[1];
+					QChar first = name[0];
+					QChar second = name[1];
 
 					QRegExp reg2("^([a-z0-9_])$");
 
 					if (reg2.indexIn(first))
 					{
-						first = "_";
+						first = '_';
 					}
 
 					if (reg2.indexIn(second))
 					{
-						second = "_";
+						second = '_';
 					}
 
 					QString url = QString("http://a.deviantart.net/avatars/%1/%2/%3.%4").arg(first).arg(second).arg(name).arg(ext);
@@ -350,7 +350,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 				}
 				else
 				{
-					qDebug() << id << "not recognized";
+					emit errorReceived(tr("Tablump %1 not recognized").arg(id));
 				}
 			}
 			else

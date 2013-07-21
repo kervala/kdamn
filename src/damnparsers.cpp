@@ -33,8 +33,9 @@ bool DAmn::parseAllMessages(const QStringList &lines)
 	if (parseJoin(lines)) return true;
 	if (parseProperty(lines)) return true;
 	if (parseGet(lines)) return true;
+	if (parseDisconnect(lines)) return true;
 
-	qDebug() << lines;
+	emit errorReceived(tr("Unable to recognize message: %1").arg(lines[0]));
 
 	return false;
 }
@@ -56,31 +57,41 @@ bool DAmn::parsePacket(const QString &cmd, const QStringList &lines, int &i, DAm
 		// extract main parameter
 		reg.setPattern("([A-Za-z0-9_.~ -]*)");
 
-		if (reg.indexIn(lines[i], pos) == -1) return false;
-
-		packet.cmd = cmd;
-		packet.params << reg.cap(1);
-
-		pos += reg.matchedLength();
-
-		reg.setPattern(":([A-Za-z0-9_.~ -]+)");
-
-		while ((pos = reg.indexIn(lines[i], pos)) != -1)
+		if (reg.indexIn(lines[i], pos) == pos)
 		{
+			packet.cmd = cmd;
 			packet.params << reg.cap(1);
+
 			pos += reg.matchedLength();
+
+			reg.setPattern(":([A-Za-z0-9_.~ -]+)");
+
+			while ((pos = reg.indexIn(lines[i], pos)) != -1)
+			{
+				packet.params << reg.cap(1);
+				pos += reg.matchedLength();
+			}
 		}
+		else
+		{
+			qDebug() << lines[i];
+
+			emit errorReceived(tr("Unable to parse parameter: %1").arg(lines[i]));
+
+			return false;
+		}
+
 	}
 
 	++i;
 
 	// extract all arguments
-	if (!parseProperties(lines, i, packet.args)) return false;
+	parseProperties(lines, i, packet.args);
 
 	return true;
 }
 
-bool DAmn::parseProperties(const QStringList &lines, int &i, DAmnProperties &props)
+void DAmn::parseProperties(const QStringList &lines, int &i, DAmnProperties &props)
 {
 	QRegExp reg("^([a-z]+)=([A-Za-z0-9_.~ -]*)$");
 
@@ -95,12 +106,12 @@ bool DAmn::parseProperties(const QStringList &lines, int &i, DAmnProperties &pro
 		else
 		{
 			qDebug() << lines[i];
+
+			emit errorReceived(tr("Unable to parse property: %1").arg(lines[i]));
 		}
 	}
 
 	++i;
-
-	return true;
 }
 
 bool DAmn::parseUserInfo(const QStringList &lines, int &i, DAmnUser &user)
@@ -108,14 +119,26 @@ bool DAmn::parseUserInfo(const QStringList &lines, int &i, DAmnUser &user)
 	DAmnProperties props;
 
 	// extract all properties
-	if (!parseProperties(lines, i, props)) return false;
+	parseProperties(lines, i, props);
 
+	if (props["symbol"].isEmpty()) return false;
+
+	// assign properties to user
 	user.usericon = props["usericon"].toInt();
 	user.symbol = props["symbol"][0];
 	user.realname = props["realname"];
 	user.gpc = props["gpc"];
 
 	return true;
+}
+
+bool DAmn::parseError(const QString &error)
+{
+	if (error == "ok") return true;
+
+	emit errorReceived(error);
+
+	return false;
 }
 
 bool DAmn::parseServer(const QStringList &lines)
@@ -139,12 +162,12 @@ bool DAmn::parseLogin(const QStringList &lines)
 
 	if (!parsePacket("login", lines, i, p)) return false;
 
-	if (p.args["e"] != "ok") return false;
+	if (!parseError(p.args["e"])) return true;
 
 	// to be sure it's not an alias
 	DAmnUser *user = createUser(p.params[0]);
 
-	if (!parseUserInfo(lines, i, *user)) return false;
+	if (!parseUserInfo(lines, i, *user)) return true;
 
 	m_step = eStepConnected;
 
@@ -251,7 +274,7 @@ bool DAmn::parseJoin(const QStringList &lines)
 
 	if (!parsePacket("join", lines, i, p)) return false;
 
-	if (p.args["e"] != "ok") return false;
+	if (!parseError(p.args["e"])) return true;
 
 	createChannel(p.params[1]);
 
@@ -276,17 +299,17 @@ bool DAmn::parseChannelProperty(const QString &channel, const DAmnProperties &pr
 	{
 		chan->topic = prop;
 
-		emit topicReceived(channel, prop.value);
+		if (!prop.value.isEmpty()) emit topicReceived(channel, prop.value);
 	}
 	else if (prop.name == "title")
 	{
 		chan->title = prop;
 
-		emit titleReceived(channel, prop.value);
+		if (!prop.value.isEmpty()) emit titleReceived(channel, prop.value);
 	}
 	else
 	{
-		qDebug() << "bad property" << prop.name;
+		emit errorReceived(tr("Unable to recognize property: %1").arg(prop.name));
 	}
 
 	++i;
@@ -356,7 +379,7 @@ bool DAmn::parseChannelPrivClasses(const QString &channel, const QStringList &li
 		}
 		else
 		{
-			qDebug() << "error";
+			emit errorReceived(tr("Unable to parse privclass: %1").arg(lines[i]));
 		}
 	}
 
@@ -412,19 +435,21 @@ bool DAmn::parseProperty(const QStringList &lines)
 
 	if (!parsePacket("property", lines, i, p)) return false;
 
+	QString prop = p.args["p"];
+
 	if (p.params[0] == "chat")
 	{
 		// extract all arguments
-		if (p.args["p"] == "members") return parseChannelMembers(p.params[1], lines, i);
-		if (p.args["p"] == "privclasses") return parseChannelPrivClasses(p.params[1], lines, i);
-		if (p.args["p"] == "topic" || p.args["p"] == "title") return parseChannelProperty(p.params[1], p.args, lines, i);
+		if (prop == "members") return parseChannelMembers(p.params[1], lines, i);
+		if (prop == "privclasses") return parseChannelPrivClasses(p.params[1], lines, i);
+		if (prop == "topic" || prop == "title") return parseChannelProperty(p.params[1], p.args, lines, i);
 	}
 	else if (p.params[0] == "login")
 	{
-		if (p.args["p"] == "info") return parseUserProperties(p.params[1], lines, i);
+		if (prop == "info") return parseUserProperties(p.params[1], lines, i);
 	}
 
-	qDebug() << "arg" << p.args["p"];
+	emit errorReceived(tr("Unable to recognize property: %1").arg(prop));
 
 	return false;
 }
@@ -439,7 +464,22 @@ bool DAmn::parseGet(const QStringList &lines)
 
 //	if (p.param1 == "login" && p.args["p"] == "info") return parseUserProperties(p.param2, lines, i);
 
-	if (p.args["e"] != "ok") return false;
+	if (!parseError(p.args["e"])) return false;
+
+	return true;
+}
+
+bool DAmn::parseDisconnect(const QStringList &lines)
+{
+	int i = 0;
+
+	DAmnPacket p;
+
+	if (!parsePacket("disconnect", lines, i, p)) return false;
+
+	if (!parseError(p.args["e"])) return true;
+
+	qDebug() << lines;
 
 	return true;
 }
