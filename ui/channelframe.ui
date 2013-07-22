@@ -27,10 +27,7 @@
     <number>2</number>
    </property>
    <item>
-    <widget class="QSplitter" name="splitter">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
+    <widget class="QSplitter" name="channelSplitter">
      <widget class="QTextBrowser" name="outputBrowser">
       <property name="horizontalScrollBarPolicy">
        <enum>Qt::ScrollBarAlwaysOff</enum>
