@@ -161,6 +161,7 @@ signals:
 	void textActionReceived(const QString &channel, const QString &user, const QString &text);
 	void imageDownloaded(const QString &md5);
 	void channelJoined(const QString &channel);
+	void channelParted(const QString &channel, const QString &reason);
 	void userJoined(const QString &user);
 	void userParted(const QString &user, const QString &reason);
 	void membersReceived(const QString &channel, const QList<DAmnMember> &members);
@@ -184,6 +185,7 @@ private:
 	bool updateWaitingMessages(const QString &md5);
 
 	DAmnChannel* createChannel(const QString &channel);
+	bool removeChannel(const QString &channel);
 	DAmnChannel* getChannel(const QString &channel);
 
 	DAmnUser* createUser(const QString &user);
@@ -210,6 +212,7 @@ private:
 	bool parsePing(const QStringList &lines);
 	bool parseRecv(const QStringList &lines);
 	bool parseJoin(const QStringList &lines);
+	bool parsePart(const QStringList &lines);
 	bool parseProperty(const QStringList &lines);
 	bool parseGet(const QStringList &lines);
 	bool parseSet(const QStringList &lines);

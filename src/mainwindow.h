@@ -34,6 +34,8 @@ public:
 	MainWindow();
 	virtual ~MainWindow();
 
+	bool createChannelFrame(const QString &channel);
+	bool removeChannelFrame(const QString &channel);
 	ChannelFrame* getChannelFrame(const QString &channel, bool *focused = NULL);
 
 	void setSystem(const QString &text);
@@ -41,9 +43,11 @@ public:
 public slots:
 	// server menu
 	void onConnect();
+	void onDisconnect();
 
 	// channel menu
 	void onJoin();
+	void onPart();
 
 	// help menu
 	void onAbout();
@@ -51,13 +55,13 @@ public slots:
 
 	// slots activated from DAmn signals
 	void onText(const QString &channel, const QString &user, const QString &text);
-	void onImage(const QString &md5);
 	void onReceiveAuthtoken(const QString &login, const QString &authtoken);
 	void onConnectServer();
 	void onTopic(const QString &channel, const QString &topic);
 	void onTitle(const QString &channel, const QString &title);
 	void onMembers(const QString &channel, const QList<DAmnMember> &members);
 	void onJoinChannel(const QString &channel);
+	void onPartChannel(const QString &channel, const QString &reason);
 	void onError(const QString &error);
 
 protected:

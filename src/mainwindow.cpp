@@ -38,10 +38,12 @@ MainWindow::MainWindow():QMainWindow(), m_damn(NULL), m_trayIcon(NULL)
 
 	// Server menu
 	connect(actionConnect, SIGNAL(triggered()), this, SLOT(onConnect()));
+	connect(actionDisconnect, SIGNAL(triggered()), this, SLOT(onDisconnect()));
 	connect(actionExit, SIGNAL(triggered()), this, SLOT(close()));
 
 	// Channel menu
 	connect(actionJoin, SIGNAL(triggered()), this, SLOT(onJoin()));
+	connect(actionPart, SIGNAL(triggered()), this, SLOT(onPart()));
 
 	// Help menu
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
@@ -56,6 +58,7 @@ MainWindow::MainWindow():QMainWindow(), m_damn(NULL), m_trayIcon(NULL)
 	connect(m_damn, SIGNAL(titleReceived(QString, QString)), this, SLOT(onTitle(QString, QString)));
 	connect(m_damn, SIGNAL(membersReceived(QString, QList<DAmnMember>)), this, SLOT(onMembers(QString, QList<DAmnMember>)));
 	connect(m_damn, SIGNAL(channelJoined(QString)), this, SLOT(onJoinChannel(QString)));
+	connect(m_damn, SIGNAL(channelParted(QString, QString)), this, SLOT(onPartChannel(QString, QString)));
 	connect(m_damn, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
 
 	if (QSystemTrayIcon::isSystemTrayAvailable())
@@ -118,8 +121,9 @@ void MainWindow::onConnect()
 	}
 }
 
-void MainWindow::onImage(const QString &md5)
+void MainWindow::onDisconnect()
 {
+	m_damn->disconnect();
 }
 
 void MainWindow::onReceiveAuthtoken(const QString &login, const QString &authtoken)
@@ -140,6 +144,10 @@ void MainWindow::onJoin()
 		QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
 		settings.setValue(QString("channels/%1").arg(channel), 1);
 	}
+}
+
+void MainWindow::onPart()
+{
 }
 
 void MainWindow::onConnectServer()
@@ -189,16 +197,52 @@ void MainWindow::onMembers(const QString &channel, const QList<DAmnMember> &memb
 
 void MainWindow::onJoinChannel(const QString &channel)
 {
-	int id = channelsWidget->addTab(new ChannelFrame(this, channel), channel);
-
-	channelsWidget->setCurrentIndex(id);
+	createChannelFrame(channel);
 
 	setSystem(tr("You joined channel <b>%1</b>").arg(channel));
+}
+
+void MainWindow::onPartChannel(const QString &channel, const QString &reason)
+{
+	removeChannelFrame(channel);
+
+	QString str = tr("You leaved channel <b>%1</b>").arg(channel);
+
+	if (!reason.isEmpty()) str += QString(" (%1)").arg(reason);
+
+	setSystem(str);
 }
 
 void MainWindow::onError(const QString &error)
 {
 	serverBrowser->append(QString("<div class=\"error\">%1</div>").arg(error));
+}
+
+bool MainWindow::createChannelFrame(const QString &channel)
+{
+	// a tab already exists for this channel
+	if (getChannelFrame(channel)) return false;
+
+	int id = channelsWidget->addTab(new ChannelFrame(this, channel), channel);
+
+	channelsWidget->setCurrentIndex(id);
+
+	return true;
+}
+
+bool MainWindow::removeChannelFrame(const QString &channel)
+{
+	for(int i = 0; i < channelsWidget->count(); ++i)
+	{
+		if (channelsWidget->tabText(i) == channel)
+		{
+			channelsWidget->removeTab(i);
+
+			delete channelsWidget->widget(i);
+		}
+	}
+
+	return false;
 }
 
 ChannelFrame* MainWindow::getChannelFrame(const QString &channel, bool *focused)

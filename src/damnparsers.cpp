@@ -37,6 +37,7 @@ bool DAmn::parseAllMessages(const QStringList &lines)
 	if (parsePing(lines)) return true;
 	if (parseRecv(lines)) return true;
 	if (parseJoin(lines)) return true;
+	if (parsePart(lines)) return true;
 	if (parseProperty(lines)) return true;
 	if (parseGet(lines)) return true;
 	if (parseSet(lines)) return true;
@@ -302,6 +303,23 @@ bool DAmn::parseJoin(const QStringList &lines)
 	createChannel(p.params[1]);
 
 	emit channelJoined(p.params[1]);
+
+	return true;
+}
+
+bool DAmn::parsePart(const QStringList &lines)
+{
+	int i = 0;
+
+	DAmnPacket p;
+
+	if (!parsePacket("part", lines, i, p)) return false;
+
+	if (!parseError(p.args["e"])) return true;
+
+	removeChannel(p.params[1]);
+
+	emit channelParted(p.params[1], p.args["p"]);
 
 	return true;
 }

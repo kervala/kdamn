@@ -348,6 +348,20 @@ DAmnChannel* DAmn::createChannel(const QString &channel)
 	return chan;
 }
 
+bool DAmn::removeChannel(const QString &channel)
+{
+	DAmnChannel *chan = getChannel(channel);
+
+	// doesn't exist
+	if (!chan) return false;
+
+	m_channels.removeAll(chan);
+
+	delete chan;
+
+	return true;
+}
+
 DAmnChannel* DAmn::getChannel(const QString &channel)
 {
 	foreach(DAmnChannel *chan, m_channels) if (chan->name.toLower() == channel.toLower()) return chan;
