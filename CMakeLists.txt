@@ -145,11 +145,6 @@ set(CPACK_SOURCE_IGNORE_FILES
 	"^${CMAKE_SOURCE_DIR}/old/")
 IF(WIN32)
   IF(${CMAKE_BUILD_TYPE} STREQUAL "Release")
-    IF(_QT5)
-      INSTALL(FILES "${QT_PLUGINS_DIR}/imageformats/qjpeg.dll" DESTINATION ${BIN_PREFIX}/imageformats)
-      INSTALL(FILES "${QT_PLUGINS_DIR}/iconengines/qsvgicon.dll" DESTINATION ${BIN_PREFIX}/iconengines)
-    ENDIF(_QT5)
-
     IF(_QT4)
       INSTALL(FILES "${QT_PLUGINS_DIR}/imageformats/qjpeg4.dll" DESTINATION ${BIN_PREFIX}/imageformats)
       INSTALL(FILES "${QT_PLUGINS_DIR}/iconengines/qsvgicon4.dll" DESTINATION ${BIN_PREFIX}/iconengines)
