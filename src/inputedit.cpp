@@ -30,87 +30,193 @@ InputEdit::InputEdit(QWidget *parent):QLineEdit(parent), m_index(-1)
 
 void InputEdit::validate()
 {
-	QString str = text();
+	QString str = text().trimmed();
+
+	if (str.isEmpty()) return;
 
 	// don't add to history if already the last entry
-	if (!str.isEmpty() && (m_history.isEmpty() || m_history.back() != str)) m_history << str;
+	if (m_history.isEmpty() || m_history.back() != str) m_history << str;
 
 	clear();
+
+	emit textValidated(str);
 }
 
 void InputEdit::setUsers(const QStringList &users)
 {
 	m_users = users;
-
-	QCompleter *completer = new QCompleter(m_users, this);
-	completer->setCaseSensitivity(Qt::CaseInsensitive);
-	setCompleter(completer);
 }
 
-void InputEdit::keyPressEvent(QKeyEvent *event)
+void InputEdit::keyPressEvent(QKeyEvent *e)
 {
-	if (event->key() == Qt::Key_Up)
+	if (e->key() == Qt::Key_Up)
 	{
-		// move back in history
-		if (!m_history.isEmpty() && (m_index > 0 || m_index == -1))
-		{
-			if (m_index == -1)
-			{
-				m_current = text();
-				m_index = m_history.size()-1;
-			}
-			else
-			{
-				--m_index;
-			}
-
-			setText(m_history[m_index]);
-		}
+		historyUp();
 	}
-	else if (event->key() == Qt::Key_Down)
+	else if (e->key() == Qt::Key_Down)
 	{
-		// move forward in history
-		if (!m_history.isEmpty() && m_index != -1)
-		{
-			if (m_index == m_history.size()-1)
-			{
-				m_index = -1;
-
-				setText(m_current);
-			}
-			else
-			{
-				++m_index;
-
-				setText(m_history[m_index]);
-			}
-		}
+		historyDown();
 	}
-	else if (event->key() == Qt::Key_Tab)
+	else if (e->key() == Qt::Key_Tab)
 	{
-		QString str = text();
-		int pos2 = cursorPosition();
-
-		int pos1 = str.lastIndexOf(' ', pos2)+1;
-
-		QString prefix = str.mid(pos1, pos2-pos1).toLower();
-
-		foreach(const QString &user, m_users)
-		{
-			if (user.toLower().startsWith(prefix))
-			{
-				setText(str.left(pos1) + user + str.mid(pos2));
-
-				break;
-			}
-		}
-
+		completeName();
+	}
+	else if (e->key() == Qt::Key_PageUp)
+	{
+		emit pageUp();
+	}
+	else if (e->key() == Qt::Key_PageDown)
+	{
+		emit pageDown();
 	}
 	else
 	{
 		if (m_index > -1 && text() != m_history[m_index]) m_index = -1;
 
 		// default handler for event
-		QLineEdit::keyPressEvent(event);
+		QLineEdit::keyPressEvent(e);
 	}
 }
+
+void InputEdit::contextMenuEvent(QContextMenuEvent *e)
+{
+    QMenu *menu = createStandardContextMenu();
+
+	if (!menu) return;
+
+	menu->setAttribute(Qt::WA_DeleteOnClose);
+
+	if (!m_history.isEmpty())
+	{
+		menu->addSeparator();
+
+		QMenu *historyMenu = menu->addMenu(tr("History"));
+
+		foreach(const QString &history, m_history)
+		{
+			QAction *action = historyMenu->addAction(history);
+		}
+
+		connect(historyMenu, SIGNAL(triggered(QAction*)), this, SLOT(historyTriggered(QAction*)));
+	}
+
+	menu->popup(e->globalPos());
+}
+
+bool InputEdit::event(QEvent *e)
+{
+	// redirect all keypresses without exception to keyPressEvent
+	if (e->type() == QEvent::KeyPress)
+	{
+		keyPressEvent((QKeyEvent *)e);
+
+		return true;
+	}
+
+	return QLineEdit::event(e);
+}
+
+void InputEdit::historyUp()
+{
+	// move back in history
+	if (!m_history.isEmpty() && (m_index > 0 || m_index == -1))
+	{
+		if (m_index == -1)
+		{
+			m_current = text();
+			m_index = m_history.size()-1;
+		}
+		else
+		{
+			--m_index;
+		}
+
+		setText(m_history[m_index]);
+	}
+}
+
+void InputEdit::historyDown()
+{
+	// move forward in history
+	if (!m_history.isEmpty() && m_index != -1)
+	{
+		if (m_index == m_history.size()-1)
+		{
+			m_index = -1;
+
+			setText(m_current);
+		}
+		else
+		{
+			++m_index;
+
+			setText(m_history[m_index]);
+		}
+	}
+}
+
+void InputEdit::completeName()
+{
+	QRegExp reg("[ :_,;!?.\\-]");
+
+	// whole string
+	QString str = text();
+
+	// beginning of username
+	int pos1 = 0;
+
+	// end of username
+	int pos2 = str.indexOf(reg, cursorPosition());
+
+	// text before and after username
+	QString pre, post;
+
+	// separator after username
+	QString sep = " ";
+	
+	if (pos2 == -1)
+	{
+		// no separator after username, take end of line
+		pos2 = str.length();
+		post.clear();
+	}
+	else
+	{
+		sep = str[pos2];
+		post = str.mid(pos2+1);
+	}
+
+	pos1 = str.lastIndexOf(reg, pos2-1)+1;
+
+	pre = str.left(pos1);
+
+	int len = pos2-pos1;
+
+	if (len > 0)
+	{
+		QString prefix = str.mid(pos1, len).toLower();
+
+		foreach(const QString &user, m_users)
+		{
+			if (user.toLower().startsWith(prefix))
+			{
+				if (pos1 == 0 && post.isEmpty()) sep = ":" + sep;
+				
+				setText(pre + user + sep + post);
+
+				setCursorPosition(pos1 + user.length() + sep.length());
+
+				break;
+			}
+		}
+	}
+}
+
+void InputEdit::historyTriggered(QAction *action)
+{
+	QString text = action->text();
+	setText(text);
+	m_index = -1;
+	m_current = text;
+}
+

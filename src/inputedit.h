@@ -33,11 +33,20 @@ public:
 	void setUsers(const QStringList &users);
 
 signals:
+	void textValidated(const QString &text);
+	void pageUp();
+	void pageDown();
 	
 public slots:
+	void historyUp();
+	void historyDown();
+	void completeName();
+	void historyTriggered(QAction *action);
 
 protected:
 	void keyPressEvent(QKeyEvent *event);
+	void contextMenuEvent(QContextMenuEvent *e);
+	bool event(QEvent *e);
 
 	QStringList m_history;
 	int m_index;
