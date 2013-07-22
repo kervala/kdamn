@@ -131,7 +131,7 @@ void MainWindow::onReceiveAuthtoken(const QString &login, const QString &authtok
 
 void MainWindow::onJoin()
 {
-	QString channel = QInputDialog::getText(this, tr("Join channel"), tr("Please enter channel to join"));
+	QString channel = QInputDialog::getText(this, tr("Join channel"), tr("Please enter channel to join"), QLineEdit::Normal, "", NULL,  Qt::Dialog | Qt::WindowCloseButtonHint);
 
 	if (!channel.isEmpty())
 	{
