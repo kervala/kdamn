@@ -38,6 +38,7 @@ public:
 	bool createChannelFrame(const QString &channel);
 	bool removeChannelFrame(const QString &channel);
 	ChannelFrame* getChannelFrame(const QString &channel, bool *focused = NULL);
+	ChannelFrame* getCurrentChannelFrame();
 
 	void setSystem(const QString &text);
 
@@ -64,6 +65,9 @@ public slots:
 	void onMembers(const QString &channel, const QList<DAmnMember> &members);
 	void onJoinChannel(const QString &channel);
 	void onPartChannel(const QString &channel, const QString &reason);
+	void onUserJoin(const QString &channel, const QString &user);
+	void onUserPart(const QString &channel, const QString &user, const QString &reason);
+	void onUserPriv(const QString &channel, const QString &user, const QString &by, const QString &pc);
 	void onError(const QString &error);
 
 	// other

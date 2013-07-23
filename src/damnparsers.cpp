@@ -54,7 +54,10 @@ bool DAmn::parsePacket(const QString &cmd, const QStringList &lines, int &i, DAm
 	if (i >= lines.size()) return false;
 
 	// check if the command is right
-	if (lines[i].left(cmd.length()) != cmd) return false;
+	if (!lines[i].startsWith(cmd)) return false;
+
+	packet.cmd = cmd;
+	packet.params.clear();
 
 	if (lines[i].length() > cmd.length())
 	{
@@ -67,7 +70,6 @@ bool DAmn::parsePacket(const QString &cmd, const QStringList &lines, int &i, DAm
 
 		if (reg.indexIn(lines[i], pos) == pos)
 		{
-			packet.cmd = cmd;
 			packet.params << reg.cap(1);
 
 			pos += reg.matchedLength();
@@ -101,6 +103,8 @@ bool DAmn::parsePacket(const QString &cmd, const QStringList &lines, int &i, DAm
 
 void DAmn::parseProperties(const QStringList &lines, int &i, DAmnProperties &props)
 {
+	props.clear();
+
 	QRegExp reg("^([a-z]+)=([A-Za-z0-9_.~ -]*)$");
 
 	for(; i < lines.size(); ++i)
@@ -248,9 +252,9 @@ bool DAmn::parseText(const QString &channel, const QString &from, bool action, c
 	return true;
 }
 
-bool DAmn::parseJoin(const QString &user, bool show, const QStringList &lines, int &i)
+bool DAmn::parseJoin(const QString &channel, const QString &user, bool show, const QStringList &lines, int &i)
 {
-	if (show) emit userJoined(user);
+	if (show) emit userJoined(channel, user);
 
 	// to be sure it's not an alias
 	DAmnUser *u = new DAmnUser();
@@ -268,9 +272,20 @@ bool DAmn::parseJoin(const QString &user, bool show, const QStringList &lines, i
 	return true;
 }
 
-bool DAmn::parsePart(const QString &user, bool show, const QString &reason, const QStringList &lines, int &i)
+bool DAmn::parsePart(const QString &channel, const QString &user, bool show, const QString &reason, const QStringList &lines, int &i)
 {
-	if (show) emit userParted(user, reason);
+	if (show) emit userParted(channel, user, reason);
+
+	// TODO: remove user from channel
+
+	return true;
+}
+
+bool DAmn::parsePriv(const QString &channel, const QString &user, bool show, const QString &by, const QString &pc, const QStringList &lines, int &i)
+{
+	if (show) emit userPrivChanged(channel, user, by, pc);
+
+	// TODO: update user priv in users list
 
 	return true;
 }
@@ -283,15 +298,25 @@ bool DAmn::parseRecv(const QStringList &lines)
 
 	if (!parsePacket("recv", lines, i, p)) return false;
 
-	// text
-	if (parsePacket("msg", lines, i, p)) return parseText(p.params[1], p.args["from"], false, lines, i);
-	if (parsePacket("action", lines, i, p))	return parseText(p.params[1], p.args["from"], true, lines, i);
+	if (p.params[0] == "chat")
+	{
+		QString channel = p.params[1];
 
-	// join/part messages
-	if (parsePacket("join", lines, i, p)) return parseJoin(p.params[0], p.args["s"] == "1", lines, i);
-	if (parsePacket("part", lines, i, p)) return parsePart(p.params[0], p.args["s"] == "1", p.args["r"], lines, i);
+		// text
+		if (parsePacket("msg", lines, i, p)) return parseText(channel, p.args["from"], false, lines, i);
+		if (parsePacket("action", lines, i, p))	return parseText(channel, p.args["from"], true, lines, i);
 
-	return false;
+		// join/part messages
+		if (parsePacket("join", lines, i, p)) return parseJoin(channel, p.params[0], p.args["s"] == "1", lines, i);
+		if (parsePacket("part", lines, i, p)) return parsePart(channel, p.params[0], p.args["s"] == "1", p.args["r"], lines, i);
+
+		// promote/demote
+		if (parsePacket("privchg", lines, i, p)) return parsePriv(channel, p.params[0], p.args["i"] == "1", p.args["by"], p.args["pc"], lines, i);
+	}
+
+	emit errorReceived(tr("Unable to recognize param %1").arg(p.params[0]));
+
+	return true;
 }
 
 bool DAmn::parseJoin(const QStringList &lines)

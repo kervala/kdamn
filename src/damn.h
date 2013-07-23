@@ -156,8 +156,9 @@ signals:
 	void imageDownloaded(const QString &md5);
 	void channelJoined(const QString &channel);
 	void channelParted(const QString &channel, const QString &reason);
-	void userJoined(const QString &user);
-	void userParted(const QString &user, const QString &reason);
+	void userJoined(const QString &channel, const QString &user);
+	void userParted(const QString &channel, const QString &user, const QString &reason);
+	void userPrivChanged(const QString &channel, const QString &user, const QString &by, const QString &pc);
 	void membersReceived(const QString &channel, const QList<DAmnMember> &members);
 	void errorReceived(const QString &error);
 
@@ -193,8 +194,9 @@ private:
 	bool parseUserProperties(const QString &user, const QStringList &lines, int &i);
 	bool parseConn(const QStringList &lines, int &i, DAmnConnection &conn);
 	bool parseText(const QString &channel, const QString &from, bool action, const QStringList &lines, int &i);
-	bool parseJoin(const QString &user, bool show, const QStringList &lines, int &i);
-	bool parsePart(const QString &user, bool show, const QString &reason, const QStringList &lines, int &i);
+	bool parseJoin(const QString &channel, const QString &user, bool show, const QStringList &lines, int &i);
+	bool parsePart(const QString &channel, const QString &user, bool show, const QString &reason, const QStringList &lines, int &i);
+	bool parsePriv(const QString &channel, const QString &user, bool show, const QString &by, const QString &pc, const QStringList &lines, int &i);
 	bool parseError(const QString &error);
 
 	// parse message sent from server
