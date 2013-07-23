@@ -20,6 +20,10 @@
 #include "common.h"
 #include "damn.h"
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
 #endif
@@ -28,7 +32,7 @@ bool DAmn::client()
 {
 	begin();
 	writeLine("dAmnClient 0.2");
-	writeLine("agent=kdAmn 1.0.0");
+	writeLine(QString("agent=%1 %2").arg(PRODUCT).arg(VERSION));
 	end();
 
 	return true;
@@ -38,7 +42,7 @@ bool DAmn::login()
 {
 	begin();
 	writeLine(QString("login %1").arg(m_login));
-	writeLine(QString("pk=%1").arg(m_authtoken));
+	writeLine(QString("pk=%1").arg(m_token));
 	end();
 
 	return true;
