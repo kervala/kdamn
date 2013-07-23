@@ -48,14 +48,9 @@ void ChannelFrame::setText(const QString &user, const QString &text)
 	outputBrowser->append(QString("<div class=\"normal\">%1<span class=\"username\">&lt;%2&gt;</span> %3</div>").arg(getTimestamp()).arg(user).arg(text));
 }
 
-void ChannelFrame::setTopic(const QString &topic)
+void ChannelFrame::setSystem(const QString &text)
 {
-	outputBrowser->append(tr("<div class=\"title\">Topic is %1</div>").arg(topic));
-}
-
-void ChannelFrame::setTitle(const QString &title)
-{
-	outputBrowser->append(tr("<div class=\"title\">Title is %1</div>").arg(title));
+	outputBrowser->append(QString("<div class=\"system\">%1%2</div>").arg(getTimestamp()).arg(text));
 }
 
 void ChannelFrame::setUsers(const QList<DAmnMember> &users)
@@ -85,7 +80,7 @@ void ChannelFrame::setUsers(const QList<DAmnMember> &users)
 
 void ChannelFrame::onSend()
 {
-	if (DAmn::getInstance()->send(m_channel, inputEdit->text()))
+	if (DAmn::getInstance()->send(m_channel, inputEdit->text().trimmed()))
 	{
 		inputEdit->validate();
 	}

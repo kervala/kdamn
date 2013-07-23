@@ -35,10 +35,11 @@ public:
 	virtual ~ChannelFrame();
 	
 	void setText(const QString &user, const QString &text);
-	void setTopic(const QString &topic);
-	void setTitle(const QString &title);
+	void setSystem(const QString &text);
 
 	void setUsers(const QList<DAmnMember> &users);
+
+	QString getChannel() const { return m_channel; }
 
 signals:
 	
