@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "damn.h"
+#include "oauth2.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -52,12 +53,6 @@ static Tablump s_tablumps[] = {
 	{ "acro", 1, "acronym" },
 	{ "", -1 }
 };
-
-/*
-/abbr:		</abbr>
-/acro:		</acronym>
-/embed:		</embed>
-*/
 
 bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QStringList &images)
 {
@@ -151,43 +146,44 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 				else if (id == "avatar")
 				{
 					QString name = tokens[1].toLower();
-					int format = tokens[2].toInt();
+					int usericon = tokens[2].toInt();
 
-					QString ext;
-				
-					if (format == 11 || format == 15 || format == 35 || format == 7 || format == 27 || format == 23 || format == 31 || format == 59)
+					int cachebuster = (usericon >> 2) & 15;
+					int format = usericon & 3;
+
+					QString url;
+
+					if (format < 1 || format > 3)
 					{
-						ext = "png";
-					}
-					else if (format == 13 || format == 33 || format == 5 || format == 41 || format == 25 || format == 45 || format == 49 || format == 37 || format == 9 || format == 17 || format == 21)
-					{
-						ext = "gif";
-					}
-					else if (format == 42 || format == 22 || format == 6 || format == 62 || format == 30 || format == 26 || format == 14 || format == 34)
-					{
-						ext = "jpg";
+						url = "http://a.deviantart.net/avatars/default.gif";
 					}
 					else
 					{
-						emit errorReceived(tr("Image format %1 not recognized").arg(format));
+						//  $cleanname = preg_replace("/[^a-zA-Z0-9_]/", "_", $username);
+
+						static QString s_formats[] = { "", "gif", "jpg", "png" };
+
+						QString ext = s_formats[format];
+
+						QChar first = name[0];
+						QChar second = name[1];
+
+						QRegExp reg2("^([a-z0-9_])$");
+
+						if (reg2.indexIn(first))
+						{
+							first = '_';
+						}
+
+						if (reg2.indexIn(second))
+						{
+							second = '_';
+						}
+
+						url = QString("http://a.deviantart.net/avatars/%1/%2/%3.%4").arg(first).arg(second).arg(name).arg(ext);
 					}
 
-					QChar first = name[0];
-					QChar second = name[1];
-
-					QRegExp reg2("^([a-z0-9_])$");
-
-					if (reg2.indexIn(first))
-					{
-						first = '_';
-					}
-
-					if (reg2.indexIn(second))
-					{
-						second = '_';
-					}
-
-					QString url = QString("http://a.deviantart.net/avatars/%1/%2/%3.%4").arg(first).arg(second).arg(name).arg(ext);
+					if (cachebuster) url += QString("?%1").arg(cachebuster);
 
 					QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
 					QString file = "cache/" + md5;
@@ -228,9 +224,6 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 						height = tokens[1].toInt();
 					}
 
-					// http://fc04.deviantart.net/fs70/i/2011/361/8/e/fatal_fury_mai_by_mikehegaman-d4kcsf6.jpg
-					// :thumb276053730: http://th02.deviantart.net/fs70/150/i/2011/361/8/e/fatal_fury_mai_by_mikehegaman-d4kcsf6.jpg
-					// :thumb73889283: http://fc00.deviantart.net/fs22/f/2008/005/4/0/Icon_by_MeZicH.jpg
 					tokens = url.split(':');
 
 					if (tokens.size() == 2)
@@ -259,7 +252,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 						url = QString("http://fc%1.deviantart.net/%2/%3");
 					}
 
-					url = url.arg(tnserver, 2, '0').arg(pre).arg(post); // PRE
+					url = url.arg(tnserver, 2, '0').arg(pre).arg(post);
 
 					tokens = flags.split(':');
 
