@@ -145,7 +145,6 @@ public slots:
 	bool updateWaitingMessages(const QString &md5);
 
 signals:
-	void authenticationRequired();
 	void authenticationFailed();
 	void serverConnected();
 	void topicReceived(const QString &channel, const QString &topic);

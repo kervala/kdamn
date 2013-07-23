@@ -53,7 +53,6 @@ MainWindow::MainWindow():QMainWindow(), m_trayIcon(NULL)
 	DAmn *damn = new DAmn(this);
 	connect(damn, SIGNAL(serverConnected()), this, SLOT(onConnectServer()));
 	connect(damn, SIGNAL(htmlMessageReceived(QString, QString, QString)), this, SLOT(onText(QString, QString, QString)));
-	connect(damn, SIGNAL(authenticationRequired()), this, SLOT(onConnect()));
 	connect(damn, SIGNAL(topicReceived(QString, QString)), this, SLOT(onTopic(QString, QString)));
 	connect(damn, SIGNAL(titleReceived(QString, QString)), this, SLOT(onTitle(QString, QString)));
 	connect(damn, SIGNAL(membersReceived(QString, QList<DAmnMember>)), this, SLOT(onMembers(QString, QList<DAmnMember>)));

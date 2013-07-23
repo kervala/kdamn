@@ -60,8 +60,6 @@ bool DAmn::connectToServer()
 		return true;
 	}
 
-	emit authenticationRequired();
-
 	return false;
 }
 
