@@ -82,9 +82,14 @@ void DAmn::onError(QAbstractSocket::SocketError error)
 	emit errorReceived(tr("Socket error: %1").arg(error));
 }
 
-bool DAmn::downloadImage(const QString &url)
+bool DAmn::downloadImage(const QString &url, QString &file, QString &md5)
 {
 	if (!OAuth2::getInstance()) return false;
+
+	QString dir(QDir::fromNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)));
+
+	md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
+	file = QString("%1/%2").arg(dir).arg(md5);
 
 	static bool s_connected = false;
 
@@ -94,7 +99,15 @@ bool DAmn::downloadImage(const QString &url)
 		s_connected = true;
 	}
 
-	return OAuth2::getInstance()->get(url);
+	if (QFile::exists(file)) return false;
+
+	// create directory to be sure, there won't be any error later
+	QDir tmp;
+	tmp.mkpath(dir);
+
+	OAuth2::getInstance()->get(url);
+
+	return true;
 }
 
 bool DAmn::updateWaitingMessages(const QString &md5)

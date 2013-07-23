@@ -122,15 +122,9 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 					QString title = tokens[4];
 					QString url = "http://e.deviantart.net/emoticons/" + tokens[5];
 
-					QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
-					QString file = "cache/" + md5;
+					QString file, md5;
 
-					if (!QFile::exists(file))
-					{
-						downloadImage(url);
-
-						images << md5;
-					}
+					if (downloadImage(url, file, md5)) images << md5;
 
 					html += QString("<img alt=\"%1\" width=\"%2\" height=\"%3\" title=\"%4\" src=\"%5\" />").arg(alt).arg(width).arg(height).arg(title).arg(file);
 					text += alt;
@@ -185,15 +179,9 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 
 					if (cachebuster) url += QString("?%1").arg(cachebuster);
 
-					QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
-					QString file = "cache/" + md5;
+					QString file, md5;
 
-					if (!QFile::exists(file))
-					{
-						downloadImage(url);
-
-						images << md5;
-					}
+					if (downloadImage(url, file, md5)) images << md5;
 
 					html += QString("<a href=\"http://%1.deviantart.com\"><img alt=\"%1\" width=\"50\" height=\"50\" title=\"%1\" src=\"%2\" /></a>").arg(name).arg(file);
 					text += QString(":icon%1:").arg(name);
@@ -263,15 +251,9 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 						nopriv = tokens[2].toInt() > 0;
 					}
 
-					QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
-					QString file = "cache/" + md5;
+					QString file, md5;
 
-					if (!QFile::exists(file))
-					{
-						downloadImage(url);
-
-						images << md5;
-					}
+					if (downloadImage(url, file, md5)) images << md5;
 
 					QString title2 = title;
 					title2.replace(" ", "-");

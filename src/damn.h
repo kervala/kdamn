@@ -174,7 +174,7 @@ private:
 	bool sendChat(const QString &channel);
 	bool replaceTablumps(const QString &data, QString &html, QString &text, QStringList &images);
 
-	bool downloadImage(const QString &url);
+	bool downloadImage(const QString &url, QString &file, QString &md5);
 
 	DAmnChannel* createChannel(const QString &channel);
 	bool removeChannel(const QString &channel);

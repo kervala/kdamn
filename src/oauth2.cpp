@@ -213,10 +213,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 		QString url = reply->url().toString();
 		QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
 
-		QDir dir;
-		dir.mkpath("cache");
-
-		QFile file("cache/" + md5);
+		QFile file(QString("%1/%2").arg(QDir::fromNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::CacheLocation))).arg(md5));
 
 		if (file.open(QIODevice::WriteOnly))
 		{
