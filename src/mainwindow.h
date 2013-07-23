@@ -34,6 +34,7 @@ public:
 	MainWindow();
 	virtual ~MainWindow();
 
+	void autoConnect();
 	bool createChannelFrame(const QString &channel);
 	bool removeChannelFrame(const QString &channel);
 	ChannelFrame* getChannelFrame(const QString &channel, bool *focused = NULL);
@@ -54,6 +55,7 @@ public slots:
 	void onAboutQt();
 
 	// slots activated from DAmn signals
+	void onRequestDAmnToken();
 	void onText(const QString &channel, const QString &user, const QString &text);
 	void onReceiveAuthtoken(const QString &login, const QString &authtoken);
 	void onConnectServer();
@@ -64,11 +66,13 @@ public slots:
 	void onPartChannel(const QString &channel, const QString &reason);
 	void onError(const QString &error);
 
+	// other
+	void trayActivated(QSystemTrayIcon::ActivationReason reseaon);
+
 protected:
 	void closeEvent(QCloseEvent *event);
 
 private:
-	DAmn *m_damn;
 	QSystemTrayIcon *m_trayIcon;
 };
 

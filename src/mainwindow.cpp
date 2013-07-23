@@ -23,6 +23,7 @@
 #include "connectdialog.h"
 #include "channelframe.h"
 #include "damn.h"
+#include "oauth2.h"
 
 #ifdef HAVE_CONFIG_H
 	#include "config.h"
@@ -32,7 +33,7 @@
 	#define new DEBUG_NEW
 #endif
 
-MainWindow::MainWindow():QMainWindow(), m_damn(NULL), m_trayIcon(NULL)
+MainWindow::MainWindow():QMainWindow(), m_trayIcon(NULL)
 {
 	setupUi(this);
 
@@ -49,31 +50,39 @@ MainWindow::MainWindow():QMainWindow(), m_damn(NULL), m_trayIcon(NULL)
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
 	connect(actionAboutQt, SIGNAL(triggered()), this, SLOT(onAboutQt()));
 
-	m_damn = new DAmn(this);
-	connect(m_damn, SIGNAL(serverConnected()), this, SLOT(onConnectServer()));
-	connect(m_damn, SIGNAL(htmlMessageReceived(QString, QString, QString)), this, SLOT(onText(QString, QString, QString)));
-	connect(m_damn, SIGNAL(authtokenReceived(QString, QString)), this, SLOT(onReceiveAuthtoken(QString, QString)));
-	connect(m_damn, SIGNAL(authenticationRequired()), this, SLOT(onConnect()));
-	connect(m_damn, SIGNAL(topicReceived(QString, QString)), this, SLOT(onTopic(QString, QString)));
-	connect(m_damn, SIGNAL(titleReceived(QString, QString)), this, SLOT(onTitle(QString, QString)));
-	connect(m_damn, SIGNAL(membersReceived(QString, QList<DAmnMember>)), this, SLOT(onMembers(QString, QList<DAmnMember>)));
-	connect(m_damn, SIGNAL(channelJoined(QString)), this, SLOT(onJoinChannel(QString)));
-	connect(m_damn, SIGNAL(channelParted(QString, QString)), this, SLOT(onPartChannel(QString, QString)));
-	connect(m_damn, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
+	DAmn *damn = new DAmn(this);
+	connect(damn, SIGNAL(serverConnected()), this, SLOT(onConnectServer()));
+	connect(damn, SIGNAL(htmlMessageReceived(QString, QString, QString)), this, SLOT(onText(QString, QString, QString)));
+	connect(damn, SIGNAL(authenticationRequired()), this, SLOT(onConnect()));
+	connect(damn, SIGNAL(topicReceived(QString, QString)), this, SLOT(onTopic(QString, QString)));
+	connect(damn, SIGNAL(titleReceived(QString, QString)), this, SLOT(onTitle(QString, QString)));
+	connect(damn, SIGNAL(membersReceived(QString, QList<DAmnMember>)), this, SLOT(onMembers(QString, QList<DAmnMember>)));
+	connect(damn, SIGNAL(channelJoined(QString)), this, SLOT(onJoinChannel(QString)));
+	connect(damn, SIGNAL(channelParted(QString, QString)), this, SLOT(onPartChannel(QString, QString)));
+	connect(damn, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
+	connect(damn, SIGNAL(authenticationFailed()), this, SLOT(onRequestDAmnToken()));
+
+	OAuth2 *oauth = new OAuth2(this);
+	connect(oauth, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
+	connect(oauth, SIGNAL(damnTokenReceived(QString, QString)), this, SLOT(onReceiveAuthtoken(QString, QString)));
 
 	if (QSystemTrayIcon::isSystemTrayAvailable())
 	{
+/*
 		QMenu * trayMenu = new QMenu(this);
 		QAction *restoreAction = trayMenu->addAction(tr("Restore"));
 		connect(restoreAction, SIGNAL(triggered()), this, SLOT(trayActivated()));
 		QAction *quitAction = trayMenu->addAction(tr("Quit"));
 		connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
+*/
 
 		m_trayIcon = new QSystemTrayIcon(QIcon(":/icons/kdamn.svg"), this);
-		m_trayIcon->setContextMenu(trayMenu);
+//		m_trayIcon->setContextMenu(trayMenu);
 		connect(m_trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayActivated(QSystemTrayIcon::ActivationReason)));
 		m_trayIcon->show();
 	}
+
+	autoConnect();
 }
 
 MainWindow::~MainWindow()
@@ -110,20 +119,24 @@ void MainWindow::onConnect()
 
 		QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
 		settings.setValue("login", login);
-		if (remember) settings.setValue("password", password);
+		settings.setValue("password", remember ? password:"");
 		settings.setValue("remember_password", remember);
 		settings.setValue("authtoken", authtoken);
 
-		m_damn->setLogin(login);
-		m_damn->setPassword(password);
-		m_damn->setAuthtoken(authtoken);
-		m_damn->connectToDA();
+		DAmn::getInstance()->setLogin(login);
+		DAmn::getInstance()->setToken(authtoken);
+
+		if (!DAmn::getInstance()->connectToServer())
+		{
+			OAuth2::getInstance()->login(login, password);
+//			OAuth2::getInstance()->loginSite(login, password);
+		}
 	}
 }
 
 void MainWindow::onDisconnect()
 {
-	m_damn->disconnect();
+	DAmn::getInstance()->disconnect();
 }
 
 void MainWindow::onReceiveAuthtoken(const QString &login, const QString &authtoken)
@@ -131,6 +144,11 @@ void MainWindow::onReceiveAuthtoken(const QString &login, const QString &authtok
 	QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
 	settings.setValue("login", login);
 	settings.setValue("authtoken", authtoken);
+
+	DAmn::getInstance()->setLogin(login);
+	DAmn::getInstance()->setToken(authtoken);
+
+	DAmn::getInstance()->connectToServer();
 }
 
 void MainWindow::onJoin()
@@ -139,7 +157,7 @@ void MainWindow::onJoin()
 
 	if (!channel.isEmpty())
 	{
-		m_damn->join(channel);
+		DAmn::getInstance()->join(channel);
 
 		QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
 		settings.setValue(QString("channels/%1").arg(channel), 1);
@@ -161,7 +179,7 @@ void MainWindow::onConnectServer()
 
 	foreach(const QString &channel, channels)
 	{
-		if (settings.value(channel, 0).toInt() == 1) m_damn->join(channel);
+		if (settings.value(channel, 0).toInt() == 1) DAmn::getInstance()->join(channel);
 	}
 
 	settings.endGroup();
@@ -263,4 +281,42 @@ ChannelFrame* MainWindow::getChannelFrame(const QString &channel, bool *focused)
 void MainWindow::setSystem(const QString &text)
 {
 	serverBrowser->append(QString("<div class=\"system\">%1</div>").arg(text));
+}
+
+void MainWindow::trayActivated(QSystemTrayIcon::ActivationReason reseaon)
+{
+}
+
+void MainWindow::autoConnect()
+{
+	QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
+	QString login = settings.value("login").toString();
+	QString token = settings.value("authtoken").toString();
+
+	if (!login.isEmpty() && !token.isEmpty())
+	{
+		DAmn::getInstance()->setLogin(login);
+		DAmn::getInstance()->setToken(token);
+
+		DAmn::getInstance()->connectToServer();
+	}
+}
+
+void MainWindow::onRequestDAmnToken()
+{
+	QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
+	QString login = settings.value("login").toString();
+	QString password = settings.value("password").toString();
+
+	// delete previous authtoken because invalid
+	settings.setValue("authtoken", "");
+
+	if (settings.value("remember_password").toBool() && !login.isEmpty() && !password.isEmpty())
+	{
+		OAuth2::getInstance()->login(login, password);
+	}
+	else
+	{
+		onConnect();
+	}
 }

@@ -108,10 +108,9 @@ public:
 	bool end();
 
 	void setLogin(const QString &login);
-	void setPassword(const QString &password);
-	void setAuthtoken(const QString &authtoken);
+	void setToken(const QString &token);
 
-	bool connectToDA();
+	bool connectToServer();
 
 	static DAmn* getInstance() { return s_instance; }
 
@@ -141,17 +140,13 @@ public slots:
 
 	// implemented
 	bool send(const QString &channel, const QString &text);
-	bool connectToChat();
 	void onError(QAbstractSocket::SocketError error);
-	void onReplyError(QNetworkReply::NetworkError error);
-	void onReply(QNetworkReply *reply);
-	void onSslErrors(const QList<QSslError> &errors);
-	void onAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth);
 	bool read();
+	bool updateWaitingMessages(const QString &md5);
 
 signals:
-	void authtokenReceived(const QString &login, const QString &authtoken);
 	void authenticationRequired();
+	void authenticationFailed();
 	void serverConnected();
 	void topicReceived(const QString &channel, const QString &topic);
 	void titleReceived(const QString &channel, const QString &title);
@@ -176,13 +171,10 @@ private:
 		eStepConnected
 	};
 
-	bool requestCookies();
-	bool requestAuthToken();
 	bool sendChat(const QString &channel);
 	bool replaceTablumps(const QString &data, QString &html, QString &text, QStringList &images);
 
 	bool downloadImage(const QString &url);
-	bool updateWaitingMessages(const QString &md5);
 
 	DAmnChannel* createChannel(const QString &channel);
 	bool removeChannel(const QString &channel);
@@ -219,11 +211,8 @@ private:
 	bool parseDisconnect(const QStringList &lines);
 
 	QTcpSocket *m_socket;
-	QNetworkAccessManager *m_manager;
 	QString m_login;
-	QString m_password;
-	eStep m_step;
-	QString m_authtoken;
+	QString m_token;
 	QByteArray m_writebuffer;
 	char *m_readbuffer;
 	qint64 m_buffersize;

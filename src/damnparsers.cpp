@@ -147,6 +147,7 @@ bool DAmn::parseError(const QString &error)
 	static DAmnError s_errors[] = {
 		{ "bad parameter", tr("Bad parameter") },
 		{ "unknown property", tr("Unknown property") },
+		{ "authentication failed", tr("Authentication failed") },
 		{ "", "" }
 	};
 
@@ -186,14 +187,17 @@ bool DAmn::parseLogin(const QStringList &lines)
 
 	if (!parsePacket("login", lines, i, p)) return false;
 
-	if (!parseError(p.args["e"])) return true;
+	if (!parseError(p.args["e"]))
+	{
+		emit authenticationFailed();
+
+		return true;
+	}
 
 	// to be sure it's not an alias
 	DAmnUser *user = createUser(p.params[0]);
 
 	if (!parseUserInfo(lines, i, *user)) return true;
-
-	m_step = eStepConnected;
 
 	emit serverConnected();
 
