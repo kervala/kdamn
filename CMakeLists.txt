@@ -123,6 +123,7 @@ SET(CPACK_NSIS_DISPLAY_NAME ${PRODUCT})
 SET(CPACK_NSIS_HELP_LINK "http://dev.kervala.net/projects/kdamn")
 SET(CPACK_NSIS_URL_INFO_ABOUT "http://dev.kervala.net/projects/kdamn")
 SET(CPACK_NSIS_CONTACT "kervala@gmail.com")
+SET(CPACK_NSIS_COMPRESSOR "/SOLID lzma")
 
 ## Source Packages
 IF(TARGET_X64)
