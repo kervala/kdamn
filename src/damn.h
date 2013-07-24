@@ -40,6 +40,8 @@ struct DAmnMember
 {
 	QString name;
 	QString pc;
+	QString by;
+	int count;
 
 	bool operator == (const DAmnMember &other) { return other.name == name; }
 };
@@ -156,8 +158,8 @@ signals:
 	void imageDownloaded(const QString &md5);
 	void channelJoined(const QString &channel);
 	void channelParted(const QString &channel, const QString &reason);
-	void userJoined(const QString &channel, const QString &user);
-	void userParted(const QString &channel, const QString &user, const QString &reason);
+	void userJoined(const QString &channel, const QString &user, bool show);
+	void userParted(const QString &channel, const QString &user, const QString &reason, bool show);
 	void userPrivChanged(const QString &channel, const QString &user, const QString &by, const QString &pc);
 	void membersReceived(const QString &channel, const QList<DAmnMember> &members);
 	void errorReceived(const QString &error);

@@ -57,6 +57,7 @@ public slots:
 
 	// slots activated from DAmn signals
 	void onRequestDAmnToken();
+	void onAction(const QString &channel, const QString &user, const QString &text);
 	void onText(const QString &channel, const QString &user, const QString &text);
 	void onReceiveAuthtoken(const QString &login, const QString &authtoken);
 	void onConnectServer();
@@ -65,8 +66,8 @@ public slots:
 	void onMembers(const QString &channel, const QList<DAmnMember> &members);
 	void onJoinChannel(const QString &channel);
 	void onPartChannel(const QString &channel, const QString &reason);
-	void onUserJoin(const QString &channel, const QString &user);
-	void onUserPart(const QString &channel, const QString &user, const QString &reason);
+	void onUserJoin(const QString &channel, const QString &user, bool show);
+	void onUserPart(const QString &channel, const QString &user, const QString &reason, bool show);
 	void onUserPriv(const QString &channel, const QString &user, const QString &by, const QString &pc);
 	void onError(const QString &error);
 

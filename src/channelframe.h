@@ -34,10 +34,13 @@ public:
 	ChannelFrame(QWidget *parent, const QString &channel);
 	virtual ~ChannelFrame();
 	
+	void setAction(const QString &user, const QString &text);
 	void setText(const QString &user, const QString &text);
 	void setSystem(const QString &text);
 
 	void setUsers(const QList<DAmnMember> &users);
+	void userJoin(const QString &user);
+	void userPart(const QString &user, const QString &reason);
 
 	QString getChannel() const { return m_channel; }
 

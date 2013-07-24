@@ -52,14 +52,15 @@ MainWindow::MainWindow():QMainWindow(), m_trayIcon(NULL)
 
 	DAmn *damn = new DAmn(this);
 	connect(damn, SIGNAL(serverConnected()), this, SLOT(onConnectServer()));
+	connect(damn, SIGNAL(htmlActionReceived(QString, QString, QString)), this, SLOT(onAction(QString, QString, QString)));
 	connect(damn, SIGNAL(htmlMessageReceived(QString, QString, QString)), this, SLOT(onText(QString, QString, QString)));
 	connect(damn, SIGNAL(topicReceived(QString, QString)), this, SLOT(onTopic(QString, QString)));
 	connect(damn, SIGNAL(titleReceived(QString, QString)), this, SLOT(onTitle(QString, QString)));
 	connect(damn, SIGNAL(membersReceived(QString, QList<DAmnMember>)), this, SLOT(onMembers(QString, QList<DAmnMember>)));
 	connect(damn, SIGNAL(channelJoined(QString)), this, SLOT(onJoinChannel(QString)));
 	connect(damn, SIGNAL(channelParted(QString, QString)), this, SLOT(onPartChannel(QString, QString)));
-	connect(damn, SIGNAL(userJoined(QString, QString)), this, SLOT(onUserJoin(QString, QString)));
-	connect(damn, SIGNAL(userParted(QString, QString, QString)), this, SLOT(onUserPart(QString, QString, QString)));
+	connect(damn, SIGNAL(userJoined(QString, QString, bool)), this, SLOT(onUserJoin(QString, QString, bool)));
+	connect(damn, SIGNAL(userParted(QString, QString, QString, bool)), this, SLOT(onUserPart(QString, QString, QString, bool)));
 	connect(damn, SIGNAL(userPrivChanged(QString, QString, QString, QString)), this, SLOT(onUserPriv(QString, QString, QString, QString)));
 	connect(damn, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
 	connect(damn, SIGNAL(authenticationFailed()), this, SLOT(onRequestDAmnToken()));
@@ -193,6 +194,13 @@ void MainWindow::onConnectServer()
 	settings.endGroup();
 }
 
+void MainWindow::onAction(const QString &channel, const QString &user, const QString &text)
+{
+	ChannelFrame *frame = getChannelFrame(channel);
+
+	if (frame) frame->setAction(user, text);
+}
+
 void MainWindow::onText(const QString &channel, const QString &user, const QString &text)
 {
 	ChannelFrame *frame = getChannelFrame(channel);
@@ -214,18 +222,18 @@ void MainWindow::onTitle(const QString &channel, const QString &title)
 	if (frame) frame->setSystem(tr("Title changed by %1: %2").arg("unknown").arg(title));
 }
 
-void MainWindow::onUserJoin(const QString &channel, const QString &user)
+void MainWindow::onUserJoin(const QString &channel, const QString &user, bool show)
 {
 	ChannelFrame *frame = getChannelFrame(channel);
 
-	if (frame) frame->setSystem(tr("%1 has joined").arg(user));
+	if (frame) frame->userJoin(user);
 }
 
-void MainWindow::onUserPart(const QString &channel, const QString &user, const QString &reason)
+void MainWindow::onUserPart(const QString &channel, const QString &user, const QString &reason, bool show)
 {
 	ChannelFrame *frame = getChannelFrame(channel);
 
-	if (frame) frame->setSystem(tr("%1 has left").arg(user) + (!reason.isEmpty() ? QString(" [%1]").arg(reason):""));
+	if (frame) frame->userPart(user, reason);
 }
 
 void MainWindow::onUserPriv(const QString &channel, const QString &user, const QString &by, const QString &pc)

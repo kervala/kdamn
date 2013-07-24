@@ -254,8 +254,6 @@ bool DAmn::parseText(const QString &channel, const QString &from, bool action, c
 
 bool DAmn::parseJoin(const QString &channel, const QString &user, bool show, const QStringList &lines, int &i)
 {
-	if (show) emit userJoined(channel, user);
-
 	// to be sure it's not an alias
 	DAmnUser *u = new DAmnUser();
 	u->name = user;
@@ -269,14 +267,47 @@ bool DAmn::parseJoin(const QString &channel, const QString &user, bool show, con
 
 	m_users << u;
 
+	DAmnChannel *c = getChannel(channel);
+
+	if (!c) return false;
+
+	DAmnMember member;
+	member.name = user;
+	member.count = 1;
+
+	int index = c->users.indexOf(member);
+
+	if (index > -1)
+	{
+		++c->users[index].count;
+	}
+	else
+	{
+		c->users << member;
+
+		emit userJoined(channel, user, show);
+	}
+
 	return true;
 }
 
 bool DAmn::parsePart(const QString &channel, const QString &user, bool show, const QString &reason, const QStringList &lines, int &i)
 {
-	if (show) emit userParted(channel, user, reason);
+	DAmnChannel *c = getChannel(channel);
 
-	// TODO: remove user from channel
+	if (!c) return false;
+
+	DAmnMember member;
+	member.name = user;
+
+	int index = c->users.indexOf(member);
+
+	if (index > -1 && (--(c->users[index].count) == 0))
+	{
+		c->users.removeAt(index);
+
+		emit userParted(channel, user, reason, show);
+	}
 
 	return true;
 }
@@ -285,7 +316,25 @@ bool DAmn::parsePriv(const QString &channel, const QString &user, bool show, con
 {
 	if (show) emit userPrivChanged(channel, user, by, pc);
 
-	// TODO: update user priv in users list
+	DAmnChannel *c = getChannel(channel);
+
+	if (!c) return false;
+
+	DAmnMember member;
+	member.name = user;
+	member.pc = pc;
+	member.by = by;
+	member.count = 1;
+
+	int index = c->users.indexOf(member);
+
+	if (index > -1)
+	{
+		// preserve count
+		member.count = c->users.at(index).count;
+
+		c->users.replace(index, member);
+	}
 
 	return true;
 }
@@ -416,8 +465,18 @@ bool DAmn::parseChannelMembers(const QString &channel, const QStringList &lines,
 		DAmnMember member;
 		member.name = p.params[0];
 		member.pc = p.args["pc"];
+		member.count = 1;
 
-		if (chan->users.indexOf(member) < 0) chan->users << member;
+		int index = chan->users.indexOf(member);
+
+		if (index < 0)
+		{
+			chan->users << member;
+		}
+		else
+		{
+			++(chan->users[index].count);
+		}
 	}
 
 	emit membersReceived(channel, chan->users);

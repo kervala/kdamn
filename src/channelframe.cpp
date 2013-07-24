@@ -43,6 +43,11 @@ ChannelFrame::~ChannelFrame()
 {
 }
 
+void ChannelFrame::setAction(const QString &user, const QString &text)
+{
+	outputBrowser->append(QString("<div class=\"normal\">%1<span class=\"username\">%2</span> %3</div>").arg(getTimestamp()).arg(user).arg(text));
+}
+
 void ChannelFrame::setText(const QString &user, const QString &text)
 {
 	outputBrowser->append(QString("<div class=\"normal\">%1<span class=\"username\">&lt;%2&gt;</span> %3</div>").arg(getTimestamp()).arg(user).arg(text));
@@ -76,6 +81,31 @@ void ChannelFrame::setUsers(const QList<DAmnMember> &users)
 	usersView->setMaximumWidth(max);
 
 	inputEdit->setUsers(list);
+}
+
+void ChannelFrame::userJoin(const QString &user)
+{
+	setSystem(tr("%1 has joined").arg(user));
+
+	QStringList users = m_usersModel->stringList();
+
+	if (users.indexOf(user) == -1)
+	{
+		users << user;
+
+		m_usersModel->setStringList(users);
+	}
+}
+
+void ChannelFrame::userPart(const QString &user, const QString &reason)
+{
+	setSystem(tr("%1 has left").arg(user) + (!reason.isEmpty() ? QString(" [%1]").arg(reason):""));
+
+	QStringList users = m_usersModel->stringList();
+
+	users.removeAll(user);
+
+	m_usersModel->setStringList(users);
 }
 
 void ChannelFrame::onSend()
