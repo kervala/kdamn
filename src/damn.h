@@ -29,56 +29,12 @@ struct DAmnPacket
 	DAmnProperties args;
 };
 
-struct DAmnConnection
+enum MessageType
 {
-	QString channel;
-	int online;
-	int idle;
-};
-
-struct DAmnMember
-{
-	QString name;
-	QString pc;
-	QString by;
-	int count;
-
-	bool operator == (const DAmnMember &other) { return other.name == name; }
-};
-
-struct DAmnPrivClass
-{
-	int id;
-	QString name;
-};
-
-struct DAmnUser
-{
-	QString name;
-	int usericon;
-	QChar symbol;
-	QString realname;
-	QString gpc;
-
-	QMap<QString, DAmnConnection> connections;
-};
-
-struct DAmnChannelProperty
-{
-	QString name;
-	QString value;
-	QString by;
-	QString ts;
-};
-
-struct DAmnChannel
-{
-	QString name;
-	DAmnChannelProperty topic;
-	DAmnChannelProperty title;
-
-	QList<DAmnPrivClass> privclasses;
-	QList<DAmnMember> users;
+	MessageText,
+	MessageAction,
+	MessageTopic,
+	MessageTitle
 };
 
 struct WaitingMessage
@@ -87,7 +43,7 @@ struct WaitingMessage
 	QString from;
 	QString html;
 	QStringList images;
-	bool action;
+	MessageType type;
 };
 
 struct Tablump
@@ -96,6 +52,11 @@ struct Tablump
 	int count;
 	QString tag;
 };
+
+class DAmnChannel;
+class DAmnUser;
+
+struct DAmnConnection;
 
 class DAmn : public QObject
 {
@@ -142,6 +103,7 @@ public slots:
 
 	// implemented
 	bool send(const QString &channel, const QString &text);
+	bool send(const QString &channel, const QStringList &lines);
 	void onError(QAbstractSocket::SocketError error);
 	bool read();
 	bool updateWaitingMessages(const QString &md5);
@@ -149,30 +111,19 @@ public slots:
 signals:
 	void authenticationFailed();
 	void serverConnected();
-	void topicReceived(const QString &channel, const QString &topic);
-	void titleReceived(const QString &channel, const QString &title);
-	void htmlMessageReceived(const QString &channel, const QString &user, const QString &html);
-	void textMessageReceived(const QString &channel, const QString &user, const QString &text);
-	void htmlActionReceived(const QString &channel, const QString &user, const QString &html);
-	void textActionReceived(const QString &channel, const QString &user, const QString &text);
+
+	void textReceived(const QString &channel, const QString &user, MessageType type, const QString &text, bool html);
+
 	void imageDownloaded(const QString &md5);
 	void channelJoined(const QString &channel);
 	void channelParted(const QString &channel, const QString &reason);
 	void userJoined(const QString &channel, const QString &user, bool show);
 	void userParted(const QString &channel, const QString &user, const QString &reason, bool show);
 	void userPrivChanged(const QString &channel, const QString &user, const QString &by, const QString &pc);
-	void membersReceived(const QString &channel, const QList<DAmnMember> &members);
+	void usersReceived(const QString &channel, const QStringList &users);
 	void errorReceived(const QString &error);
 
 private:
-	enum eStep
-	{
-		eStepNone,
-		eStepCookies,
-		eStepAuthToken,
-		eStepConnected
-	};
-
 	bool sendChat(const QString &channel);
 	bool replaceTablumps(const QString &data, QString &html, QString &text, QStringList &images);
 
@@ -181,6 +132,7 @@ private:
 	DAmnChannel* createChannel(const QString &channel);
 	bool removeChannel(const QString &channel);
 	DAmnChannel* getChannel(const QString &channel);
+	QString getAvatarUrl(const QString &user, int usericon);
 
 	DAmnUser* createUser(const QString &user);
 	DAmnUser* getUser(const QString &user);
@@ -195,7 +147,7 @@ private:
 	bool parseChannelPrivClasses(const QString &channel, const QStringList &lines, int &i);
 	bool parseUserProperties(const QString &user, const QStringList &lines, int &i);
 	bool parseConn(const QStringList &lines, int &i, DAmnConnection &conn);
-	bool parseText(const QString &channel, const QString &from, bool action, const QStringList &lines, int &i);
+	bool parseText(const QString &channel, const QString &from, MessageType type, const QStringList &lines, int &i, QString &html, QString &text);
 	bool parseJoin(const QString &channel, const QString &user, bool show, const QStringList &lines, int &i);
 	bool parsePart(const QString &channel, const QString &user, bool show, const QString &reason, const QStringList &lines, int &i);
 	bool parsePriv(const QString &channel, const QString &user, bool show, const QString &by, const QString &pc, const QStringList &lines, int &i);
@@ -206,6 +158,7 @@ private:
 	bool parseLogin(const QStringList &lines);
 	bool parsePing(const QStringList &lines);
 	bool parseRecv(const QStringList &lines);
+	bool parseSend(const QStringList &lines);
 	bool parseJoin(const QStringList &lines);
 	bool parsePart(const QStringList &lines);
 	bool parseProperty(const QStringList &lines);
@@ -225,6 +178,8 @@ private:
 	QList<DAmnChannel*> m_channels;
 
 	QList<WaitingMessage*> m_waitingMessages;
+
+	QMap<QString, int> m_stats;
 
 	static DAmn *s_instance;
 };
