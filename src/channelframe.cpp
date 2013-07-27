@@ -58,29 +58,26 @@ void ChannelFrame::setSystem(const QString &text)
 	outputBrowser->append(QString("<div class=\"system\">%1%2</div>").arg(getTimestamp()).arg(text));
 }
 
-void ChannelFrame::setUsers(const QList<DAmnMember> &users)
+void ChannelFrame::setUsers(const QStringList &users)
 {
-	QStringList list;
 	int min = 65536;
 	int max = 0;
 
-	foreach(const DAmnMember &member, users)
+	foreach(const QString &user, users)
 	{
 //		int width = usersView->fontMetrics().boundingRect(member.name).width();
-		int width = usersView->fontMetrics().width(member.name)+10;
+		int width = usersView->fontMetrics().width(user)+10;
 
 		if (width < min) min = width;
 		if (width > max) max = width;
-
-		list << member.name;
 	}
 
-	m_usersModel->setStringList(list);
+	m_usersModel->setStringList(users);
 
 	usersView->setMinimumWidth(min);
 	usersView->setMaximumWidth(max);
 
-	inputEdit->setUsers(list);
+	inputEdit->setUsers(users);
 }
 
 void ChannelFrame::userJoin(const QString &user)
@@ -110,7 +107,9 @@ void ChannelFrame::userPart(const QString &user, const QString &reason)
 
 void ChannelFrame::onSend()
 {
-	if (DAmn::getInstance()->send(m_channel, inputEdit->text().trimmed()))
+	QStringList lines = inputEdit->getLines();
+
+	if (DAmn::getInstance()->send(m_channel, lines))
 	{
 		inputEdit->validate();
 	}
