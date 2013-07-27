@@ -36,6 +36,10 @@
 	#define new DEBUG_NEW
 #endif
 
+#if defined(_DEBUG) && defined(_WIN32)
+#pragma comment(linker,"/SUBSYSTEM:CONSOLE")
+#endif
+
 int main(int argv, char *args[])
 {
 #if defined(_MSC_VER) && defined(_DEBUG)
