@@ -25,6 +25,7 @@
 class DAmn;
 struct DAmnMember;
 class ChannelFrame;
+enum MessageType;
 
 class MainWindow : public QMainWindow, public Ui::MainWindow
 {
@@ -57,13 +58,10 @@ public slots:
 
 	// slots activated from DAmn signals
 	void onRequestDAmnToken();
-	void onAction(const QString &channel, const QString &user, const QString &text);
-	void onText(const QString &channel, const QString &user, const QString &text);
+	void onText(const QString &channel, const QString &user, MessageType type, const QString &text, bool html);
 	void onReceiveAuthtoken(const QString &login, const QString &authtoken);
 	void onConnectServer();
-	void onTopic(const QString &channel, const QString &topic);
-	void onTitle(const QString &channel, const QString &title);
-	void onMembers(const QString &channel, const QList<DAmnMember> &members);
+	void onUsers(const QString &channel, const QStringList &users);
 	void onJoinChannel(const QString &channel);
 	void onPartChannel(const QString &channel, const QString &reason);
 	void onUserJoin(const QString &channel, const QString &user, bool show);

@@ -18,6 +18,8 @@
  */
 
 #include "common.h"
+#include "damnchannel.h"
+#include "damnuser.h"
 #include "damn.h"
 
 #ifdef DEBUG_NEW
@@ -32,16 +34,19 @@ struct DAmnError
 
 bool DAmn::parseAllMessages(const QStringList &lines)
 {
-	if (parseServer(lines)) return true;
-	if (parseLogin(lines)) return true;
-	if (parsePing(lines)) return true;
-	if (parseRecv(lines)) return true;
-	if (parseJoin(lines)) return true;
-	if (parsePart(lines)) return true;
-	if (parseProperty(lines)) return true;
-	if (parseGet(lines)) return true;
-	if (parseSet(lines)) return true;
-	if (parseDisconnect(lines)) return true;
+	if (parsePing(lines)) return true; // every 5 minutes 18
+	if (parseRecv(lines)) return true; // each message 31
+	if (parseProperty(lines)) return true; // 5
+	if (parseJoin(lines)) return true; // 2
+	if (parsePart(lines)) return true; // 2
+
+	if (parseGet(lines)) return true; // 1
+	if (parseSet(lines)) return true; // 1
+	if (parseSend(lines)) return true; // when error only
+
+	if (parseServer(lines)) return true; // once
+	if (parseLogin(lines)) return true; // once
+	if (parseDisconnect(lines)) return true; // once
 
 	emit errorReceived(tr("Unable to recognize message: %1").arg(lines[0]));
 
@@ -55,6 +60,8 @@ bool DAmn::parsePacket(const QString &cmd, const QStringList &lines, int &i, DAm
 
 	// check if the command is right
 	if (!lines[i].startsWith(cmd)) return false;
+
+	if (m_stats.contains(cmd)) ++m_stats[cmd]; else m_stats[cmd] = 0;
 
 	packet.cmd = cmd;
 	packet.params.clear();
@@ -105,7 +112,7 @@ void DAmn::parseProperties(const QStringList &lines, int &i, DAmnProperties &pro
 {
 	props.clear();
 
-	QRegExp reg("^([a-z]+)=([A-Za-z0-9_.~ -]*)$");
+	QRegExp reg("^([a-z]+)=(.*)$");
 
 	for(; i < lines.size(); ++i)
 	{
@@ -136,10 +143,10 @@ bool DAmn::parseUserInfo(const QStringList &lines, int &i, DAmnUser &user)
 	if (props["symbol"].isEmpty()) return false;
 
 	// assign properties to user
-	user.usericon = props["usericon"].toInt();
-	user.symbol = props["symbol"][0];
-	user.realname = props["realname"];
-	user.gpc = props["gpc"];
+	user.setUserIcon(props["usericon"].toInt());
+	user.setSymbol(props["symbol"][0]);
+	user.setRealName(props["realname"]);
+	user.setGPC(props["gpc"]);
 
 	return true;
 }
@@ -152,6 +159,7 @@ bool DAmn::parseError(const QString &error)
 		{ "bad parameter", tr("Bad parameter") },
 		{ "unknown property", tr("Unknown property") },
 		{ "authentication failed", tr("Authentication failed") },
+		{ "nothing to send", tr("Nothing to send") },
 		{ "", "" }
 	};
 
@@ -219,23 +227,13 @@ bool DAmn::parsePing(const QStringList &lines)
 	return pong();
 }
 
-bool DAmn::parseText(const QString &channel, const QString &from, bool action, const QStringList &lines, int &i)
+bool DAmn::parseText(const QString &channel, const QString &from, MessageType type, const QStringList &lines, int &i, QString &html, QString &text)
 {
-	QString text, html;
 	QStringList images;
 
 	if (replaceTablumps(lines[i], html, text, images) && m_waitingMessages.isEmpty())
 	{
-		if (action)
-		{
-			emit htmlActionReceived(channel, from, html);
-			emit textActionReceived(channel, from, text);
-		}
-		else
-		{
-			emit htmlMessageReceived(channel, from, html);
-			emit textMessageReceived(channel, from, text);
-		}
+		emit textReceived(channel, from, type, html, true);
 	}
 	else
 	{
@@ -244,10 +242,14 @@ bool DAmn::parseText(const QString &channel, const QString &from, bool action, c
 		message->from = from;
 		message->html = html;
 		message->images = images;
-		message->action = action;
+		message->type = type;
 
 		m_waitingMessages << message;
 	}
+
+	emit textReceived(channel, from, type, text, false);
+
+	++i;
 
 	return true;
 }
@@ -255,8 +257,7 @@ bool DAmn::parseText(const QString &channel, const QString &from, bool action, c
 bool DAmn::parseJoin(const QString &channel, const QString &user, bool show, const QStringList &lines, int &i)
 {
 	// to be sure it's not an alias
-	DAmnUser *u = new DAmnUser();
-	u->name = user;
+	DAmnUser *u = new DAmnUser(user, this);
 
 	if (!parseUserInfo(lines, i, *u))
 	{
@@ -271,22 +272,7 @@ bool DAmn::parseJoin(const QString &channel, const QString &user, bool show, con
 
 	if (!c) return false;
 
-	DAmnMember member;
-	member.name = user;
-	member.count = 1;
-
-	int index = c->users.indexOf(member);
-
-	if (index > -1)
-	{
-		++c->users[index].count;
-	}
-	else
-	{
-		c->users << member;
-
-		emit userJoined(channel, user, show);
-	}
+	if (c->addUser(user)) emit userJoined(channel, user, show);
 
 	return true;
 }
@@ -297,15 +283,8 @@ bool DAmn::parsePart(const QString &channel, const QString &user, bool show, con
 
 	if (!c) return false;
 
-	DAmnMember member;
-	member.name = user;
-
-	int index = c->users.indexOf(member);
-
-	if (index > -1 && (--(c->users[index].count) == 0))
+	if (c->removeUser(user))
 	{
-		c->users.removeAt(index);
-
 		emit userParted(channel, user, reason, show);
 	}
 
@@ -320,21 +299,12 @@ bool DAmn::parsePriv(const QString &channel, const QString &user, bool show, con
 
 	if (!c) return false;
 
-	DAmnMember member;
+	DAmnChannelUser member;
 	member.name = user;
 	member.pc = pc;
 	member.by = by;
-	member.count = 1;
 
-	int index = c->users.indexOf(member);
-
-	if (index > -1)
-	{
-		// preserve count
-		member.count = c->users.at(index).count;
-
-		c->users.replace(index, member);
-	}
+	c->setUser(member);
 
 	return true;
 }
@@ -350,10 +320,11 @@ bool DAmn::parseRecv(const QStringList &lines)
 	if (p.params[0] == "chat")
 	{
 		QString channel = p.params[1];
+		QString html, text;
 
 		// text
-		if (parsePacket("msg", lines, i, p)) return parseText(channel, p.args["from"], false, lines, i);
-		if (parsePacket("action", lines, i, p))	return parseText(channel, p.args["from"], true, lines, i);
+		if (parsePacket("msg", lines, i, p)) return parseText(channel, p.args["from"], MessageText, lines, i, html, text);
+		if (parsePacket("action", lines, i, p))	return parseText(channel, p.args["from"], MessageAction, lines, i, html, text);
 
 		// join/part messages
 		if (parsePacket("join", lines, i, p)) return parseJoin(channel, p.params[0], p.args["s"] == "1", lines, i);
@@ -364,6 +335,19 @@ bool DAmn::parseRecv(const QStringList &lines)
 	}
 
 	emit errorReceived(tr("Unable to recognize param %1").arg(p.params[0]));
+
+	return true;
+}
+
+bool DAmn::parseSend(const QStringList &lines)
+{
+	int i = 0;
+
+	DAmnPacket p;
+
+	if (!parsePacket("send", lines, i, p)) return false;
+
+	if (!parseError(p.args["e"])) return true;
 
 	return true;
 }
@@ -412,26 +396,25 @@ bool DAmn::parseChannelProperty(const QString &channel, const DAmnProperties &pr
 	prop.name = props["p"];
 	prop.by = props["by"];
 	prop.ts = props["ts"];
-	prop.value = lines[i];
+
+	MessageType type;
 
 	if (prop.name == "topic")
 	{
-		chan->topic = prop;
-
-		if (!prop.value.isEmpty()) emit topicReceived(channel, prop.value);
+		type = MessageTopic;
 	}
 	else if (prop.name == "title")
 	{
-		chan->title = prop;
-
-		if (!prop.value.isEmpty()) emit titleReceived(channel, prop.value);
+		type = MessageTitle;
 	}
 	else
 	{
 		emit errorReceived(tr("Unable to recognize property: %1").arg(prop.name));
 	}
 
-	++i;
+	parseText(channel, prop.by, type, lines, i, prop.html, prop.text);
+
+	chan->setProperty(prop);
 
 	return true;
 }
@@ -443,8 +426,10 @@ bool DAmn::parseChannelMembers(const QString &channel, const QStringList &lines,
 	// channel doesn't exist
 	if (!chan) return false;
 
+	QStringList list;
+
 	// update the list of all members, so clear it first
-	chan->users.clear();
+	chan->removeUsers();
 
 	while(i < lines.size())
 	{
@@ -456,30 +441,21 @@ bool DAmn::parseChannelMembers(const QString &channel, const QStringList &lines,
 		// create user if needed
 		DAmnUser *user = createUser(p.params[0]);
 
-		user->usericon = p.args["usericon"].toInt();
-		user->symbol = p.args["symbol"][0];
-		user->realname = p.args["realname"];
-		user->gpc = p.args["gpc"];
+		user->setUserIcon(p.args["usericon"].toInt());
+		user->setSymbol(p.args["symbol"][0]);
+		user->setRealName(p.args["realname"]);
+		user->setGPC(p.args["gpc"]);
 
 		// add member to channel
-		DAmnMember member;
+		DAmnChannelUser member;
 		member.name = p.params[0];
 		member.pc = p.args["pc"];
 		member.count = 1;
 
-		int index = chan->users.indexOf(member);
-
-		if (index < 0)
-		{
-			chan->users << member;
-		}
-		else
-		{
-			++(chan->users[index].count);
-		}
+		if (chan->addUser(member)) list << member.name;
 	}
 
-	emit membersReceived(channel, chan->users);
+	emit usersReceived(channel, list);
 
 	return true;
 }
@@ -490,7 +466,7 @@ bool DAmn::parseChannelPrivClasses(const QString &channel, const QStringList &li
 
 	if (!chan) return false;
 
-	chan->privclasses.clear();
+	chan->removePrivClasses();
 
 	QRegExp reg("([0-9]+):([A-Z-a-z]+)");
 
@@ -504,7 +480,7 @@ bool DAmn::parseChannelPrivClasses(const QString &channel, const QStringList &li
 			privclass.id = reg.cap(1).toInt();
 			privclass.name = reg.cap(2);
 
-			chan->privclasses << privclass;
+			chan->setPrivClass(privclass);
 		}
 		else
 		{
@@ -544,13 +520,15 @@ bool DAmn::parseUserProperties(const QString &user, const QStringList &lines, in
 
 	if (!parseUserInfo(lines, i, *u)) return false;
 
+	u->removeConnections();
+
 	while(i < lines.size())
 	{
 		DAmnConnection c;
 
 		if (!parseConn(lines, i, c)) break;
 
-		u->connections[c.channel] = c;
+		u->setConnection(c);
 	}
 
 	return true;

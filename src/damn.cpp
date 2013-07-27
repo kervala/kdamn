@@ -19,6 +19,8 @@
 
 #include "common.h"
 #include "damn.h"
+#include "damnchannel.h"
+#include "damnuser.h"
 #include "oauth2.h"
 
 #ifdef DEBUG_NEW
@@ -87,7 +89,7 @@ bool DAmn::downloadImage(const QString &url, QString &file, QString &md5)
 	QString dir(QDir::fromNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)));
 
 	md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
-	file = QString("%1/%2").arg(dir).arg(md5);
+	QString filename = QString("%1/%2").arg(dir).arg(md5);
 
 	static bool s_connected = false;
 
@@ -97,7 +99,9 @@ bool DAmn::downloadImage(const QString &url, QString &file, QString &md5)
 		s_connected = true;
 	}
 
-	if (QFile::exists(file)) return false;
+	file = QUrl::fromLocalFile(filename).toString();
+
+	if (QFile::exists(filename)) return false;
 
 	// create directory to be sure, there won't be any error later
 	QDir tmp;
@@ -120,16 +124,7 @@ bool DAmn::updateWaitingMessages(const QString &md5)
 		// check if all images have been downloaded
 		if (msg->images.isEmpty())
 		{
-			if (msg->action)
-			{
-				emit htmlActionReceived(msg->channel, msg->from, msg->html);
-				emit textActionReceived(msg->channel, msg->from, msg->html);
-			}
-			else
-			{
-				emit htmlMessageReceived(msg->channel, msg->from, msg->html);
-				emit textMessageReceived(msg->channel, msg->from, msg->html);
-			}
+			emit textReceived(msg->channel, msg->from, msg->type, msg->html, true);
 
 			m_waitingMessages.removeAll(msg);
 
@@ -170,9 +165,7 @@ bool DAmn::read()
 		QStringList lines = packet.split("\n");
 
 		// at least one line
-		if (lines.size() < 1) return false;
-
-		if (!parseAllMessages(lines)) return false;
+		if (lines.size() > 0) parseAllMessages(lines);
 	}
 
 	return true;
@@ -185,8 +178,7 @@ DAmnChannel* DAmn::createChannel(const QString &channel)
 	// already exists
 	if (chan) return chan;
 
-	chan = new DAmnChannel();
-	chan->name = channel;
+	chan = new DAmnChannel(channel, this);
 
 	m_channels << chan;
 
@@ -209,7 +201,7 @@ bool DAmn::removeChannel(const QString &channel)
 
 DAmnChannel* DAmn::getChannel(const QString &channel)
 {
-	foreach(DAmnChannel *chan, m_channels) if (chan->name.toLower() == channel.toLower()) return chan;
+	foreach(DAmnChannel *chan, m_channels) if (chan->getName().toLower() == channel.toLower()) return chan;
 
 	return NULL;
 }
@@ -221,8 +213,7 @@ DAmnUser* DAmn::createUser(const QString &user)
 	// already exists
 	if (u) return u;
 
-	u = new DAmnUser();
-	u->name = user;
+	u = new DAmnUser(user, this);
 
 	m_users << u;
 
@@ -231,7 +222,7 @@ DAmnUser* DAmn::createUser(const QString &user)
 
 DAmnUser* DAmn::getUser(const QString &user)
 {
-	foreach(DAmnUser *u, m_users) if (u->name.toLower() == user.toLower()) return u;
+	foreach(DAmnUser *u, m_users) if (u->hasSameName(user)) return u;
 
 	return NULL;
 }

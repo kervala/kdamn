@@ -52,11 +52,8 @@ MainWindow::MainWindow():QMainWindow(), m_trayIcon(NULL)
 
 	DAmn *damn = new DAmn(this);
 	connect(damn, SIGNAL(serverConnected()), this, SLOT(onConnectServer()));
-	connect(damn, SIGNAL(htmlActionReceived(QString, QString, QString)), this, SLOT(onAction(QString, QString, QString)));
-	connect(damn, SIGNAL(htmlMessageReceived(QString, QString, QString)), this, SLOT(onText(QString, QString, QString)));
-	connect(damn, SIGNAL(topicReceived(QString, QString)), this, SLOT(onTopic(QString, QString)));
-	connect(damn, SIGNAL(titleReceived(QString, QString)), this, SLOT(onTitle(QString, QString)));
-	connect(damn, SIGNAL(membersReceived(QString, QList<DAmnMember>)), this, SLOT(onMembers(QString, QList<DAmnMember>)));
+	connect(damn, SIGNAL(textReceived(QString, QString, MessageType, QString, bool)), this, SLOT(onText(QString, QString, MessageType, QString, bool)));
+	connect(damn, SIGNAL(usersReceived(QString, QStringList)), this, SLOT(onUsers(QString, QStringList)));
 	connect(damn, SIGNAL(channelJoined(QString)), this, SLOT(onJoinChannel(QString)));
 	connect(damn, SIGNAL(channelParted(QString, QString)), this, SLOT(onPartChannel(QString, QString)));
 	connect(damn, SIGNAL(userJoined(QString, QString, bool)), this, SLOT(onUserJoin(QString, QString, bool)));
@@ -174,6 +171,9 @@ void MainWindow::onPart()
 	if (frame)
 	{
 		DAmn::getInstance()->part(frame->getChannel());
+
+		QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
+		settings.setValue(QString("channels/%1").arg(frame->getChannel()), 0);
 	}
 }
 
@@ -194,32 +194,35 @@ void MainWindow::onConnectServer()
 	settings.endGroup();
 }
 
-void MainWindow::onAction(const QString &channel, const QString &user, const QString &text)
+void MainWindow::onText(const QString &channel, const QString &user, MessageType type, const QString &text, bool html)
 {
-	ChannelFrame *frame = getChannelFrame(channel);
+	if (html)
+	{
+		if (!channel.isEmpty())
+		{
+			ChannelFrame *frame = getChannelFrame(channel);
 
-	if (frame) frame->setAction(user, text);
-}
-
-void MainWindow::onText(const QString &channel, const QString &user, const QString &text)
-{
-	ChannelFrame *frame = getChannelFrame(channel);
-
-	if (frame) frame->setText(user, text);
-}
-
-void MainWindow::onTopic(const QString &channel, const QString &topic)
-{
-	ChannelFrame *frame = getChannelFrame(channel);
-
-	if (frame) frame->setSystem(tr("Topic changed by %1: %2").arg("unknown").arg(topic));
-}
-
-void MainWindow::onTitle(const QString &channel, const QString &title)
-{
-	ChannelFrame *frame = getChannelFrame(channel);
-
-	if (frame) frame->setSystem(tr("Title changed by %1: %2").arg("unknown").arg(title));
+			if (frame)
+			{
+				switch(type)
+				{
+					case MessageText: frame->setText(user, text); break;
+					case MessageAction: if (!text.isEmpty()) frame->setAction(user, text); break;
+					case MessageTopic: if (!text.isEmpty()) frame->setSystem(tr("Topic changed by %1: %2").arg(user).arg(text)); break;
+					case MessageTitle: if (!text.isEmpty()) frame->setSystem(tr("Title changed by %1: %2").arg(user).arg(text)); break;
+					default: break;
+				}
+			}
+		}
+		else
+		{
+			setSystem(text);
+		}
+	}
+	else
+	{
+		// TODO: write to logs
+	}
 }
 
 void MainWindow::onUserJoin(const QString &channel, const QString &user, bool show)
@@ -243,11 +246,11 @@ void MainWindow::onUserPriv(const QString &channel, const QString &user, const Q
 	if (frame) frame->setSystem(tr("%1 has been made a member of %2 by %3").arg(user).arg(pc).arg(by));
 }
 
-void MainWindow::onMembers(const QString &channel, const QList<DAmnMember> &members)
+void MainWindow::onUsers(const QString &channel, const QStringList &users)
 {
 	ChannelFrame *frame = getChannelFrame(channel);
 
-	if (frame) frame->setUsers(members);
+	if (frame) frame->setUsers(users);
 }
 
 void MainWindow::onJoinChannel(const QString &channel)
@@ -289,11 +292,13 @@ bool MainWindow::removeChannelFrame(const QString &channel)
 {
 	for(int i = 0; i < channelsWidget->count(); ++i)
 	{
-		if (channelsWidget->tabText(i) == channel)
+		ChannelFrame *frame = qobject_cast<ChannelFrame*>(channelsWidget->widget(i));
+
+		if (frame && frame->getChannel() == channel)
 		{
 			channelsWidget->removeTab(i);
 
-			delete channelsWidget->widget(i);
+			delete frame;
 		}
 	}
 
