@@ -24,6 +24,8 @@
 	#define new DEBUG_NEW
 #endif
 
+#define MAX_HISTORY 40
+
 InputEdit::InputEdit(QWidget *parent):QLineEdit(parent), m_index(-1)
 {
 }
@@ -123,9 +125,24 @@ void InputEdit::contextMenuEvent(QContextMenuEvent *e)
 
 		QMenu *historyMenu = menu->addMenu(tr("History"));
 
-		foreach(const QString &history, m_history)
+
+
+		for(int i = 0; i < m_history.size(); ++i)
 		{
+			QString history = m_history[i];
+
+			if (history.length() > MAX_HISTORY)
+			{
+				int pos = history.lastIndexOf(QRegExp("[ -_\n\t:;]"), MAX_HISTORY);
+
+				if (pos == -1) pos = MAX_HISTORY-3;
+
+				history = history.left(pos) + "...";
+			}
+
 			action = historyMenu->addAction(history);
+
+			action->setData(i);
 		}
 
 		connect(historyMenu, SIGNAL(triggered(QAction*)), this, SLOT(historyTriggered(QAction*)));
@@ -253,7 +270,7 @@ void InputEdit::completeCommand()
 
 void InputEdit::historyTriggered(QAction *action)
 {
-	QString text = action->text();
+	QString text = m_history[action->data().toInt()];
 	setText(text);
 	m_index = -1;
 	m_current = text;

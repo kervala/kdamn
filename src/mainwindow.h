@@ -21,11 +21,9 @@
 #define MAINWINDOW_H
 
 #include "ui_mainwindow.h"
+#include "damn.h"
 
-class DAmn;
-struct DAmnMember;
 class ChannelFrame;
-enum MessageType;
 
 class MainWindow : public QMainWindow, public Ui::MainWindow
 {
