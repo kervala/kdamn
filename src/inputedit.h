@@ -32,6 +32,8 @@ public:
 	void validate();
 	void setUsers(const QStringList &users);
 
+	QStringList getLines() const;
+
 signals:
 	void textValidated(const QString &text);
 	void pageUp();

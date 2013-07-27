@@ -47,6 +47,19 @@ void InputEdit::setUsers(const QStringList &users)
 	m_users = users;
 }
 
+QStringList InputEdit::getLines() const
+{
+	QStringList lines = text().split('\n');
+
+	for(int i = 0; i < lines.size(); ++i)
+	{
+		if (lines[i].isEmpty()) lines[i] = "&nbsp;";
+		else if (lines[i].right(1) == " ") lines[i] = lines[i].left(lines[i].length()-1);
+	}
+
+	return lines;
+}
+
 void InputEdit::keyPressEvent(QKeyEvent *e)
 {
 	if (e->key() == Qt::Key_Up)
