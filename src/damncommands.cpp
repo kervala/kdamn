@@ -286,7 +286,7 @@ bool DAmn::sendChat(const QString &channel)
 
 bool DAmn::send(const QString &channel, const QString &text)
 {
-	if (text[0] == '/')
+	if (!text.isEmpty() && text[0] == '/')
 	{
 		QRegExp reg("([a-zA-Z]+)( (.*))?");
 
@@ -309,6 +309,19 @@ bool DAmn::send(const QString &channel, const QString &text)
 			if (cmd == "unban") return unban(channel, msg);
 			if (cmd == "admin") return admin(channel, msg);
 			if (cmd == "clear") return true;
+			if (cmd == "stats")
+			{
+				QMap<QString, int>::const_iterator it = m_stats.begin();
+
+				while(it != m_stats.end())
+				{
+					emit textReceived("", "", MessageText, QString("%1=%2").arg(it.key()).arg(it.value()), true);
+
+					++it;
+				}
+
+				return true;
+			}
 
 			if (cmd == "raw")
 			{
@@ -329,6 +342,16 @@ bool DAmn::send(const QString &channel, const QString &text)
 	}
 
 	return sendMessage(channel, text);
+}
+
+bool DAmn::send(const QString &channel, const QStringList &lines)
+{
+	foreach(const QString &line, lines)
+	{
+		send(channel, line);
+	}
+
+	return true;
 }
 
 bool DAmn::begin()
