@@ -112,7 +112,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 		}
 		else
 		{
-			if (!close && tokens.size() == tab.count + 1)
+			if (!close && (tokens.size() == tab.count + 1 || (!tab.count && !tokens.size())))
 			{
 				if (id == "emote")
 				{
@@ -139,46 +139,10 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 				}
 				else if (id == "avatar")
 				{
-					QString name = tokens[1].toLower();
+					QString name = tokens[1];
 					int usericon = tokens[2].toInt();
 
-					int cachebuster = (usericon >> 2) & 15;
-					int format = usericon & 3;
-
-					QString url;
-
-					if (format < 1 || format > 3)
-					{
-						url = "http://a.deviantart.net/avatars/default.gif";
-					}
-					else
-					{
-						//  $cleanname = preg_replace("/[^a-zA-Z0-9_]/", "_", $username);
-
-						static QString s_formats[] = { "", "gif", "jpg", "png" };
-
-						QString ext = s_formats[format];
-
-						QChar first = name[0];
-						QChar second = name[1];
-
-						QRegExp reg2("^([a-z0-9_])$");
-
-						if (reg2.indexIn(first))
-						{
-							first = '_';
-						}
-
-						if (reg2.indexIn(second))
-						{
-							second = '_';
-						}
-
-						url = QString("http://a.deviantart.net/avatars/%1/%2/%3.%4").arg(first).arg(second).arg(name).arg(ext);
-					}
-
-					if (cachebuster) url += QString("?%1").arg(cachebuster);
-
+					QString url = getAvatarUrl(name.toLower(), usericon);
 					QString file, md5;
 
 					if (downloadImage(url, file, md5)) images << md5;
@@ -344,4 +308,44 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 	html += data.mid(pos2);
 
 	return images.isEmpty();
+}
+
+QString DAmn::getAvatarUrl(const QString &user, int usericon)
+{
+	QString url;
+
+	int cachebuster = (usericon >> 2) & 15;
+	int format = usericon & 3;
+
+	if (format < 1 || format > 3)
+	{
+		url = "http://a.deviantart.net/avatars/default.gif";
+	}
+	else
+	{
+		static const QString s_formats[] = { "", "gif", "jpg", "png" };
+
+		QString ext = s_formats[format];
+
+		QChar first = user[0];
+		QChar second = user[1];
+
+		QRegExp reg2("^([a-z0-9_])$");
+
+		if (reg2.indexIn(first))
+		{
+			first = '_';
+		}
+
+		if (reg2.indexIn(second))
+		{
+			second = '_';
+		}
+
+		url = QString("http://a.deviantart.net/avatars/%1/%2/%3.%4").arg(first).arg(second).arg(user).arg(ext);
+	}
+
+	if (cachebuster) url += QString("?%1").arg(cachebuster);
+
+	return url;
 }
