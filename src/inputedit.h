@@ -43,7 +43,9 @@ public slots:
 	void historyUp();
 	void historyDown();
 	void completeName();
+	void completeCommand();
 	void historyTriggered(QAction *action);
+	void clearHistory();
 
 protected:
 	void keyPressEvent(QKeyEvent *event);

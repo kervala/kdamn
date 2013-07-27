@@ -72,7 +72,23 @@ void InputEdit::keyPressEvent(QKeyEvent *e)
 	}
 	else if (e->key() == Qt::Key_Tab)
 	{
-		completeName();
+		QString str = text();
+
+		if (!str.isEmpty())
+		{
+			QRegExp reg("^/([a-z]*)");
+
+			int pos = reg.indexIn(str);
+
+			if (pos == 0 && cursorPosition() <= reg.matchedLength())
+			{
+				completeCommand();
+			}
+			else
+			{
+				completeName();
+			}
+		}
 	}
 	else if (e->key() == Qt::Key_PageUp)
 	{
@@ -101,16 +117,22 @@ void InputEdit::contextMenuEvent(QContextMenuEvent *e)
 
 	if (!m_history.isEmpty())
 	{
+		QAction *action = NULL;
+
 		menu->addSeparator();
 
 		QMenu *historyMenu = menu->addMenu(tr("History"));
 
 		foreach(const QString &history, m_history)
 		{
-			QAction *action = historyMenu->addAction(history);
+			action = historyMenu->addAction(history);
 		}
 
 		connect(historyMenu, SIGNAL(triggered(QAction*)), this, SLOT(historyTriggered(QAction*)));
+
+		action = menu->addAction(tr("Clear"));
+
+		connect(action, SIGNAL(triggered()), this, SLOT(clearHistory()));
 	}
 
 	menu->popup(e->globalPos());
@@ -225,6 +247,10 @@ void InputEdit::completeName()
 	}
 }
 
+void InputEdit::completeCommand()
+{
+}
+
 void InputEdit::historyTriggered(QAction *action)
 {
 	QString text = action->text();
@@ -233,3 +259,8 @@ void InputEdit::historyTriggered(QAction *action)
 	m_current = text;
 }
 
+void InputEdit::clearHistory()
+{
+	m_history.clear();
+	m_index = -1;
+}
