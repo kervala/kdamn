@@ -71,7 +71,7 @@
      <x>0</x>
      <y>0</y>
      <width>519</width>
-     <height>21</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -103,7 +103,6 @@
    <addaction name="menuChannel"/>
    <addaction name="menuHelp"/>
   </widget>
-  <widget class="QStatusBar" name="statusbar"/>
   <action name="actionSettings">
    <property name="text">
     <string>&amp;Settings</string>
