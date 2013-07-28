@@ -229,7 +229,7 @@ bool DAmn::parsePing(const QStringList &lines)
 
 bool DAmn::parseText(const QString &channel, const QString &from, MessageType type, const QStringList &lines, int &i, QString &html, QString &text)
 {
-	QStringList images;
+	DAmnImages images;
 
 	if (replaceTablumps(lines[i], html, text, images) && m_waitingMessages.isEmpty())
 	{
@@ -397,7 +397,7 @@ bool DAmn::parseChannelProperty(const QString &channel, const DAmnProperties &pr
 	prop.by = props["by"];
 	prop.ts = props["ts"];
 
-	MessageType type;
+	MessageType type = MessageUnknown;
 
 	if (prop.name == "topic")
 	{
@@ -514,8 +514,6 @@ bool DAmn::parseConn(const QStringList &lines, int &i, DAmnConnection &conn)
 
 bool DAmn::parseUserProperties(const QString &user, const QStringList &lines, int &i)
 {
-	bool found = false;
-
 	DAmnUser *u = createUser(user);
 
 	if (!parseUserInfo(lines, i, *u)) return false;
