@@ -25,6 +25,17 @@
 #include "damn.h"
 #include "oauth2.h"
 
+#ifdef UNITY_HACK
+
+extern "C"
+{
+	#include <libappindicator/app-indicator.h>
+//	#include <gtk/gtk.h>
+}
+
+//#define signals public
+#endif
+
 #ifdef HAVE_CONFIG_H
 	#include "config.h"
 #endif
@@ -32,6 +43,55 @@
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
 #endif
+
+void MainWindow::createSystray()
+{
+	if (!QSystemTrayIcon::isSystemTrayAvailable()) return;
+
+	QString desktop = getenv("XDG_CURRENT_DESKTOP");
+	bool is_unity = (desktop.toLower() == "unity");
+
+	if (is_unity)
+	{
+#ifdef UNITY_HACK
+		AppIndicator *indicator;
+//		GtkWidget *menu, *item;
+
+//		menu = gtk_menu_new();
+
+//		item = gtk_menu_item_new_with_label("Quit");
+//		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
+//		g_signal_connect(item, "activate", G_CALLBACK(quitIndicator), qApp);
+		// We cannot connect
+		// gtk signal and qt slot so we need to create proxy
+		// function later on, we pass qApp pointer as an argument.
+		// This is useful when we need to call signals on "this"
+		//object so external function can access current object
+//		gtk_widget_show(item);
+
+		indicator = app_indicator_new("unique-application-name", "indicator-messages", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
+
+		app_indicator_set_status(indicator, APP_INDICATOR_STATUS_ACTIVE);
+//		app_indicator_set_menu(indicator, GTK_MENU(menu));
+#else
+		qDebug() << "Unity hack not enabled";
+#endif
+	}
+	else
+	{
+		m_trayIcon = new QSystemTrayIcon(QIcon(":/icons/kdamn.svg"), this);
+
+//		QMenu *trayMenu = new QMenu(m_trayIcon);
+//		QAction *restoreAction = trayMenu->addAction(tr("Restore"));
+//		connect(restoreAction, SIGNAL(triggered()), this, SLOT(trayActivated()));
+//		QAction *quitAction = trayMenu->addAction(tr("Quit"));
+//		connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
+		
+//		m_trayIcon->setContextMenu(trayMenu);
+		connect(m_trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayActivated(QSystemTrayIcon::ActivationReason)));
+		m_trayIcon->show();
+	}
+}
 
 MainWindow::MainWindow():QMainWindow(), m_trayIcon(NULL)
 {
@@ -50,6 +110,8 @@ MainWindow::MainWindow():QMainWindow(), m_trayIcon(NULL)
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
 	connect(actionAboutQt, SIGNAL(triggered()), this, SLOT(onAboutQt()));
 
+	connect(channelsWidget, SIGNAL(currentChanged(int)), this, SLOT(onChannelFocus(int)));
+
 	DAmn *damn = new DAmn(this);
 	connect(damn, SIGNAL(serverConnected()), this, SLOT(onConnectServer()));
 	connect(damn, SIGNAL(textReceived(QString, QString, MessageType, QString, bool)), this, SLOT(onText(QString, QString, MessageType, QString, bool)));
@@ -66,21 +128,7 @@ MainWindow::MainWindow():QMainWindow(), m_trayIcon(NULL)
 	connect(oauth, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
 	connect(oauth, SIGNAL(damnTokenReceived(QString, QString)), this, SLOT(onReceiveAuthtoken(QString, QString)));
 
-	if (QSystemTrayIcon::isSystemTrayAvailable())
-	{
-/*
-		QMenu * trayMenu = new QMenu(this);
-		QAction *restoreAction = trayMenu->addAction(tr("Restore"));
-		connect(restoreAction, SIGNAL(triggered()), this, SLOT(trayActivated()));
-		QAction *quitAction = trayMenu->addAction(tr("Quit"));
-		connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
-*/
-
-		m_trayIcon = new QSystemTrayIcon(QIcon(":/icons/kdamn.svg"), this);
-//		m_trayIcon->setContextMenu(trayMenu);
-		connect(m_trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayActivated(QSystemTrayIcon::ActivationReason)));
-		m_trayIcon->show();
-	}
+	createSystray();
 
 	autoConnect();
 }
@@ -337,6 +385,18 @@ void MainWindow::setSystem(const QString &text)
 
 void MainWindow::trayActivated(QSystemTrayIcon::ActivationReason reseaon)
 {
+}
+
+void MainWindow::onChannelFocus(int index)
+{
+	for(int i = 0; i < channelsWidget->count(); ++i)
+	{
+		bool focused = index == i;
+
+		ChannelFrame *frame = qobject_cast<ChannelFrame*>(channelsWidget->widget(i));
+
+		if (frame) frame->setFocus(focused);
+	}
 }
 
 void MainWindow::autoConnect()

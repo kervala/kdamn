@@ -69,9 +69,11 @@ public slots:
 
 	// other
 	void trayActivated(QSystemTrayIcon::ActivationReason reseaon);
+	void onChannelFocus(int index);
 
 protected:
 	void closeEvent(QCloseEvent *event);
+	void createSystray();
 
 private:
 	QSystemTrayIcon *m_trayIcon;
