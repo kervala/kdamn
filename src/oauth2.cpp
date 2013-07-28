@@ -165,6 +165,31 @@ bool OAuth2::uploadToStash(const QString &filename)
 	return true;
 }
 
+QString OAuth2::getSupportedImageFormatsFilter()
+{
+	static QString s_imagesFilter;
+
+	if (s_imagesFilter.isEmpty())
+	{
+		QList<QByteArray> formats = QImageReader::supportedImageFormats();
+
+		foreach(const QByteArray &format, formats)
+		{
+			// some formats are not supported in QTextBrowser
+			if (format == "mng") continue;
+
+			if (!s_imagesFilter.isEmpty()) s_imagesFilter += "|";
+
+			s_imagesFilter += format;
+		}
+
+		s_imagesFilter = "(" + s_imagesFilter + ")";
+	}
+
+	return s_imagesFilter;
+}
+
+
 bool OAuth2::loginSite(const QString &login, const QString &password)
 {
 	m_login = login;
@@ -207,7 +232,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
 	QString url = reply->url().toString();
 
-	if (url.indexOf(QRegExp("\\.(jpeg|jpg|jpe|gif|png)(\\?([0-9]+))?$")) > -1)
+	if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
 	{
 		QByteArray content = reply->readAll();
 		QString url = reply->url().toString();
@@ -243,7 +268,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 			}
 			else
 			{
-				emit errorReceived("No DAmn token received");
+				emit errorReceived(tr("No dAmn token received"));
 			}
 		}
 		else
@@ -272,7 +297,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 			}
 			else
 			{
-				emit errorReceived("No DAmn token received");
+				emit errorReceived(tr("No dAmn token received"));
 			}
 		}
 		else
@@ -292,13 +317,13 @@ void OAuth2::onReply(QNetworkReply *reply)
 			QJsonObject object = doc.object();
 
 			QJsonObject::const_iterator it;
-				
+
 			it = object.constFind("status");
 
 			if (it != object.constEnd())
 			{
 				QString status = it.value().toString();
-				
+
 				if (status == "success")
 				{
 					// seconds number before a session expire

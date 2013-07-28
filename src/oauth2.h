@@ -42,6 +42,8 @@ public:
 	bool get(const QString &url, const QString &referer = "");
 	bool uploadToStash(const QString &filename);
 
+	static QString getSupportedImageFormatsFilter();
+
 signals:
 	void errorReceived(const QString &error);
 	void damnTokenReceived(const QString &login, const QString &damntoken);
