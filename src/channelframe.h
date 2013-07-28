@@ -33,7 +33,7 @@ class ChannelFrame : public QFrame, public Ui::ChannelFrame
 public:
 	ChannelFrame(QWidget *parent, const QString &channel);
 	virtual ~ChannelFrame();
-	
+
 	void setAction(const QString &user, const QString &text);
 	void setText(const QString &user, const QString &text);
 	void setSystem(const QString &text);
@@ -44,8 +44,10 @@ public:
 
 	QString getChannel() const { return m_channel; }
 
-signals:
-	
+	void startAnimations(const QString &html);
+	bool addAnimation(const QString &url);
+	void setFocus(bool focus);
+
 public slots:
 	// when user press enter
 	void onSend();
@@ -53,11 +55,36 @@ public slots:
 	// when user click on a link
 	void onUrl(const QUrl &url);
 
+	void animate(int frame);
+
 protected:
 	QString getTimestamp() const;
 
 	QStringListModel *m_usersModel;
 	QString m_channel;
+	QHash<QMovie*, QUrl> m_urls;
+	bool m_focus;
+};
+
+class AnimationStart : public QObject
+{
+	Q_OBJECT
+
+public:
+	AnimationStart(const QString &url, ChannelFrame *frame):QObject(frame), m_url(url), m_frame(frame)
+	{
+		QTimer::singleShot(1000, this, SLOT(timeout()));
+	}
+
+public slots:
+	void timeout()
+	{
+		m_frame->addAnimation(m_url);
+	}
+
+private:
+	ChannelFrame *m_frame;
+	QString m_url;
 };
 
 #endif

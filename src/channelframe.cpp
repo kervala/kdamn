@@ -25,7 +25,7 @@
 	#define new DEBUG_NEW
 #endif
 
-ChannelFrame::ChannelFrame(QWidget *parent, const QString &channel):QFrame(parent), m_channel(channel)
+ChannelFrame::ChannelFrame(QWidget *parent, const QString &channel):QFrame(parent), m_channel(channel), m_focus(false)
 {
 	setupUi(this);
 
@@ -46,16 +46,22 @@ ChannelFrame::~ChannelFrame()
 void ChannelFrame::setAction(const QString &user, const QString &text)
 {
 	outputBrowser->append(QString("<div class=\"normal\">%1<span class=\"username\">%2</span> %3</div>").arg(getTimestamp()).arg(user).arg(text));
+
+	startAnimations(text);
 }
 
 void ChannelFrame::setText(const QString &user, const QString &text)
 {
 	outputBrowser->append(QString("<div class=\"normal\">%1<span class=\"username\">&lt;%2&gt;</span> %3</div>").arg(getTimestamp()).arg(user).arg(text));
+
+	startAnimations(text);
 }
 
 void ChannelFrame::setSystem(const QString &text)
 {
 	outputBrowser->append(QString("<div class=\"system\">%1%2</div>").arg(getTimestamp()).arg(text));
+
+	startAnimations(text);
 }
 
 void ChannelFrame::setUsers(const QStringList &users)
@@ -127,3 +133,97 @@ QString ChannelFrame::getTimestamp() const
 	return QString("<span class=\"timestamp\">%1</span> ").arg(timestamp);
 }
 
+void ChannelFrame::startAnimations(const QString &html)
+{
+	// parse HTML code to find local images
+	QRegExp reg("\"(file://([^\"]+))\"");
+
+	int pos = 0;
+
+	while((pos = reg.indexIn(html, pos)) != -1)
+	{
+		// found an URL
+		QString url = reg.cap(1);
+
+		QHash<QMovie*, QUrl>::iterator it = m_urls.begin();
+
+		bool found = false;
+
+		while(it != m_urls.end())
+		{
+			if (it->toString() == url)
+			{
+				found = true;
+				break;
+			}
+
+			++it;
+		}
+
+		if (!found) new AnimationStart(url, this);
+
+		pos += reg.matchedLength();
+	}
+}
+
+void ChannelFrame::setFocus(bool focus)
+{
+	if (focus == m_focus) return;
+
+	m_focus = focus;
+
+	QHash<QMovie*, QUrl>::iterator it = m_urls.begin();
+
+	while(it != m_urls.end())
+	{
+		if (m_focus)
+		{
+			it.key()->start();
+		}
+		else
+		{
+			it.key()->stop();
+		}
+
+		++it;
+	}
+}
+
+bool ChannelFrame::addAnimation(const QString& file)
+{
+	QUrl url(file);
+
+	QMovie* movie = new QMovie(this);
+
+	movie->setFileName(url.toLocalFile());
+
+	if (!movie->isValid())
+	{
+		delete movie;
+		new AnimationStart(file, this);
+
+		return false;
+	}
+
+	QString test = movie->format();
+
+	if (movie->frameCount() < 2) return false;
+	
+	m_urls.insert(movie, url);
+
+	connect(movie, SIGNAL(frameChanged(int)), this, SLOT(animate(int)));
+
+	// start only when in foreground
+	if (m_focus) movie->start();
+
+	return true;
+}
+
+void ChannelFrame::animate(int frame)
+{
+	if (QMovie* movie = qobject_cast<QMovie*>(sender()))
+	{
+		outputBrowser->document()->addResource(QTextDocument::ImageResource, m_urls.value(movie), movie->currentPixmap());
+		outputBrowser->setLineWrapColumnOrWidth(outputBrowser->lineWrapColumnOrWidth()); // causes reload
+	}
+}
