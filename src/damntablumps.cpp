@@ -43,6 +43,7 @@ static Tablump s_tablumps[] = {
 	{ "li", 0, "li" },
 	{ "ul", 0, "ul" },
 	{ "ol", 0, "ol" },
+	{ "img", 3, "img", },
 //	{ "iframe", 3, "iframe" },
 //	{ "embed", 3, "embed" },
 	{ "iframe", 3, "a" },
@@ -54,7 +55,7 @@ static Tablump s_tablumps[] = {
 	{ "", -1 }
 };
 
-bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QStringList &images)
+bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DAmnImages &images)
 {
 	int pos1 = 0, pos2 = 0;
 
@@ -122,11 +123,12 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 					QString title = tokens[4];
 					QString url = "http://e.deviantart.net/emoticons/" + tokens[5];
 
-					QString file, md5;
+					DAmnImage image;
+					image.remoteUrl = url;
 
-					if (downloadImage(url, file, md5)) images << md5;
+					if (downloadImage(image) && !images.contains(image)) images << image;
 
-					html += QString("<img alt=\"%1\" width=\"%2\" height=\"%3\" title=\"%4\" src=\"%5\" />").arg(alt).arg(width).arg(height).arg(title).arg(file);
+					html += QString("<img alt=\"%1\" width=\"%2\" height=\"%3\" title=\"%4\" src=\"%5\" />").arg(alt).arg(width).arg(height).arg(title).arg(image.localUrl);
 					text += alt;
 				}
 				else if (id == "dev")
@@ -143,11 +145,13 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 					int usericon = tokens[2].toInt();
 
 					QString url = getAvatarUrl(name.toLower(), usericon);
-					QString file, md5;
 
-					if (downloadImage(url, file, md5)) images << md5;
+					DAmnImage image;
+					image.remoteUrl = url;
 
-					html += QString("<a href=\"http://%1.deviantart.com\"><img alt=\"%1\" width=\"50\" height=\"50\" title=\"%1\" src=\"%2\" /></a>").arg(name).arg(file);
+					if (downloadImage(image) && !images.contains(image)) images << image;
+
+					html += QString("<a href=\"http://%1.deviantart.com\"><img alt=\"%1\" width=\"50\" height=\"50\" title=\"%1\" src=\"%2\" /></a>").arg(name).arg(image.localUrl);
 					text += QString(":icon%1:").arg(name);
 				}
 				else if (id == "thumb")
@@ -215,16 +219,17 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 						nopriv = tokens[2].toInt() > 0;
 					}
 
-					QString file, md5;
+					DAmnImage image;
+					image.remoteUrl = url;
 
-					if (downloadImage(url, file, md5)) images << md5;
+					if (downloadImage(image) && !images.contains(image)) images << image;
 
 					QString title2 = title;
 					title2.replace(" ", "-");
 
 					QString link = QString("http://www.deviantart.com/art/%1-%2").arg(title2).arg(number);
 
-					html += QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(file).arg(link).arg(width).arg(height);
+					html += QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(image.localUrl).arg(link).arg(width).arg(height);
 					text += QString(":thumb%1:").arg(number);
 				}
 				else if (id == "iframe" || id == "embed")
@@ -243,6 +248,11 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, QS
 					QString url = tokens[1];
 					QString width = tokens[2];
 					QString height = tokens[3];
+
+					DAmnImage image;
+					image.remoteUrl = url;
+
+					if (downloadImage(image) && !images.contains(image)) images << image;
 
 					html += QString("<img src=\"%1\" alt=\"\" width=\"%2\" height=\"%3\" />").arg(url).arg(width).arg(height);
 					text += url;
