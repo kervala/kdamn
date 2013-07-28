@@ -82,14 +82,9 @@ void DAmn::onError(QAbstractSocket::SocketError error)
 	emit errorReceived(tr("Socket error: %1").arg(error));
 }
 
-bool DAmn::downloadImage(const QString &url, QString &file, QString &md5)
+bool DAmn::downloadImage(DAmnImage &image)
 {
 	if (!OAuth2::getInstance()) return false;
-
-	QString dir(QDir::fromNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)));
-
-	md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
-	QString filename = QString("%1/%2").arg(dir).arg(md5);
 
 	static bool s_connected = false;
 
@@ -99,30 +94,76 @@ bool DAmn::downloadImage(const QString &url, QString &file, QString &md5)
 		s_connected = true;
 	}
 
-	file = QUrl::fromLocalFile(filename).toString();
+	image.downloaded = false;
+	image.valid = false;
 
-	if (QFile::exists(filename)) return false;
+	QByteArray ext;
+	int pos = image.remoteUrl.lastIndexOf('.');
+
+	if (pos == -1) return false;
+
+	QRegExp reg(OAuth2::getSupportedImageFormatsFilter());
+
+	image.valid = reg.indexIn(image.remoteUrl.mid(pos+1).toLatin1()) == 0;
+
+	if (!image.valid) return false;
+
+	QString dir(QDir::fromNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)));
+
+	image.md5 = QCryptographicHash::hash(image.remoteUrl.toLatin1(), QCryptographicHash::Md5).toHex();
+	image.filename = QString("%1/%2").arg(dir).arg(image.md5);
+	image.localUrl = QUrl::fromLocalFile(image.filename).toString();
+	image.downloaded = QFile::exists(image.filename);
+
+	if (image.downloaded) return false;
 
 	// create directory to be sure, there won't be any error later
 	QDir tmp;
 	tmp.mkpath(dir);
 
-	OAuth2::getInstance()->get(url);
+	// request download of image
+	OAuth2::getInstance()->get(image.remoteUrl);
 
 	return true;
 }
 
 bool DAmn::updateWaitingMessages(const QString &md5)
 {
+	QString filename;
+	QStringList channels;
+
 	foreach(WaitingMessage *msg, m_waitingMessages)
 	{
 		if (!msg) continue;
 
-		// remove all images with the same md5
-		msg->images.removeAll(md5);
+		int total = 0;
+		int downloaded = 0;
+
+		// mark downloaded all images with the same md5
+		DAmnImagesIterator it = msg->images.begin();
+
+		while(it != msg->images.end())
+		{
+			++total;
+
+			if (md5 == it->md5)
+			{
+				++downloaded;
+
+				if (!it->downloaded)
+				{
+					it->downloaded = true;
+					filename = it->localUrl;
+				}
+
+				if (!channels.contains(msg->channel)) channels << msg->channel;
+			}
+
+			++it;
+		}
 
 		// check if all images have been downloaded
-		if (msg->images.isEmpty())
+		if (total == downloaded)
 		{
 			emit textReceived(msg->channel, msg->from, msg->type, msg->html, true);
 

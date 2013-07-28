@@ -34,15 +34,34 @@ enum MessageType
 	MessageText,
 	MessageAction,
 	MessageTopic,
-	MessageTitle
+	MessageTitle,
+	MessageUnknown
 };
+
+struct DAmnImage
+{
+	QString md5;
+	QString remoteUrl;
+	QString localUrl;
+	QString filename;
+	bool downloaded;
+	bool valid;
+
+	bool operator == (const DAmnImage &other)
+	{
+		return other.md5 == md5;
+	}
+};
+
+typedef QList<DAmnImage> DAmnImages;
+typedef DAmnImages::iterator DAmnImagesIterator;
 
 struct WaitingMessage
 {
 	QString channel;
 	QString from;
 	QString html;
-	QStringList images;
+	DAmnImages images;
 	MessageType type;
 };
 
@@ -125,9 +144,9 @@ signals:
 
 private:
 	bool sendChat(const QString &channel);
-	bool replaceTablumps(const QString &data, QString &html, QString &text, QStringList &images);
+	bool replaceTablumps(const QString &data, QString &html, QString &text, DAmnImages &images);
 
-	bool downloadImage(const QString &url, QString &file, QString &md5);
+	bool downloadImage(DAmnImage &image);
 
 	DAmnChannel* createChannel(const QString &channel);
 	bool removeChannel(const QString &channel);
