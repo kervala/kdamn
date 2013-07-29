@@ -160,6 +160,7 @@ bool DAmn::parseError(const QString &error)
 		{ "unknown property", tr("Unknown property") },
 		{ "authentication failed", tr("Authentication failed") },
 		{ "nothing to send", tr("Nothing to send") },
+		{ "already joined", tr("Already joined") },
 		{ "", "" }
 	};
 
@@ -362,9 +363,16 @@ bool DAmn::parseJoin(const QStringList &lines)
 
 	if (!parseError(p.args["e"])) return true;
 
-	createChannel(p.params[1]);
+	if (p.params[0] == "chat")
+	{
+		createChannel(p.params[1]);
 
-	emit channelJoined(p.params[1]);
+		emit channelJoined(p.params[1]);
+	}
+	else if (p.params[0] == "pchat")
+	{
+		emit errorReceived(tr("Private chats not yet implemented"));
+	}
 
 	return true;
 }
