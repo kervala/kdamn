@@ -49,6 +49,7 @@ public slots:
 	// channel menu
 	void onJoin();
 	void onPart();
+	void onChannels();
 
 	// help menu
 	void onAbout();
@@ -70,13 +71,10 @@ public slots:
 	// other
 	void trayActivated(QSystemTrayIcon::ActivationReason reseaon);
 	void onChannelFocus(int index);
+	void onFocus(QWindow *window);
 
 protected:
 	void closeEvent(QCloseEvent *event);
-	void createSystray();
-
-private:
-	QSystemTrayIcon *m_trayIcon;
 };
 
 #endif

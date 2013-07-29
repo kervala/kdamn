@@ -21,20 +21,13 @@
 #include "mainwindow.h"
 #include "moc_mainwindow.cpp"
 #include "connectdialog.h"
+#include "joinchanneldialog.h"
+#include "configfile.h"
+#include "channelsdialog.h"
 #include "channelframe.h"
 #include "damn.h"
 #include "oauth2.h"
-
-#ifdef UNITY_HACK
-
-extern "C"
-{
-	#include <libappindicator/app-indicator.h>
-//	#include <gtk/gtk.h>
-}
-
-//#define signals public
-#endif
+#include "systrayicon.h"
 
 #ifdef HAVE_CONFIG_H
 	#include "config.h"
@@ -44,56 +37,7 @@ extern "C"
 	#define new DEBUG_NEW
 #endif
 
-void MainWindow::createSystray()
-{
-	if (!QSystemTrayIcon::isSystemTrayAvailable()) return;
-
-	QString desktop = getenv("XDG_CURRENT_DESKTOP");
-	bool is_unity = (desktop.toLower() == "unity");
-
-	if (is_unity)
-	{
-#ifdef UNITY_HACK
-		AppIndicator *indicator;
-//		GtkWidget *menu, *item;
-
-//		menu = gtk_menu_new();
-
-//		item = gtk_menu_item_new_with_label("Quit");
-//		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-//		g_signal_connect(item, "activate", G_CALLBACK(quitIndicator), qApp);
-		// We cannot connect
-		// gtk signal and qt slot so we need to create proxy
-		// function later on, we pass qApp pointer as an argument.
-		// This is useful when we need to call signals on "this"
-		//object so external function can access current object
-//		gtk_widget_show(item);
-
-		indicator = app_indicator_new("unique-application-name", "indicator-messages", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
-
-		app_indicator_set_status(indicator, APP_INDICATOR_STATUS_ACTIVE);
-//		app_indicator_set_menu(indicator, GTK_MENU(menu));
-#else
-		qDebug() << "Unity hack not enabled";
-#endif
-	}
-	else
-	{
-		m_trayIcon = new QSystemTrayIcon(QIcon(":/icons/kdamn.svg"), this);
-
-//		QMenu *trayMenu = new QMenu(m_trayIcon);
-//		QAction *restoreAction = trayMenu->addAction(tr("Restore"));
-//		connect(restoreAction, SIGNAL(triggered()), this, SLOT(trayActivated()));
-//		QAction *quitAction = trayMenu->addAction(tr("Quit"));
-//		connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
-		
-//		m_trayIcon->setContextMenu(trayMenu);
-		connect(m_trayIcon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayActivated(QSystemTrayIcon::ActivationReason)));
-		m_trayIcon->show();
-	}
-}
-
-MainWindow::MainWindow():QMainWindow(), m_trayIcon(NULL)
+MainWindow::MainWindow():QMainWindow()
 {
 	setupUi(this);
 
@@ -105,12 +49,15 @@ MainWindow::MainWindow():QMainWindow(), m_trayIcon(NULL)
 	// Channel menu
 	connect(actionJoin, SIGNAL(triggered()), this, SLOT(onJoin()));
 	connect(actionPart, SIGNAL(triggered()), this, SLOT(onPart()));
+	connect(actionKnownChannels, SIGNAL(triggered()), this, SLOT(onChannels()));
 
 	// Help menu
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
 	connect(actionAboutQt, SIGNAL(triggered()), this, SLOT(onAboutQt()));
 
 	connect(channelsWidget, SIGNAL(currentChanged(int)), this, SLOT(onChannelFocus(int)));
+
+	new ConfigFile(this);
 
 	DAmn *damn = new DAmn(this);
 	connect(damn, SIGNAL(serverConnected()), this, SLOT(onConnectServer()));
@@ -128,9 +75,11 @@ MainWindow::MainWindow():QMainWindow(), m_trayIcon(NULL)
 	connect(oauth, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
 	connect(oauth, SIGNAL(damnTokenReceived(QString, QString)), this, SLOT(onReceiveAuthtoken(QString, QString)));
 
-	createSystray();
+	new SystrayIcon(this);
 
 	autoConnect();
+
+	connect(qApp, SIGNAL(focusWindowChanged(QWindow*)), this, SLOT(onFocus(QWindow*)));
 }
 
 MainWindow::~MainWindow()
@@ -166,11 +115,10 @@ void MainWindow::onConnect()
 		QString authtoken = dialog.getAuthtoken();
 		bool remember = dialog.isRememberPassword();
 
-		QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
-		settings.setValue("login", login);
-		settings.setValue("password", remember ? password:"");
-		settings.setValue("remember_password", remember);
-		settings.setValue("authtoken", authtoken);
+		ConfigFile::getInstance()->setLogin(login);
+		ConfigFile::getInstance()->setPassword(remember ? password:"");
+		ConfigFile::getInstance()->rememberPassword(remember);
+		ConfigFile::getInstance()->setDAmnToken(authtoken);
 
 		DAmn::getInstance()->setLogin(login);
 		DAmn::getInstance()->setToken(authtoken);
@@ -190,9 +138,8 @@ void MainWindow::onDisconnect()
 
 void MainWindow::onReceiveAuthtoken(const QString &login, const QString &authtoken)
 {
-	QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
-	settings.setValue("login", login);
-	settings.setValue("authtoken", authtoken);
+	ConfigFile::getInstance()->setLogin(login);
+	ConfigFile::getInstance()->setDAmnToken(authtoken);
 
 	DAmn::getInstance()->setLogin(login);
 	DAmn::getInstance()->setToken(authtoken);
@@ -202,14 +149,15 @@ void MainWindow::onReceiveAuthtoken(const QString &login, const QString &authtok
 
 void MainWindow::onJoin()
 {
-	QString channel = QInputDialog::getText(this, tr("Join channel"), tr("Please enter channel to join"), QLineEdit::Normal, "", NULL,  Qt::Dialog | Qt::WindowCloseButtonHint);
+	JoinChannelDialog dialog(this);
 
-	if (!channel.isEmpty())
+	if (dialog.exec())
 	{
+		QString channel = dialog.getChannel();
+
 		DAmn::getInstance()->join(channel);
 
-		QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
-		settings.setValue(QString("channels/%1").arg(channel), 1);
+		ConfigFile::getInstance()->setChannelAutoConnect(channel, true);
 	}
 }
 
@@ -221,8 +169,16 @@ void MainWindow::onPart()
 	{
 		DAmn::getInstance()->part(frame->getChannel());
 
-		QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
-		settings.setValue(QString("channels/%1").arg(frame->getChannel()), 0);
+		ConfigFile::getInstance()->setChannelAutoConnect(frame->getChannel(), false);
+	}
+}
+
+void MainWindow::onChannels()
+{
+	ChannelsDialog dialog(this);
+
+	if (dialog.exec())
+	{
 	}
 }
 
@@ -230,17 +186,16 @@ void MainWindow::onConnectServer()
 {
 	setSystem(tr("Connected to server"));
 
-	QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
+	ConfigChannels channels = ConfigFile::getInstance()->getChannels();
 
-	settings.beginGroup("channels");
-	QStringList channels = settings.childKeys();
+	ConfigChannelsIterator it = channels.begin();
 
-	foreach(const QString &channel, channels)
+	while(it != channels.end())
 	{
-		if (settings.value(channel, 0).toInt() == 1) DAmn::getInstance()->join(channel);
-	}
+		if (it->autoconnect) DAmn::getInstance()->join(it->name);
 
-	settings.endGroup();
+		++it;
+	}
 }
 
 void MainWindow::onText(const QString &channel, const QString &user, MessageType type, const QString &text, bool html)
@@ -307,6 +262,8 @@ void MainWindow::onJoinChannel(const QString &channel)
 	createChannelFrame(channel);
 
 	setSystem(tr("You joined channel <b>%1</b>").arg(channel));
+
+	ConfigFile::getInstance()->setChannelConnected(channel, true);
 }
 
 void MainWindow::onPartChannel(const QString &channel, const QString &reason)
@@ -318,6 +275,8 @@ void MainWindow::onPartChannel(const QString &channel, const QString &reason)
 	if (!reason.isEmpty()) str += QString(" (%1)").arg(reason);
 
 	setSystem(str);
+
+	ConfigFile::getInstance()->setChannelConnected(channel, false);
 }
 
 void MainWindow::onError(const QString &error)
@@ -399,11 +358,15 @@ void MainWindow::onChannelFocus(int index)
 	}
 }
 
+void MainWindow::onFocus(QWindow *window)
+{
+	onChannelFocus(window && window->isActive() ? channelsWidget->currentIndex():-1);
+}
+
 void MainWindow::autoConnect()
 {
-	QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
-	QString login = settings.value("login").toString();
-	QString token = settings.value("authtoken").toString();
+	QString login = ConfigFile::getInstance()->getLogin();
+	QString token = ConfigFile::getInstance()->getDAmnToken();
 
 	if (!login.isEmpty() && !token.isEmpty())
 	{
@@ -416,14 +379,13 @@ void MainWindow::autoConnect()
 
 void MainWindow::onRequestDAmnToken()
 {
-	QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
-	QString login = settings.value("login").toString();
-	QString password = settings.value("password").toString();
+	QString login = ConfigFile::getInstance()->getLogin();
+	QString password = ConfigFile::getInstance()->getPassword();
 
 	// delete previous authtoken because invalid
-	settings.setValue("authtoken", "");
+	ConfigFile::getInstance()->setDAmnToken("");
 
-	if (settings.value("remember_password").toBool() && !login.isEmpty() && !password.isEmpty())
+	if (ConfigFile::getInstance()->isRememberPassword() && !login.isEmpty() && !password.isEmpty())
 	{
 		OAuth2::getInstance()->login(login, password);
 	}

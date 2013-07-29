@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "connectdialog.h"
+#include "configfile.h"
 #include "moc_connectdialog.cpp"
 
 #ifdef HAVE_CONFIG_H
@@ -33,11 +34,10 @@ ConnectDialog::ConnectDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt::W
 {
 	setupUi(this);
 
-	QSettings settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT);
-	loginEdit->setText(settings.value("login").toString());
-	passwordEdit->setText(settings.value("password").toString());
-	authtokenEdit->setText(settings.value("authtoken").toString());
-	rememberPasswordBox->setChecked(settings.value("remember_password").toBool());
+	loginEdit->setText(ConfigFile::getInstance()->getLogin());
+	passwordEdit->setText(ConfigFile::getInstance()->getPassword());
+	authtokenEdit->setText(ConfigFile::getInstance()->getDAmnToken());
+	rememberPasswordBox->setChecked(ConfigFile::getInstance()->isRememberPassword());
 }
 
 ConnectDialog::~ConnectDialog()
