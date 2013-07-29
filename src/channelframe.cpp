@@ -19,7 +19,9 @@
 
 #include "common.h"
 #include "channelframe.h"
+#include "configfile.h"
 #include "damn.h"
+#include "systrayicon.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -48,6 +50,7 @@ void ChannelFrame::setAction(const QString &user, const QString &text)
 	outputBrowser->append(QString("<div class=\"normal\">%1<span class=\"username\">%2</span> %3</div>").arg(getTimestamp()).arg(user).arg(text));
 
 	startAnimations(text);
+	updateSystrayIcon(user, text);
 }
 
 void ChannelFrame::setText(const QString &user, const QString &text)
@@ -55,6 +58,7 @@ void ChannelFrame::setText(const QString &user, const QString &text)
 	outputBrowser->append(QString("<div class=\"normal\">%1<span class=\"username\">&lt;%2&gt;</span> %3</div>").arg(getTimestamp()).arg(user).arg(text));
 
 	startAnimations(text);
+	updateSystrayIcon(user, text);
 }
 
 void ChannelFrame::setSystem(const QString &text)
@@ -187,6 +191,27 @@ void ChannelFrame::setFocus(bool focus)
 
 		++it;
 	}
+
+	if (m_focus)
+	{
+		SystrayIcon::getInstance()->setStatus(m_channel, StatusNormal);
+		inputEdit->setFocus();
+	}
+}
+
+void ChannelFrame::updateSystrayIcon(const QString &user, const QString &html)
+{
+	if (m_focus) return;
+
+	QString login = ConfigFile::getInstance()->getLogin().toLower();
+
+	// don't alert if we talk to ourself
+	if (login == user.toLower()) return;
+
+	SystrayStatus oldStatus = SystrayIcon::getInstance()->getStatus(m_channel);
+	SystrayStatus newStatus = html.toLower().indexOf(login) > -1 ? StatusTalkMe:StatusTalkOther;
+
+	if (newStatus > oldStatus) SystrayIcon::getInstance()->setStatus(m_channel, newStatus);
 }
 
 bool ChannelFrame::addAnimation(const QString& file)

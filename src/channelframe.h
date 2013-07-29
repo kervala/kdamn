@@ -48,6 +48,8 @@ public:
 	bool addAnimation(const QString &url);
 	void setFocus(bool focus);
 
+	void updateSystrayIcon(const QString &user, const QString &html);
+
 public slots:
 	// when user press enter
 	void onSend();
