@@ -36,7 +36,7 @@ ConnectDialog::ConnectDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt::W
 
 	loginEdit->setText(ConfigFile::getInstance()->getLogin());
 	passwordEdit->setText(ConfigFile::getInstance()->getPassword());
-	authtokenEdit->setText(ConfigFile::getInstance()->getDAmnToken());
+	tokenEdit->setText(ConfigFile::getInstance()->getDAmnToken());
 	rememberPasswordBox->setChecked(ConfigFile::getInstance()->isRememberPassword());
 }
 

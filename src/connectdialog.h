@@ -32,7 +32,7 @@ public:
 
 	QString getLogin() const { return loginEdit->text(); }
 	QString getPassword() const { return passwordEdit->text(); }
-	QString getAuthtoken() const { return authtokenEdit->text(); }
+	QString getToken() const { return tokenEdit->text(); }
 
 	bool isRememberPassword() const { return rememberPasswordBox->isChecked(); }
 };

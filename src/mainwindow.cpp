@@ -112,16 +112,16 @@ void MainWindow::onConnect()
 	{
 		QString login = dialog.getLogin();
 		QString password = dialog.getPassword();
-		QString authtoken = dialog.getAuthtoken();
+		QString token = dialog.getToken();
 		bool remember = dialog.isRememberPassword();
 
 		ConfigFile::getInstance()->setLogin(login);
 		ConfigFile::getInstance()->setPassword(remember ? password:"");
 		ConfigFile::getInstance()->rememberPassword(remember);
-		ConfigFile::getInstance()->setDAmnToken(authtoken);
+		ConfigFile::getInstance()->setDAmnToken(token);
 
 		DAmn::getInstance()->setLogin(login);
-		DAmn::getInstance()->setToken(authtoken);
+		DAmn::getInstance()->setToken(token);
 
 		if (!DAmn::getInstance()->connectToServer())
 		{
