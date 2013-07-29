@@ -71,7 +71,7 @@
      <x>0</x>
      <y>0</y>
      <width>519</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -98,6 +98,7 @@
     </property>
     <addaction name="actionJoin"/>
     <addaction name="actionPart"/>
+    <addaction name="actionKnownChannels"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuChannel"/>
@@ -164,6 +165,14 @@
   <action name="actionPart">
    <property name="text">
     <string>Part</string>
+   </property>
+  </action>
+  <action name="actionKnownChannels">
+   <property name="text">
+    <string>Known channels</string>
+   </property>
+   <property name="toolTip">
+    <string>Known channels</string>
    </property>
   </action>
  </widget>
