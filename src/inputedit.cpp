@@ -41,6 +41,8 @@ void InputEdit::validate()
 
 	clear();
 
+	m_index = -1;
+
 	emit textValidated(str);
 }
 
@@ -124,9 +126,7 @@ void InputEdit::contextMenuEvent(QContextMenuEvent *e)
 		menu->addSeparator();
 
 		QMenu *historyMenu = menu->addMenu(tr("History"));
-
-
-
+	
 		for(int i = 0; i < m_history.size(); ++i)
 		{
 			QString history = m_history[i];
@@ -147,7 +147,7 @@ void InputEdit::contextMenuEvent(QContextMenuEvent *e)
 
 		connect(historyMenu, SIGNAL(triggered(QAction*)), this, SLOT(historyTriggered(QAction*)));
 
-		action = menu->addAction(tr("Clear"));
+		action = menu->addAction(tr("Clear history"));
 
 		connect(action, SIGNAL(triggered()), this, SLOT(clearHistory()));
 	}
