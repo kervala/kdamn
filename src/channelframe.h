@@ -46,9 +46,9 @@ public:
 
 	void startAnimations(const QString &html);
 	bool addAnimation(const QString &url);
-	void setFocus(bool focus);
 
-	void updateSystrayIcon(const QString &user, const QString &html);
+	bool getFocus() const;
+	void setFocus(bool focus);
 
 public slots:
 	// when user press enter

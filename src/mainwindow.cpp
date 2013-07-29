@@ -216,6 +216,8 @@ void MainWindow::onText(const QString &channel, const QString &user, MessageType
 					case MessageTitle: if (!text.isEmpty()) frame->setSystem(tr("Title changed by %1: %2").arg(user).arg(text)); break;
 					default: break;
 				}
+
+				updateSystrayIcon(channel, user, text);
 			}
 		}
 		else
@@ -234,6 +236,8 @@ void MainWindow::onUserJoin(const QString &channel, const QString &user, bool sh
 	ChannelFrame *frame = getChannelFrame(channel);
 
 	if (frame) frame->userJoin(user);
+
+	updateSystrayIcon(channel, user, "");
 }
 
 void MainWindow::onUserPart(const QString &channel, const QString &user, const QString &reason, bool show)
@@ -241,6 +245,8 @@ void MainWindow::onUserPart(const QString &channel, const QString &user, const Q
 	ChannelFrame *frame = getChannelFrame(channel);
 
 	if (frame) frame->userPart(user, reason);
+
+	updateSystrayIcon(channel, user, "");
 }
 
 void MainWindow::onUserPriv(const QString &channel, const QString &user, const QString &by, const QString &pc)
@@ -282,6 +288,8 @@ void MainWindow::onPartChannel(const QString &channel, const QString &reason)
 void MainWindow::onError(const QString &error)
 {
 	serverBrowser->append(QString("<div class=\"error\">%1</div>").arg(error));
+
+	updateSystrayIcon("", "", "");
 }
 
 bool MainWindow::createChannelFrame(const QString &channel)
@@ -313,14 +321,12 @@ bool MainWindow::removeChannelFrame(const QString &channel)
 	return false;
 }
 
-ChannelFrame* MainWindow::getChannelFrame(const QString &channel, bool *focused)
+ChannelFrame* MainWindow::getChannelFrame(const QString &channel)
 {
 	for(int i = 0; i < channelsWidget->count(); ++i)
 	{
 		if (channelsWidget->tabText(i) == channel)
 		{
-			if (focused) *focused = channelsWidget->currentIndex() == i;
-
 			return qobject_cast<ChannelFrame*>(channelsWidget->widget(i));
 		}
 	}
@@ -354,7 +360,24 @@ void MainWindow::onChannelFocus(int index)
 
 		ChannelFrame *frame = qobject_cast<ChannelFrame*>(channelsWidget->widget(i));
 
-		if (frame) frame->setFocus(focused);
+		if (frame)
+		{
+			frame->setFocus(focused);
+
+			if (focused)
+			{
+				SystrayIcon::getInstance()->setStatus(frame->getChannel(), StatusNormal);
+				channelsWidget->tabBar()->setTabTextColor(i, QColor(QColor::Invalid));
+			}
+		}
+		else
+		{
+			if (focused)
+			{
+				SystrayIcon::getInstance()->setStatus("", StatusNormal);
+				channelsWidget->tabBar()->setTabTextColor(i, QColor(QColor::Invalid));
+			}
+		}
 	}
 }
 
@@ -392,5 +415,55 @@ void MainWindow::onRequestDAmnToken()
 	else
 	{
 		onConnect();
+	}
+}
+
+void MainWindow::updateSystrayIcon(const QString &channel, const QString &user, const QString &html)
+{
+	ChannelFrame *frame = NULL;
+	int index = 0;
+	bool found = false;
+	
+	for(int i = 0; i < channelsWidget->count(); ++i)
+	{
+		frame = qobject_cast<ChannelFrame*>(channelsWidget->widget(i));
+
+		if (frame)
+		{
+			if (frame->getChannel() == channel)
+			{
+				index = i;
+				found = true;
+				break;
+			}
+		}
+		else
+		{
+			index = i;
+		}
+	}
+
+	// server tab
+	if (!found)
+	{
+		if (index == channelsWidget->currentIndex()) return;
+	}
+	else
+	{
+		if (frame && frame->getFocus()) return;
+	}
+
+	QString login = ConfigFile::getInstance()->getLogin().toLower();
+
+	// don't alert if we talk to ourself
+	if (login == user.toLower()) return;
+
+	SystrayStatus oldStatus = SystrayIcon::getInstance()->getStatus(channel);
+	SystrayStatus newStatus = html.toLower().indexOf(login) > -1 ? StatusTalkMe:StatusTalkOther;
+
+	if (newStatus > oldStatus)
+	{
+		SystrayIcon::getInstance()->setStatus(channel, newStatus);
+		channelsWidget->tabBar()->setTabTextColor(index, newStatus == StatusTalkMe ? Qt::red:Qt::blue);
 	}
 }

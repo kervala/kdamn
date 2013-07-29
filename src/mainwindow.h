@@ -36,7 +36,7 @@ public:
 	void autoConnect();
 	bool createChannelFrame(const QString &channel);
 	bool removeChannelFrame(const QString &channel);
-	ChannelFrame* getChannelFrame(const QString &channel, bool *focused = NULL);
+	ChannelFrame* getChannelFrame(const QString &channel);
 	ChannelFrame* getCurrentChannelFrame();
 
 	void setSystem(const QString &text);
@@ -75,6 +75,7 @@ public slots:
 
 protected:
 	void closeEvent(QCloseEvent *event);
+	void updateSystrayIcon(const QString &channel, const QString &user, const QString &html);
 };
 
 #endif
