@@ -19,8 +19,8 @@
 
 #include "common.h"
 #include "connectdialog.h"
-#include "configfile.h"
 #include "moc_connectdialog.cpp"
+#include "configfile.h"
 
 #ifdef HAVE_CONFIG_H
 	#include "config.h"
@@ -36,10 +36,29 @@ ConnectDialog::ConnectDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt::W
 
 	loginEdit->setText(ConfigFile::getInstance()->getLogin());
 	passwordEdit->setText(ConfigFile::getInstance()->getPassword());
-	tokenEdit->setText(ConfigFile::getInstance()->getDAmnToken());
 	rememberPasswordBox->setChecked(ConfigFile::getInstance()->isRememberPassword());
+	tokenEdit->setText(ConfigFile::getInstance()->getDAmnToken());
+	oauth2MethodButton->setChecked(ConfigFile::getInstance()->getDAmnTokenMethod() == MethodOAuth2);
 }
 
 ConnectDialog::~ConnectDialog()
 {
+}
+
+void ConnectDialog::accept()
+{
+	QString login = loginEdit->text();
+	QString password = passwordEdit->text();
+	QString token = tokenEdit->text();
+	bool oauth2 = oauth2MethodButton->isChecked();
+	DAmnTokenMethod method = oauth2 ? MethodOAuth2:MethodSite;
+	bool remember = rememberPasswordBox->isChecked();
+
+	ConfigFile::getInstance()->setLogin(login);
+	ConfigFile::getInstance()->setPassword(remember ? password:"");
+	ConfigFile::getInstance()->rememberPassword(remember);
+	ConfigFile::getInstance()->setDAmnToken(token);
+	ConfigFile::getInstance()->setDAmnTokenMethod(method);
+
+	QDialog::accept();
 }

@@ -30,11 +30,8 @@ public:
 	ConnectDialog(QWidget* parent);
 	virtual ~ConnectDialog();
 
-	QString getLogin() const { return loginEdit->text(); }
-	QString getPassword() const { return passwordEdit->text(); }
-	QString getToken() const { return tokenEdit->text(); }
-
-	bool isRememberPassword() const { return rememberPasswordBox->isChecked(); }
+public Q_SLOTS:
+	virtual void accept();
 };
 
 #endif
