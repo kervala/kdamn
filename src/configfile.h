@@ -20,7 +20,7 @@
 #ifndef CONFIGFILE_H
 #define CONFIGFILE_H
 
-struct ConfigChannel
+struct ConfigRoom
 {
 	QString name;
 	bool autoconnect;
@@ -30,7 +30,7 @@ struct ConfigChannel
 
 	int value;
 
-	ConfigChannel()
+	ConfigRoom()
 	{
 		autoconnect = false;
 		connected = false;
@@ -42,6 +42,12 @@ struct ConfigChannel
 
 	void updateToValue()
 	{
+		value = 0;
+
+		value |= autoconnect ? 1:0;
+		value |= connected ? 2:0;
+		value |= focused ? 4:0;
+		order |= value << 8;
 	}
 
 	void updateFromValue()
@@ -53,8 +59,14 @@ struct ConfigChannel
 	}
 };
 
-typedef QList<ConfigChannel> ConfigChannels;
-typedef ConfigChannels::iterator ConfigChannelsIterator;
+enum DAmnTokenMethod
+{
+	MethodOAuth2,
+	MethodSite
+};
+
+typedef QList<ConfigRoom> ConfigRooms;
+typedef ConfigRooms::iterator ConfigRoomsIterator;
 
 class ConfigFile : public QObject
 {
@@ -81,16 +93,22 @@ public:
 	QString getDAmnToken() const;
 	void setDAmnToken(const QString &token);
 
-	ConfigChannels getChannels() const;
-	ConfigChannelsIterator getChannel(const QString &name, bool insert = false);
-	void setChannelValue(const QString &channel, int value);
-	void setChannelAutoConnect(const QString &channel, bool autoconnect);
-	void setChannelConnected(const QString &channel, bool connected);
-	void setChannelFocused(const QString &channel, bool focused);
-	void setChannelOrder(const QString &channel, int order);
+	DAmnTokenMethod getDAmnTokenMethod() const;
+	void setDAmnTokenMethod(DAmnTokenMethod method);
+
+	ConfigRooms getRooms() const;
+	ConfigRoomsIterator getRoom(const QString &name, bool insert = false);
+	void setRoomValue(const QString &room, int value);
+	void setRoomAutoConnect(const QString &room, bool autoconnect);
+	void setRoomConnected(const QString &room, bool connected);
+	void setRoomFocused(const QString &room, bool focused);
+	void setRoomOrder(const QString &room, int order);
 
 private:
 	static ConfigFile* s_instance;
+
+	bool loadVersion1();
+	bool loadVersion2();
 
 	QSettings m_settings;
 
@@ -98,7 +116,8 @@ private:
 	QString m_password;
 	bool m_rememberPassword;
 	QString m_damnToken;
-	ConfigChannels m_channels;
+	DAmnTokenMethod m_method;
+	ConfigRooms m_rooms;
 };
 
 #endif

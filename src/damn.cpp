@@ -19,7 +19,7 @@
 
 #include "common.h"
 #include "damn.h"
-#include "damnchannel.h"
+#include "damnroom.h"
 #include "damnuser.h"
 #include "oauth2.h"
 
@@ -39,7 +39,7 @@ DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_readbuffer(NULL),
 DAmn::~DAmn()
 {
 	foreach(WaitingMessage *msg, m_waitingMessages) delete msg;
-	foreach(DAmnChannel *channel, m_channels) delete channel;
+	foreach(DAmnRoom *room, m_rooms) delete room;
 	foreach(DAmnUser *user, m_users) delete user;
 
 	delete [] m_readbuffer;
@@ -138,7 +138,7 @@ bool DAmn::downloadImage(DAmnImage &image)
 bool DAmn::updateWaitingMessages(const QString &md5)
 {
 	QString filename;
-	QStringList channels;
+	QStringList rooms;
 
 	foreach(WaitingMessage *msg, m_waitingMessages)
 	{
@@ -164,7 +164,7 @@ bool DAmn::updateWaitingMessages(const QString &md5)
 					filename = it->localUrl;
 				}
 
-				if (!channels.contains(msg->channel)) channels << msg->channel;
+				if (!rooms.contains(msg->room)) rooms << msg->room;
 			}
 
 			++it;
@@ -173,7 +173,7 @@ bool DAmn::updateWaitingMessages(const QString &md5)
 		// check if all images have been downloaded
 		if (total == downloaded)
 		{
-			emit textReceived(msg->channel, msg->from, msg->type, msg->html, true);
+			emit textReceived(msg->room, msg->from, msg->type, msg->html, true);
 
 			m_waitingMessages.removeAll(msg);
 
@@ -220,37 +220,37 @@ bool DAmn::read()
 	return true;
 }
 
-DAmnChannel* DAmn::createChannel(const QString &channel)
+DAmnRoom* DAmn::createRoom(const QString &room)
 {
-	DAmnChannel *chan = getChannel(channel);
+	DAmnRoom *chan = getRoom(room);
 
 	// already exists
 	if (chan) return chan;
 
-	chan = new DAmnChannel(channel, this);
+	chan = new DAmnRoom(room, this);
 
-	m_channels << chan;
+	m_rooms << chan;
 
 	return chan;
 }
 
-bool DAmn::removeChannel(const QString &channel)
+bool DAmn::removeRoom(const QString &room)
 {
-	DAmnChannel *chan = getChannel(channel);
+	DAmnRoom *chan = getRoom(room);
 
 	// doesn't exist
 	if (!chan) return false;
 
-	m_channels.removeAll(chan);
+	m_rooms.removeAll(chan);
 
 	delete chan;
 
 	return true;
 }
 
-DAmnChannel* DAmn::getChannel(const QString &channel)
+DAmnRoom* DAmn::getRoom(const QString &room)
 {
-	foreach(DAmnChannel *chan, m_channels) if (chan->getName().toLower() == channel.toLower()) return chan;
+	foreach(DAmnRoom *chan, m_rooms) if (chan->getName().toLower() == room.toLower()) return chan;
 
 	return NULL;
 }

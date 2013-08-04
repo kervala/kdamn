@@ -22,7 +22,7 @@
 
 struct DAmnConnection
 {
-	QString channel;
+	QString room;
 	int online;
 	int idle;
 };

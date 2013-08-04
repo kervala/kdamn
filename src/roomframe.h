@@ -17,22 +17,22 @@
  *
  */
 
-#ifndef CHANNELFRAME_H
-#define CHANNELFRAME_H
+#ifndef ROOMFRAME_H
+#define ROOMFRAME_H
 
-#include "ui_channelframe.h"
+#include "ui_roomframe.h"
 
-#include <QFrame>
+#include "tabframe.h"
 
 struct DAmnMember;
 
-class ChannelFrame : public QFrame, public Ui::ChannelFrame
+class RoomFrame : public TabFrame, public Ui::RoomFrame
 {
 	Q_OBJECT
 
 public:
-	ChannelFrame(QWidget *parent, const QString &channel);
-	virtual ~ChannelFrame();
+	RoomFrame(QWidget *parent, const QString &room);
+	virtual ~RoomFrame();
 
 	void setAction(const QString &user, const QString &text);
 	void setText(const QString &user, const QString &text);
@@ -42,51 +42,17 @@ public:
 	void userJoin(const QString &user);
 	void userPart(const QString &user, const QString &reason);
 
-	QString getChannel() const { return m_channel; }
+	QString getRoom() const { return m_room; }
 
-	void startAnimations(const QString &html);
-	bool addAnimation(const QString &url);
-
-	bool getFocus() const;
-	void setFocus(bool focus);
+	bool setFocus(bool focus);
 
 public slots:
 	// when user press enter
 	void onSend();
 
-	// when user click on a link
-	void onUrl(const QUrl &url);
-
-	void animate(int frame);
-
 protected:
-	QString getTimestamp() const;
-
 	QStringListModel *m_usersModel;
-	QString m_channel;
-	QHash<QMovie*, QUrl> m_urls;
-	bool m_focus;
-};
-
-class AnimationStart : public QObject
-{
-	Q_OBJECT
-
-public:
-	AnimationStart(const QString &url, ChannelFrame *frame):QObject(frame), m_url(url), m_frame(frame)
-	{
-		QTimer::singleShot(1000, this, SLOT(timeout()));
-	}
-
-public slots:
-	void timeout()
-	{
-		m_frame->addAnimation(m_url);
-	}
-
-private:
-	ChannelFrame *m_frame;
-	QString m_url;
+	QString m_room;
 };
 
 #endif

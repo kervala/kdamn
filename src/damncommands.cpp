@@ -48,12 +48,12 @@ bool DAmn::login()
 	return true;
 }
 
-bool DAmn::join(const QString &channel)
+bool DAmn::join(const QString &room)
 {
-	if (channel.isEmpty()) return false;
+	if (room.isEmpty()) return false;
 
 	begin();
-	writeLine(QString("join chat:%1").arg(channel));
+	writeLine(QString("join chat:%1").arg(room));
 	end();
 
 	return true;
@@ -70,16 +70,16 @@ bool DAmn::joinPrivate(const QStringList &users)
 	return true;
 }
 
-bool DAmn::part(const QString &channel)
+bool DAmn::part(const QString &room)
 {
 	begin();
-	writeLine(QString("part chat:%1").arg(channel));
+	writeLine(QString("part chat:%1").arg(room));
 	end();
 
 	return true;
 }
 
-bool DAmn::partPrivate(const QString &channel, const QStringList &users)
+bool DAmn::partPrivate(const QStringList &users)
 {
 	begin();
 	writeLine("part pchat:" + users.join(":"));
@@ -97,9 +97,9 @@ bool DAmn::pong()
 	return true;
 }
 
-bool DAmn::sendMessage(const QString &channel, const QString &text)
+bool DAmn::sendMessage(const QString &room, const QString &text)
 {
-	sendChat(channel);
+	sendChat(room);
 
 	writeLine("msg main");
 	writeLine();
@@ -109,9 +109,9 @@ bool DAmn::sendMessage(const QString &channel, const QString &text)
 	return true;
 }
 
-bool DAmn::sendAction(const QString &channel, const QString &text)
+bool DAmn::sendAction(const QString &room, const QString &text)
 {
-	sendChat(channel);
+	sendChat(room);
 
 	writeLine("action main");
 	writeLine();
@@ -121,9 +121,9 @@ bool DAmn::sendAction(const QString &channel, const QString &text)
 	return true;
 }
 
-bool DAmn::sendNonParsedMessage(const QString &channel, const QString &text)
+bool DAmn::sendNonParsedMessage(const QString &room, const QString &text)
 {
-	sendChat(channel);
+	sendChat(room);
 
 	writeLine("npmsg main");
 	writeLine();
@@ -133,9 +133,9 @@ bool DAmn::sendNonParsedMessage(const QString &channel, const QString &text)
 	return true;
 }
 
-bool DAmn::promote(const QString &channel, const QString &username, const QString &privclass)
+bool DAmn::promote(const QString &room, const QString &username, const QString &privclass)
 {
-	sendChat(channel);
+	sendChat(room);
 
 	writeLine("promote " + username);
 
@@ -150,9 +150,9 @@ bool DAmn::promote(const QString &channel, const QString &username, const QStrin
 	return true;
 }
 
-bool DAmn::demote(const QString &channel, const QString &username, const QString &privclass)
+bool DAmn::demote(const QString &room, const QString &username, const QString &privclass)
 {
-	sendChat(channel);
+	sendChat(room);
 
 	writeLine("demote " + username);
 
@@ -167,9 +167,9 @@ bool DAmn::demote(const QString &channel, const QString &username, const QString
 	return true;
 }
 
-bool DAmn::ban(const QString &channel, const QString &username)
+bool DAmn::ban(const QString &room, const QString &username)
 {
-	sendChat(channel);
+	sendChat(room);
 
 	writeLine("ban " + username);
 	end();
@@ -177,9 +177,9 @@ bool DAmn::ban(const QString &channel, const QString &username)
 	return true;
 }
 
-bool DAmn::unban(const QString &channel, const QString &username)
+bool DAmn::unban(const QString &room, const QString &username)
 {
-	sendChat(channel);
+	sendChat(room);
 
 	writeLine("unban " + username);
 	end();
@@ -187,10 +187,10 @@ bool DAmn::unban(const QString &channel, const QString &username)
 	return true;
 }
 
-bool DAmn::kick(const QString &channel, const QString &username, const QString &reason)
+bool DAmn::kick(const QString &room, const QString &username, const QString &reason)
 {
 	begin();
-	writeLine("kick chat:" + channel);
+	writeLine("kick chat:" + room);
 	writeLine("u=" + username);
 
 	if (!reason.isEmpty())
@@ -204,11 +204,11 @@ bool DAmn::kick(const QString &channel, const QString &username, const QString &
 	return true;
 }
 
-bool DAmn::getChatProperty(const QString &channel, const QString &prop)
+bool DAmn::getChatProperty(const QString &room, const QString &prop)
 {
 	// title topic privclasses members
 	begin();
-	writeLine("get chat:" + channel);
+	writeLine("get chat:" + room);
 	writeLine("p=" + prop);
 	end();
 
@@ -225,11 +225,11 @@ bool DAmn::getUserInfo(const QString &username)
 	return true;
 }
 
-bool DAmn::setChatProperty(const QString &channel, const QString &prop, const QString &value)
+bool DAmn::setChatProperty(const QString &room, const QString &prop, const QString &value)
 {
 	// title topic
 	begin();
-	writeLine("set chat:" + channel);
+	writeLine("set chat:" + room);
 	writeLine("p=" + prop);
 	writeLine();
 	writeLine(value);
@@ -238,9 +238,9 @@ bool DAmn::setChatProperty(const QString &channel, const QString &prop, const QS
 	return true;
 }
 
-bool DAmn::admin(const QString &channel, const QString &command)
+bool DAmn::admin(const QString &room, const QString &command)
 {
-	sendChat(channel);
+	sendChat(room);
 
 	writeLine("admin");
 	writeLine();
@@ -275,16 +275,16 @@ bool DAmn::kill(const QString &username, const QString &reason)
 	return true;
 }
 
-bool DAmn::sendChat(const QString &channel)
+bool DAmn::sendChat(const QString &room)
 {
 	begin();
-	writeLine("send chat:" + channel);
+	writeLine("send chat:" + room);
 	writeLine();
 
 	return true;
 }
 
-bool DAmn::send(const QString &channel, const QString &text)
+bool DAmn::send(const QString &room, const QString &text)
 {
 	if (!text.isEmpty() && text[0] == '/')
 	{
@@ -295,19 +295,19 @@ bool DAmn::send(const QString &channel, const QString &text)
 			QString cmd(reg.cap(1));
 			QString msg(reg.cap(3));
 
-			if (cmd == "me") return sendAction(channel, msg);
-			if (cmd == "part") return part(channel);
+			if (cmd == "me") return sendAction(room, msg);
+			if (cmd == "part") return part(room);
 			if (cmd == "whois") return getUserInfo(msg);
-			if (cmd == "topic") return setChatProperty(channel, "topic", msg);
-			if (cmd == "title") return setChatProperty(channel, "title", msg);
+			if (cmd == "topic") return setChatProperty(room, "topic", msg);
+			if (cmd == "title") return setChatProperty(room, "title", msg);
 			if (cmd == "join") return join(msg);
-			if (cmd == "part") return part(msg.isEmpty() ? channel:msg);
-			if (cmd == "demote") return demote(channel, msg); // TODO: parse 3rd parameter
-			if (cmd == "promote") return promote(channel, msg); // TODO: parse 3rd parameter
-			if (cmd == "kick") return kick(channel, msg); // TODO: parse 3rd parameter
-			if (cmd == "ban") return ban(channel, msg);
-			if (cmd == "unban") return unban(channel, msg);
-			if (cmd == "admin") return admin(channel, msg);
+			if (cmd == "part") return part(msg.isEmpty() ? room:msg);
+			if (cmd == "demote") return demote(room, msg); // TODO: parse 3rd parameter
+			if (cmd == "promote") return promote(room, msg); // TODO: parse 3rd parameter
+			if (cmd == "kick") return kick(room, msg); // TODO: parse 3rd parameter
+			if (cmd == "ban") return ban(room, msg);
+			if (cmd == "unban") return unban(room, msg);
+			if (cmd == "admin") return admin(room, msg);
 			if (cmd == "clear") return true;
 			if (cmd == "stats")
 			{
@@ -341,14 +341,14 @@ bool DAmn::send(const QString &channel, const QString &text)
 		}
 	}
 
-	return sendMessage(channel, text);
+	return sendMessage(room, text);
 }
 
-bool DAmn::send(const QString &channel, const QStringList &lines)
+bool DAmn::send(const QString &room, const QStringList &lines)
 {
 	foreach(const QString &line, lines)
 	{
-		send(channel, line);
+		send(room, line);
 	}
 
 	return true;

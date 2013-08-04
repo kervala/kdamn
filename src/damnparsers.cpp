@@ -18,7 +18,7 @@
  */
 
 #include "common.h"
-#include "damnchannel.h"
+#include "damnroom.h"
 #include "damnuser.h"
 #include "damn.h"
 
@@ -228,18 +228,18 @@ bool DAmn::parsePing(const QStringList &lines)
 	return pong();
 }
 
-bool DAmn::parseText(const QString &channel, const QString &from, MessageType type, const QStringList &lines, int &i, QString &html, QString &text)
+bool DAmn::parseText(const QString &room, const QString &from, MessageType type, const QStringList &lines, int &i, QString &html, QString &text)
 {
 	DAmnImages images;
 
 	if (replaceTablumps(lines[i], html, text, images) && m_waitingMessages.isEmpty())
 	{
-		emit textReceived(channel, from, type, html, true);
+		emit textReceived(room, from, type, html, true);
 	}
 	else
 	{
 		WaitingMessage *message = new WaitingMessage();
-		message->channel = channel;
+		message->room = room;
 		message->from = from;
 		message->html = html;
 		message->images = images;
@@ -248,14 +248,14 @@ bool DAmn::parseText(const QString &channel, const QString &from, MessageType ty
 		m_waitingMessages << message;
 	}
 
-	emit textReceived(channel, from, type, text, false);
+	emit textReceived(room, from, type, text, false);
 
 	++i;
 
 	return true;
 }
 
-bool DAmn::parseJoin(const QString &channel, const QString &user, bool show, const QStringList &lines, int &i)
+bool DAmn::parseJoin(const QString &room, const QString &user, bool show, const QStringList &lines, int &i)
 {
 	// to be sure it's not an alias
 	DAmnUser *u = new DAmnUser(user, this);
@@ -269,38 +269,38 @@ bool DAmn::parseJoin(const QString &channel, const QString &user, bool show, con
 
 	m_users << u;
 
-	DAmnChannel *c = getChannel(channel);
+	DAmnRoom *c = getRoom(room);
 
 	if (!c) return false;
 
-	if (c->addUser(user)) emit userJoined(channel, user, show);
+	if (c->addUser(user)) emit userJoined(room, user, show);
 
 	return true;
 }
 
-bool DAmn::parsePart(const QString &channel, const QString &user, bool show, const QString &reason, const QStringList &lines, int &i)
+bool DAmn::parsePart(const QString &room, const QString &user, bool show, const QString &reason, const QStringList &lines, int &i)
 {
-	DAmnChannel *c = getChannel(channel);
+	DAmnRoom *c = getRoom(room);
 
 	if (!c) return false;
 
 	if (c->removeUser(user))
 	{
-		emit userParted(channel, user, reason, show);
+		emit userParted(room, user, reason, show);
 	}
 
 	return true;
 }
 
-bool DAmn::parsePriv(const QString &channel, const QString &user, bool show, const QString &by, const QString &pc, const QStringList &lines, int &i)
+bool DAmn::parsePriv(const QString &room, const QString &user, bool show, const QString &by, const QString &pc, const QStringList &lines, int &i)
 {
-	if (show) emit userPrivChanged(channel, user, by, pc);
+	if (show) emit userPrivChanged(room, user, by, pc);
 
-	DAmnChannel *c = getChannel(channel);
+	DAmnRoom *c = getRoom(room);
 
 	if (!c) return false;
 
-	DAmnChannelUser member;
+	DAmnRoomUser member;
 	member.name = user;
 	member.pc = pc;
 	member.by = by;
@@ -320,19 +320,19 @@ bool DAmn::parseRecv(const QStringList &lines)
 
 	if (p.params[0] == "chat")
 	{
-		QString channel = p.params[1];
+		QString room = p.params[1];
 		QString html, text;
 
 		// text
-		if (parsePacket("msg", lines, i, p)) return parseText(channel, p.args["from"], MessageText, lines, i, html, text);
-		if (parsePacket("action", lines, i, p))	return parseText(channel, p.args["from"], MessageAction, lines, i, html, text);
+		if (parsePacket("msg", lines, i, p)) return parseText(room, p.args["from"], MessageText, lines, i, html, text);
+		if (parsePacket("action", lines, i, p))	return parseText(room, p.args["from"], MessageAction, lines, i, html, text);
 
 		// join/part messages
-		if (parsePacket("join", lines, i, p)) return parseJoin(channel, p.params[0], p.args["s"] == "1", lines, i);
-		if (parsePacket("part", lines, i, p)) return parsePart(channel, p.params[0], p.args["s"] == "1", p.args["r"], lines, i);
+		if (parsePacket("join", lines, i, p)) return parseJoin(room, p.params[0], p.args["s"] == "1", lines, i);
+		if (parsePacket("part", lines, i, p)) return parsePart(room, p.params[0], p.args["s"] == "1", p.args["r"], lines, i);
 
 		// promote/demote
-		if (parsePacket("privchg", lines, i, p)) return parsePriv(channel, p.params[0], p.args["i"] == "1", p.args["by"], p.args["pc"], lines, i);
+		if (parsePacket("privchg", lines, i, p)) return parsePriv(room, p.params[0], p.args["i"] == "1", p.args["by"], p.args["pc"], lines, i);
 	}
 
 	emit errorReceived(tr("Unable to recognize param %1").arg(p.params[0]));
@@ -365,9 +365,9 @@ bool DAmn::parseJoin(const QStringList &lines)
 
 	if (p.params[0] == "chat")
 	{
-		createChannel(p.params[1]);
+		createRoom(p.params[1]);
 
-		emit channelJoined(p.params[1]);
+		emit roomJoined(p.params[1]);
 	}
 	else if (p.params[0] == "pchat")
 	{
@@ -387,20 +387,20 @@ bool DAmn::parsePart(const QStringList &lines)
 
 	if (!parseError(p.args["e"])) return true;
 
-	removeChannel(p.params[1]);
+	removeRoom(p.params[1]);
 
-	emit channelParted(p.params[1], p.args["p"]);
+	emit roomParted(p.params[1], p.args["p"]);
 
 	return true;
 }
 
-bool DAmn::parseChannelProperty(const QString &channel, const DAmnProperties &props, const QStringList &lines, int &i)
+bool DAmn::parseRoomProperty(const QString &room, const DAmnProperties &props, const QStringList &lines, int &i)
 {
-	DAmnChannel *chan = getChannel(channel);
+	DAmnRoom *chan = getRoom(room);
 
 	if (!chan) return false;
 
-	DAmnChannelProperty prop;
+	DAmnRoomProperty prop;
 	prop.name = props["p"];
 	prop.by = props["by"];
 	prop.ts = props["ts"];
@@ -420,18 +420,18 @@ bool DAmn::parseChannelProperty(const QString &channel, const DAmnProperties &pr
 		emit errorReceived(tr("Unable to recognize property: %1").arg(prop.name));
 	}
 
-	parseText(channel, prop.by, type, lines, i, prop.html, prop.text);
+	parseText(room, prop.by, type, lines, i, prop.html, prop.text);
 
 	chan->setProperty(prop);
 
 	return true;
 }
 
-bool DAmn::parseChannelMembers(const QString &channel, const QStringList &lines, int &i)
+bool DAmn::parseRoomMembers(const QString &room, const QStringList &lines, int &i)
 {
-	DAmnChannel *chan = getChannel(channel);
+	DAmnRoom *chan = getRoom(room);
 
-	// channel doesn't exist
+	// room doesn't exist
 	if (!chan) return false;
 
 	QStringList list;
@@ -454,8 +454,8 @@ bool DAmn::parseChannelMembers(const QString &channel, const QStringList &lines,
 		user->setRealName(p.args["realname"]);
 		user->setGPC(p.args["gpc"]);
 
-		// add member to channel
-		DAmnChannelUser member;
+		// add member to room
+		DAmnRoomUser member;
 		member.name = p.params[0];
 		member.pc = p.args["pc"];
 		member.count = 1;
@@ -463,14 +463,14 @@ bool DAmn::parseChannelMembers(const QString &channel, const QStringList &lines,
 		if (chan->addUser(member)) list << member.name;
 	}
 
-	emit usersReceived(channel, list);
+	emit usersReceived(room, list);
 
 	return true;
 }
 
-bool DAmn::parseChannelPrivClasses(const QString &channel, const QStringList &lines, int &i)
+bool DAmn::parseRoomPrivClasses(const QString &room, const QStringList &lines, int &i)
 {
-	DAmnChannel *chan = getChannel(channel);
+	DAmnRoom *chan = getRoom(room);
 
 	if (!chan) return false;
 
@@ -512,7 +512,7 @@ bool DAmn::parseConn(const QStringList &lines, int &i, DAmnConnection &conn)
 
 	if (reg.indexIn(lines[i])) return false;
 
-	conn.channel = reg.cap(1);
+	conn.room = reg.cap(1);
 
 	++i;
 	++i;
@@ -553,9 +553,9 @@ bool DAmn::parseProperty(const QStringList &lines)
 	if (p.params[0] == "chat")
 	{
 		// extract all arguments
-		if (prop == "members") return parseChannelMembers(p.params[1], lines, i);
-		if (prop == "privclasses") return parseChannelPrivClasses(p.params[1], lines, i);
-		if (prop == "topic" || prop == "title") return parseChannelProperty(p.params[1], p.args, lines, i);
+		if (prop == "members") return parseRoomMembers(p.params[1], lines, i);
+		if (prop == "privclasses") return parseRoomPrivClasses(p.params[1], lines, i);
+		if (prop == "topic" || prop == "title") return parseRoomProperty(p.params[1], p.args, lines, i);
 	}
 	else if (p.params[0] == "login")
 	{

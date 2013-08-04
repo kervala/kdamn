@@ -17,18 +17,18 @@
  *
  */
 
-#ifndef CHANNELSDIALOG_H
-#define CHANNELSDIALOG_H
+#ifndef ROOMSDIALOG_H
+#define ROOMSDIALOG_H
 
-#include "ui_channelsdialog.h"
+#include "ui_roomsdialog.h"
 
-class ChannelsDialog : public QDialog, public Ui::ChannelsDialog
+class RoomsDialog : public QDialog, public Ui::RoomsDialog
 {
 	Q_OBJECT
 
 public:
-	ChannelsDialog(QWidget* parent);
-	virtual ~ChannelsDialog();
+	RoomsDialog(QWidget* parent);
+	virtual ~RoomsDialog();
 };
 
 #endif

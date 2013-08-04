@@ -18,38 +18,38 @@
  */
 
 #include "common.h"
-#include "damnchannel.h"
+#include "damnroom.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
 #endif
 
-DAmnChannel::DAmnChannel(const QString &name, QObject *parent):QObject(parent), m_name(name)
+DAmnRoom::DAmnRoom(const QString &name, QObject *parent):QObject(parent), m_name(name)
 {
 }
 
-DAmnChannel::~DAmnChannel()
+DAmnRoom::~DAmnRoom()
 {
 }
 
-void DAmnChannel::setName(const QString &name)
+void DAmnRoom::setName(const QString &name)
 {
 	m_name = name;
 }
 
-QString DAmnChannel::getName() const
+QString DAmnRoom::getName() const
 {
 	return m_name;
 }
 
-bool DAmnChannel::hasSameName(const QString &name)
+bool DAmnRoom::hasSameName(const QString &name)
 {
 	return name.toLower() == m_name.toLower();
 }
 
-void DAmnChannel::setProperty(const DAmnChannelProperty &prop)
+void DAmnRoom::setProperty(const DAmnRoomProperty &prop)
 {
-	QList<DAmnChannelProperty>::iterator it = m_properties.begin();
+	QList<DAmnRoomProperty>::iterator it = m_properties.begin();
 
 	while(it != m_properties.end())
 	{
@@ -68,9 +68,9 @@ void DAmnChannel::setProperty(const DAmnChannelProperty &prop)
 	m_properties << prop;
 }
 
-bool DAmnChannel::getProperty(const QString &name, DAmnChannelProperty &prop) const
+bool DAmnRoom::getProperty(const QString &name, DAmnRoomProperty &prop) const
 {
-	foreach(const DAmnChannelProperty &p, m_properties)
+	foreach(const DAmnRoomProperty &p, m_properties)
 	{
 		if (p.name.toLower() == name.toLower())
 		{
@@ -82,18 +82,18 @@ bool DAmnChannel::getProperty(const QString &name, DAmnChannelProperty &prop) co
 	return false;
 }
 
-bool DAmnChannel::addUser(const QString &name)
+bool DAmnRoom::addUser(const QString &name)
 {
-	DAmnChannelUser user;
+	DAmnRoomUser user;
 	user.name = name;
 	user.count = 1;
 
 	return addUser(user);
 }
 
-bool DAmnChannel::addUser(const DAmnChannelUser &user)
+bool DAmnRoom::addUser(const DAmnRoomUser &user)
 {
-	DAmnChannelUsersIterator it = findUser(user.name);
+	DAmnRoomUsersIterator it = findUser(user.name);
 
 	if (it != m_users.end())
 	{
@@ -111,9 +111,9 @@ bool DAmnChannel::addUser(const DAmnChannelUser &user)
 	return true;
 }
 
-bool DAmnChannel::removeUser(const QString &name)
+bool DAmnRoom::removeUser(const QString &name)
 {
-	DAmnChannelUsersIterator it = findUser(name);
+	DAmnRoomUsersIterator it = findUser(name);
 
 	if (it == m_users.end()) return false;
 
@@ -124,14 +124,14 @@ bool DAmnChannel::removeUser(const QString &name)
 	return true;
 }
 
-void DAmnChannel::removeUsers()
+void DAmnRoom::removeUsers()
 {
 	m_users.clear();
 }
 
-bool DAmnChannel::setUser(const DAmnChannelUser &user)
+bool DAmnRoom::setUser(const DAmnRoomUser &user)
 {
-	DAmnChannelUsersIterator it = findUser(user.name);
+	DAmnRoomUsersIterator it = findUser(user.name);
 
 	if (it == m_users.end()) return false;
 
@@ -141,12 +141,12 @@ bool DAmnChannel::setUser(const DAmnChannelUser &user)
 	return true;
 }
 
-void DAmnChannel::removePrivClasses()
+void DAmnRoom::removePrivClasses()
 {
 	m_privclasses.clear();
 }
 
-bool DAmnChannel::setPrivClass(const DAmnPrivClass &priv)
+bool DAmnRoom::setPrivClass(const DAmnPrivClass &priv)
 {
 	DAmnPrivClassesIterator it = findPrivClass(priv.name);
 
@@ -162,9 +162,9 @@ bool DAmnChannel::setPrivClass(const DAmnPrivClass &priv)
 	return true;
 }
 
-DAmnChannelUsersIterator DAmnChannel::findUser(const QString &name)
+DAmnRoomUsersIterator DAmnRoom::findUser(const QString &name)
 {
-	DAmnChannelUsersIterator it = m_users.begin();
+	DAmnRoomUsersIterator it = m_users.begin();
 
 	while(it != m_users.end())
 	{
@@ -176,7 +176,7 @@ DAmnChannelUsersIterator DAmnChannel::findUser(const QString &name)
 	return it;
 }
 
-DAmnPrivClassesIterator DAmnChannel::findPrivClass(const QString &name)
+DAmnPrivClassesIterator DAmnRoom::findPrivClass(const QString &name)
 {
 	DAmnPrivClassesIterator it = m_privclasses.begin();
 

@@ -69,7 +69,7 @@ void DAmnUser::setGPC(const QString &gpc)
 
 bool DAmnUser::setConnection(const DAmnConnection &connection)
 {
-	DAmnConnectionsIterator it = findConnection(connection.channel);
+	DAmnConnectionsIterator it = findConnection(connection.room);
 
 	if (it != m_connections.end())
 	{
@@ -95,7 +95,7 @@ DAmnConnectionsIterator DAmnUser::findConnection(const QString &name)
 
 	while(it != m_connections.end())
 	{
-		if (it->channel.toLower() == name.toLower()) break;
+		if (it->room.toLower() == name.toLower()) break;
 
 		++it;
 	}

@@ -21,9 +21,6 @@
 #define MAINWINDOW_H
 
 #include "ui_mainwindow.h"
-#include "damn.h"
-
-class ChannelFrame;
 
 class MainWindow : public QMainWindow, public Ui::MainWindow
 {
@@ -34,48 +31,28 @@ public:
 	virtual ~MainWindow();
 
 	void autoConnect();
-	bool createChannelFrame(const QString &channel);
-	bool removeChannelFrame(const QString &channel);
-	ChannelFrame* getChannelFrame(const QString &channel);
-	ChannelFrame* getCurrentChannelFrame();
-
-	void setSystem(const QString &text);
 
 public slots:
 	// server menu
 	void onConnect();
 	void onDisconnect();
 
-	// channel menu
+	// room menu
 	void onJoin();
 	void onPart();
-	void onChannels();
+	void onRooms();
 
 	// help menu
 	void onAbout();
 	void onAboutQt();
 
-	// slots activated from DAmn signals
-	void onRequestDAmnToken();
-	void onText(const QString &channel, const QString &user, MessageType type, const QString &text, bool html);
-	void onReceiveAuthtoken(const QString &login, const QString &authtoken);
-	void onConnectServer();
-	void onUsers(const QString &channel, const QStringList &users);
-	void onJoinChannel(const QString &channel);
-	void onPartChannel(const QString &channel, const QString &reason);
-	void onUserJoin(const QString &channel, const QString &user, bool show);
-	void onUserPart(const QString &channel, const QString &user, const QString &reason, bool show);
-	void onUserPriv(const QString &channel, const QString &user, const QString &by, const QString &pc);
-	void onError(const QString &error);
-
 	// other
 	void trayActivated(QSystemTrayIcon::ActivationReason reseaon);
-	void onChannelFocus(int index);
-	void onFocus(QWindow *window);
 
 protected:
 	void closeEvent(QCloseEvent *event);
-	void updateSystrayIcon(const QString &channel, const QString &user, const QString &html);
+	bool event(QEvent *e);
+
 };
 
 #endif

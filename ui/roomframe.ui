@@ -27,8 +27,11 @@
     <number>2</number>
    </property>
    <item>
-    <widget class="QSplitter" name="channelSplitter">
-     <widget class="QTextBrowser" name="outputBrowser">
+    <widget class="QSplitter" name="roomsSplitter">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <widget class="ChatWidget" name="outputBrowser">
       <property name="horizontalScrollBarPolicy">
        <enum>Qt::ScrollBarAlwaysOff</enum>
       </property>
@@ -56,6 +59,11 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>ChatWidget</class>
+   <extends>QTextBrowser</extends>
+   <header>chatwidget.h</header>
+  </customwidget>
   <customwidget>
    <class>InputEdit</class>
    <extends>QLineEdit</extends>

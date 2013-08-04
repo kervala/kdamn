@@ -17,23 +17,23 @@
  *
  */
 
-#ifndef JOINCHANNELDIALOG_H
-#define JOINCHANNELDIALOG_H
+#ifndef JOINROOMDIALOG_H
+#define JOINROOMDIALOG_H
 
-#include "ui_joinchanneldialog.h"
+#include "ui_joinroomdialog.h"
 
-class JoinChannelDialog : public QDialog, public Ui::JoinChannelDialog
+class JoinRoomDialog : public QDialog, public Ui::JoinRoomDialog
 {
 	Q_OBJECT
 
 public:
-	JoinChannelDialog(QWidget* parent);
-	virtual ~JoinChannelDialog();
+	JoinRoomDialog(QWidget* parent);
+	virtual ~JoinRoomDialog();
 
-	QString getChannel() const;
+	QString getRoom() const;
 
 public slots:
-	void onChannel(const QModelIndex &index);
+	void onRoom(const QModelIndex &index);
 };
 
 #endif

@@ -17,29 +17,29 @@
  *
  */
 
-#ifndef DAMNCHANNEL_H
-#define DAMNCHANNEL_H
+#ifndef DAMNROOM_H
+#define DAMNROOM_H
 
-struct DAmnChannelUser
+struct DAmnRoomUser
 {
 	QString name;
 	QString pc;
 	QString by;
 	int count;
 
-	DAmnChannelUser()
+	DAmnRoomUser()
 	{
 		count = 0;
 	}
 
-	bool operator == (const DAmnChannelUser &other)
+	bool operator == (const DAmnRoomUser &other)
 	{
 		return other.name.toLower() == name.toLower();
 	}
 };
 
-typedef QList<DAmnChannelUser> DAmnChannelUsers;
-typedef DAmnChannelUsers::iterator DAmnChannelUsersIterator;
+typedef QList<DAmnRoomUser> DAmnRoomUsers;
+typedef DAmnRoomUsers::iterator DAmnRoomUsersIterator;
 
 struct DAmnPrivClass
 {
@@ -50,7 +50,7 @@ struct DAmnPrivClass
 typedef QList<DAmnPrivClass> DAmnPrivClasses;
 typedef DAmnPrivClasses::iterator DAmnPrivClassesIterator;
 
-struct DAmnChannelProperty
+struct DAmnRoomProperty
 {
 	QString name;
 	QString html;
@@ -59,45 +59,45 @@ struct DAmnChannelProperty
 	QString ts;
 };
 
-typedef QList<DAmnChannelProperty> DAmnChannelProperties;
-typedef DAmnChannelProperties::iterator DAmnChannelPropertiesIterator;
+typedef QList<DAmnRoomProperty> DAmnRoomProperties;
+typedef DAmnRoomProperties::iterator DAmnRoomPropertiesIterator;
 
-class DAmnChannel : public QObject
+class DAmnRoom : public QObject
 {
 	Q_OBJECT
 
 public:
-	DAmnChannel(const QString &name, QObject *parent);
-	virtual ~DAmnChannel();
+	DAmnRoom(const QString &name, QObject *parent);
+	virtual ~DAmnRoom();
 
 	void setName(const QString &name);
 	QString getName() const;
 
 	bool hasSameName(const QString &name);
 
-	void setProperty(const DAmnChannelProperty &prop);
-	bool getProperty(const QString &name, DAmnChannelProperty &prop) const;
+	void setProperty(const DAmnRoomProperty &prop);
+	bool getProperty(const QString &name, DAmnRoomProperty &prop) const;
 
 	bool addUser(const QString &name);
-	bool addUser(const DAmnChannelUser &user);
+	bool addUser(const DAmnRoomUser &user);
 
 	bool removeUser(const QString &name);
 	void removeUsers();
 
-	bool setUser(const DAmnChannelUser &user);
+	bool setUser(const DAmnRoomUser &user);
 
 	void removePrivClasses();
 	bool setPrivClass(const DAmnPrivClass &priv);
 
 private:
-	DAmnChannelUsersIterator findUser(const QString &name);
+	DAmnRoomUsersIterator findUser(const QString &name);
 	DAmnPrivClassesIterator findPrivClass(const QString &name);
 
 	QString m_name;
 
-	DAmnChannelProperties m_properties;
+	DAmnRoomProperties m_properties;
 	DAmnPrivClasses m_privclasses;
-	DAmnChannelUsers m_users;
+	DAmnRoomUsers m_users;
 };
 
 #endif

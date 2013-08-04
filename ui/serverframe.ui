@@ -2,12 +2,29 @@
 <ui version="4.0">
  <class>ServerFrame</class>
  <widget class="QFrame" name="ServerFrame">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>256</width>
+    <height>192</height>
+   </rect>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
-   <property name="margin">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
     <number>0</number>
    </property>
    <item>
-    <widget class="QTextBrowser" name="serverBrowser">
+    <widget class="ChatWidget" name="serverBrowser">
      <property name="frameShape">
       <enum>QFrame::NoFrame</enum>
      </property>
@@ -18,6 +35,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ChatWidget</class>
+   <extends>QTextBrowser</extends>
+   <header>chatwidget.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -18,18 +18,18 @@
  */
 
 #include "common.h"
-#include "channelsdialog.h"
-#include "moc_channelsdialog.cpp"
+#include "roomsdialog.h"
+#include "moc_roomsdialog.cpp"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
 #endif
 
-ChannelsDialog::ChannelsDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt::WindowCloseButtonHint)
+RoomsDialog::RoomsDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt::WindowCloseButtonHint)
 {
 	setupUi(this);
 }
 
-ChannelsDialog::~ChannelsDialog()
+RoomsDialog::~RoomsDialog()
 {
 }

@@ -11,18 +11,18 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Join channel</string>
+   <string>Join room</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QLabel" name="joinRoomLabel">
      <property name="text">
-      <string>Please select or enter channel to join</string>
+      <string>Please select or enter room to join</string>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QListView" name="channelsView">
+    <widget class="QListView" name="roomsView">
      <property name="editTriggers">
       <set>QAbstractItemView::NoEditTriggers</set>
      </property>
@@ -32,7 +32,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QLineEdit" name="channelEdit"/>
+    <widget class="QLineEdit" name="roomEdit"/>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">

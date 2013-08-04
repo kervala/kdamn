@@ -58,7 +58,7 @@ typedef DAmnImages::iterator DAmnImagesIterator;
 
 struct WaitingMessage
 {
-	QString channel;
+	QString room;
 	QString from;
 	QString html;
 	DAmnImages images;
@@ -72,7 +72,7 @@ struct Tablump
 	QString tag;
 };
 
-class DAmnChannel;
+class DAmnRoom;
 class DAmnUser;
 
 struct DAmnConnection;
@@ -100,29 +100,29 @@ public slots:
 	// dAmn commands
 	bool client();
 	bool login();
-	bool join(const QString &channel);
+	bool join(const QString &room);
 	bool joinPrivate(const QStringList &users);
-	bool part(const QString &channel);
-	bool partPrivate(const QString &channel, const QStringList &users);
+	bool part(const QString &room);
+	bool partPrivate(const QStringList &users);
 	bool pong();
-	bool sendMessage(const QString &channel, const QString &text);
-	bool sendAction(const QString &channel, const QString &text);
-	bool sendNonParsedMessage(const QString &channel, const QString &text);
-	bool promote(const QString &channel, const QString &username, const QString &privclass = "");
-	bool demote(const QString &channel, const QString &username, const QString &privclass = "");
-	bool ban(const QString &channel, const QString &username);
-	bool unban(const QString &channel, const QString &username);
-	bool kick(const QString &channel, const QString &username, const QString &reason = "");
-	bool getChatProperty(const QString &channel, const QString &prop);
+	bool sendMessage(const QString &room, const QString &text);
+	bool sendAction(const QString &room, const QString &text);
+	bool sendNonParsedMessage(const QString &room, const QString &text);
+	bool promote(const QString &room, const QString &username, const QString &privclass = "");
+	bool demote(const QString &room, const QString &username, const QString &privclass = "");
+	bool ban(const QString &room, const QString &username);
+	bool unban(const QString &room, const QString &username);
+	bool kick(const QString &room, const QString &username, const QString &reason = "");
+	bool getChatProperty(const QString &room, const QString &prop);
 	bool getUserInfo(const QString &username);
-	bool setChatProperty(const QString &channel, const QString &prop, const QString &value);
-	bool admin(const QString &channel, const QString &command);
+	bool setChatProperty(const QString &room, const QString &prop, const QString &value);
+	bool admin(const QString &room, const QString &command);
 	bool disconnect();
 	bool kill(const QString &username, const QString &reason);
 
 	// implemented
-	bool send(const QString &channel, const QString &text);
-	bool send(const QString &channel, const QStringList &lines);
+	bool send(const QString &room, const QString &text);
+	bool send(const QString &room, const QStringList &lines);
 	void onError(QAbstractSocket::SocketError error);
 	bool read();
 	bool updateWaitingMessages(const QString &md5);
@@ -131,26 +131,26 @@ signals:
 	void authenticationFailed();
 	void serverConnected();
 
-	void textReceived(const QString &channel, const QString &user, MessageType type, const QString &text, bool html);
+	void textReceived(const QString &room, const QString &user, MessageType type, const QString &text, bool html);
 
 	void imageDownloaded(const QString &md5);
-	void channelJoined(const QString &channel);
-	void channelParted(const QString &channel, const QString &reason);
-	void userJoined(const QString &channel, const QString &user, bool show);
-	void userParted(const QString &channel, const QString &user, const QString &reason, bool show);
-	void userPrivChanged(const QString &channel, const QString &user, const QString &by, const QString &pc);
-	void usersReceived(const QString &channel, const QStringList &users);
+	void roomJoined(const QString &room);
+	void roomParted(const QString &room, const QString &reason);
+	void userJoined(const QString &room, const QString &user, bool show);
+	void userParted(const QString &room, const QString &user, const QString &reason, bool show);
+	void userPrivChanged(const QString &room, const QString &user, const QString &by, const QString &pc);
+	void usersReceived(const QString &room, const QStringList &users);
 	void errorReceived(const QString &error);
 
 private:
-	bool sendChat(const QString &channel);
+	bool sendChat(const QString &room);
 	bool replaceTablumps(const QString &data, QString &html, QString &text, DAmnImages &images);
 
 	bool downloadImage(DAmnImage &image);
 
-	DAmnChannel* createChannel(const QString &channel);
-	bool removeChannel(const QString &channel);
-	DAmnChannel* getChannel(const QString &channel);
+	DAmnRoom* createRoom(const QString &room);
+	bool removeRoom(const QString &room);
+	DAmnRoom* getRoom(const QString &room);
 	QString getAvatarUrl(const QString &user, int usericon);
 
 	DAmnUser* createUser(const QString &user);
@@ -161,15 +161,15 @@ private:
 	bool parsePacket(const QString &cmd, const QStringList &lines, int &i, DAmnPacket &apcket);
 	void parseProperties(const QStringList &lines, int &i, DAmnProperties &props);
 	bool parseUserInfo(const QStringList &lines, int &i, DAmnUser &user);
-	bool parseChannelProperty(const QString &channel, const DAmnProperties &props, const QStringList &lines, int &i);
-	bool parseChannelMembers(const QString &channel, const QStringList &lines, int &i);
-	bool parseChannelPrivClasses(const QString &channel, const QStringList &lines, int &i);
+	bool parseRoomProperty(const QString &room, const DAmnProperties &props, const QStringList &lines, int &i);
+	bool parseRoomMembers(const QString &room, const QStringList &lines, int &i);
+	bool parseRoomPrivClasses(const QString &room, const QStringList &lines, int &i);
 	bool parseUserProperties(const QString &user, const QStringList &lines, int &i);
 	bool parseConn(const QStringList &lines, int &i, DAmnConnection &conn);
-	bool parseText(const QString &channel, const QString &from, MessageType type, const QStringList &lines, int &i, QString &html, QString &text);
-	bool parseJoin(const QString &channel, const QString &user, bool show, const QStringList &lines, int &i);
-	bool parsePart(const QString &channel, const QString &user, bool show, const QString &reason, const QStringList &lines, int &i);
-	bool parsePriv(const QString &channel, const QString &user, bool show, const QString &by, const QString &pc, const QStringList &lines, int &i);
+	bool parseText(const QString &room, const QString &from, MessageType type, const QStringList &lines, int &i, QString &html, QString &text);
+	bool parseJoin(const QString &room, const QString &user, bool show, const QStringList &lines, int &i);
+	bool parsePart(const QString &room, const QString &user, bool show, const QString &reason, const QStringList &lines, int &i);
+	bool parsePriv(const QString &room, const QString &user, bool show, const QString &by, const QString &pc, const QStringList &lines, int &i);
 	bool parseError(const QString &error);
 
 	// parse message sent from server
@@ -194,7 +194,7 @@ private:
 	QString m_serverversion;
 
 	QList<DAmnUser*> m_users;
-	QList<DAmnChannel*> m_channels;
+	QList<DAmnRoom*> m_rooms;
 
 	QList<WaitingMessage*> m_waitingMessages;
 

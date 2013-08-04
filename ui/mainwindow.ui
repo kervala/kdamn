@@ -140,10 +140,10 @@
   </action>
   <action name="actionKnownRooms">
    <property name="text">
-    <string>Known channels</string>
+    <string>Known rooms</string>
    </property>
    <property name="toolTip">
-    <string>Known channels</string>
+    <string>Known rooms</string>
    </property>
   </action>
  </widget>

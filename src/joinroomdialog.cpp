@@ -18,29 +18,29 @@
  */
 
 #include "common.h"
-#include "joinchanneldialog.h"
+#include "joinroomdialog.h"
 #include "configfile.h"
-#include "moc_joinchanneldialog.cpp"
+#include "moc_joinroomdialog.cpp"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
 #endif
 
-JoinChannelDialog::JoinChannelDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt::WindowCloseButtonHint)
+JoinRoomDialog::JoinRoomDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt::WindowCloseButtonHint)
 {
 	setupUi(this);
 
 	QStringListModel *model = new QStringListModel(this);
-	channelsView->setModel(model);
+	roomsView->setModel(model);
 
-	// TODO: remove channels already joined
+	// TODO: remove rooms already joined
 	QStringList list;
 
-	ConfigChannels channels = ConfigFile::getInstance()->getChannels();
+	ConfigRooms rooms = ConfigFile::getInstance()->getRooms();
 
-	ConfigChannelsIterator it = channels.begin();
+	ConfigRoomsIterator it = rooms.begin();
 
-	while(it != channels.end())
+	while(it != rooms.end())
 	{
 		if (!it->connected) list << it->name;
 
@@ -49,22 +49,22 @@ JoinChannelDialog::JoinChannelDialog(QWidget* parent):QDialog(parent, Qt::Dialog
 
 	model->setStringList(list);
 
-	connect(channelsView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex, QModelIndex)), this, SLOT(onChannel(QModelIndex)));
+	connect(roomsView->selectionModel(), SIGNAL(currentRowChanged(QModelIndex, QModelIndex)), this, SLOT(onRoom(QModelIndex)));
 }
 
-JoinChannelDialog::~JoinChannelDialog()
+JoinRoomDialog::~JoinRoomDialog()
 {
 }
 
-QString JoinChannelDialog::getChannel() const
+QString JoinRoomDialog::getRoom() const
 {
-	return channelEdit->text();
+	return roomEdit->text();
 }
 
-void JoinChannelDialog::onChannel(const QModelIndex &index)
+void JoinRoomDialog::onRoom(const QModelIndex &index)
 {
-	QString text = channelsView->model()->data(index).toString();
+	QString text = roomsView->model()->data(index).toString();
 
-	channelEdit->setText(text);
+	roomEdit->setText(text);
 }
 

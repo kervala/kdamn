@@ -46,22 +46,66 @@ ConfigFile::~ConfigFile()
 
 bool ConfigFile::load()
 {
-	// connection parameters
+	int version = m_settings.value("version", 1).toInt();
+
+	if (version == 1) return loadVersion1();
+	if (version == 2) return loadVersion2();
+
+	return false;
+}
+
+bool ConfigFile::loadVersion1()
+{
+	// server parameters
 	m_login = m_settings.value("login").toString();
 	m_password = m_settings.value("password").toString();
-	m_rememberPassword = m_settings.value("remember_password").toBool();
+	m_rememberPassword = m_settings.value("remember_password", true).toBool();
 	m_damnToken = m_settings.value("authtoken").toString();
+	m_method = MethodOAuth2;
 
-	// load channels
+	// load rooms
 	m_settings.beginGroup("channels");
 
-	QStringList channels = m_settings.childKeys();
+	QStringList rooms = m_settings.childKeys();
 
-	m_channels.clear();
+	m_rooms.clear();
 
-	foreach(const QString &channel, channels)
+	foreach(const QString &room, rooms)
 	{
-		setChannelValue(channel, m_settings.value(channel, 0).toInt());
+		setRoomValue(room, m_settings.value(room, 0).toInt());
+	}
+
+	m_settings.endGroup();
+
+	// clear all entries
+	m_settings.clear();
+
+	return true;
+}
+
+bool ConfigFile::loadVersion2()
+{
+	// server parameters
+	m_settings.beginGroup("server");
+
+	m_login = m_settings.value("login").toString();
+	m_password = m_settings.value("password").toString();
+	m_rememberPassword = m_settings.value("remember_password", true).toBool();
+	m_damnToken = m_settings.value("authtoken").toString();
+	m_method = m_settings.value("authtoken_method", "oauth2").toString() == "oauth2" ? MethodOAuth2:MethodSite;
+
+	m_settings.endGroup();
+
+	// load rooms
+	m_settings.beginGroup("rooms");
+
+	QStringList rooms = m_settings.childKeys();
+
+	m_rooms.clear();
+
+	foreach(const QString &room, rooms)
+	{
+		setRoomValue(room, m_settings.value(room, 0).toInt());
 	}
 
 	m_settings.endGroup();
@@ -71,21 +115,32 @@ bool ConfigFile::load()
 
 bool ConfigFile::save()
 {
-	// connection parameters
+	// general parameters
+	m_settings.setValue("version", 2);
+
+	// server parameters
+	m_settings.beginGroup("server");
+
 	m_settings.setValue("login", m_login);
 	m_settings.setValue("password", m_password);
 	m_settings.setValue("remember_password", m_rememberPassword);
 	m_settings.setValue("authtoken", m_damnToken);
 
-	// save channels
-	ConfigChannelsIterator it = m_channels.begin();
+	m_settings.endGroup();
 
-	while(it != m_channels.end())
+	// save rooms
+	m_settings.beginGroup("rooms");
+
+	ConfigRoomsIterator it = m_rooms.begin();
+
+	while(it != m_rooms.end())
 	{
-		m_settings.setValue(QString("channels/%1").arg(it->name), it->value);
+		m_settings.setValue(it->name, it->value);
 
 		++it;
 	}
+
+	m_settings.endGroup();
 
 	return true;
 }
@@ -130,68 +185,78 @@ void ConfigFile::setDAmnToken(const QString &token)
 	m_damnToken = token;
 }
 
-ConfigChannels ConfigFile::getChannels() const
+DAmnTokenMethod ConfigFile::getDAmnTokenMethod() const
 {
-	return m_channels;
+	return m_method;
 }
 
-ConfigChannelsIterator ConfigFile::getChannel(const QString &name, bool insert)
+void ConfigFile::setDAmnTokenMethod(DAmnTokenMethod method)
 {
-	ConfigChannelsIterator it = m_channels.begin();
+	m_method = method;
+}
 
-	while(it != m_channels.end())
+ConfigRooms ConfigFile::getRooms() const
+{
+	return m_rooms;
+}
+
+ConfigRoomsIterator ConfigFile::getRoom(const QString &name, bool insert)
+{
+	ConfigRoomsIterator it = m_rooms.begin();
+
+	while(it != m_rooms.end())
 	{
 		if (it->name.toLower() == name.toLower()) break;
 
 		++it;
 	}
 
-	if (it == m_channels.end())
+	if (it == m_rooms.end())
 	{
-		ConfigChannel channel;
-		channel.name = name;
+		ConfigRoom room;
+		room.name = name;
 
-		it = m_channels.insert(it, channel);
+		it = m_rooms.insert(it, room);
 	}
 
 	return it;
 }
 
-void ConfigFile::setChannelAutoConnect(const QString &name, bool autoconnect)
+void ConfigFile::setRoomAutoConnect(const QString &name, bool autoconnect)
 {
-	ConfigChannelsIterator it = getChannel(name, true);
+	ConfigRoomsIterator it = getRoom(name, true);
 
 	it->autoconnect = autoconnect;
 	it->updateToValue();
 }
 
-void ConfigFile::setChannelConnected(const QString &name, bool connected)
+void ConfigFile::setRoomConnected(const QString &name, bool connected)
 {
-	ConfigChannelsIterator it = getChannel(name, true);
+	ConfigRoomsIterator it = getRoom(name, true);
 
 	it->connected = connected;
 	it->updateToValue();
 }
 
-void ConfigFile::setChannelFocused(const QString &name, bool focused)
+void ConfigFile::setRoomFocused(const QString &name, bool focused)
 {
-	ConfigChannelsIterator it = getChannel(name, true);
+	ConfigRoomsIterator it = getRoom(name, true);
 
 	it->focused = focused;
 	it->updateToValue();
 }
 
-void ConfigFile::setChannelOrder(const QString &name, int order)
+void ConfigFile::setRoomOrder(const QString &name, int order)
 {
-	ConfigChannelsIterator it = getChannel(name, true);
+	ConfigRoomsIterator it = getRoom(name, true);
 
 	it->order = order;
 	it->updateToValue();
 }
 
-void ConfigFile::setChannelValue(const QString &name, int value)
+void ConfigFile::setRoomValue(const QString &name, int value)
 {
-	ConfigChannelsIterator it = getChannel(name, true);
+	ConfigRoomsIterator it = getRoom(name, true);
 
 	it->value = value;
 	it->updateFromValue();

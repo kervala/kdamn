@@ -21,14 +21,14 @@
 #include "systrayicon.h"
 
 #ifdef UNITY_HACK
+#undef signals
 
 extern "C"
 {
 	#include <libappindicator/app-indicator.h>
-//	#include <gtk/gtk.h>
 }
 
-//#define signals public
+#define signals public
 #endif
 
 #ifdef DEBUG_NEW
@@ -104,9 +104,9 @@ void SystrayIcon::updateStatus()
 {
 	SystrayStatus status = StatusNormal;
 
-	SystrayStatusesIterator it = m_channels.begin();
+	SystrayStatusesIterator it = m_rooms.begin();
 
-	while(it != m_channels.end())
+	while(it != m_rooms.end())
 	{
 		if (it.value() > status) status = it.value();
 
@@ -126,18 +126,18 @@ void SystrayIcon::updateStatus()
 	m_icon->setIcon(QIcon(icon));
 }
 
-SystrayStatus SystrayIcon::getStatus(const QString &channel) const
+SystrayStatus SystrayIcon::getStatus(const QString &room) const
 {
-	SystrayStatusesConstIterator it = m_channels.find(channel);
+	SystrayStatusesConstIterator it = m_rooms.find(room);
 
-	if (it == m_channels.end()) return StatusUndefined;
+	if (it == m_rooms.end()) return StatusUndefined;
 
 	return it.value();
 }
 
-void SystrayIcon::setStatus(const QString &channel, SystrayStatus status)
+void SystrayIcon::setStatus(const QString &room, SystrayStatus status)
 {
-	m_channels[channel] = status;
+	m_rooms[room] = status;
 
 	updateStatus();
 }

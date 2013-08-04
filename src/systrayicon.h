@@ -42,8 +42,8 @@ public:
 
 	static SystrayIcon* getInstance() { return s_instance; }
 
-	SystrayStatus getStatus(const QString &channel) const;
-	void setStatus(const QString &channel, SystrayStatus status);
+	SystrayStatus getStatus(const QString &room) const;
+	void setStatus(const QString &room, SystrayStatus status);
 
 private:
 	bool create();
@@ -51,7 +51,7 @@ private:
 
 	static SystrayIcon* s_instance;
 
-	SystrayStatuses m_channels;
+	SystrayStatuses m_rooms;
 	SystrayStatus m_status;
 	QSystemTrayIcon *m_icon;
 };
