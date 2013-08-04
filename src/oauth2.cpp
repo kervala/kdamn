@@ -197,9 +197,6 @@ QString OAuth2::getSupportedImageFormatsFilter()
 
 		foreach(const QByteArray &format, formats)
 		{
-			// some formats are not supported in QTextBrowser
-			if (format == "mng") continue;
-
 			if (!s_imagesFilter.isEmpty()) s_imagesFilter += "|";
 
 			s_imagesFilter += format;
@@ -310,7 +307,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 			}
 			else
 			{
-				emit errorReceived(tr("No dAmn token received"));
+				emit errorReceived(tr("No login received"));
 			}
 		}
 		else
