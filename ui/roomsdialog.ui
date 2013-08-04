@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>JoinChannelDialog</class>
- <widget class="QDialog" name="JoinChannelDialog">
+ <class>RoomsDialog</class>
+ <widget class="QDialog" name="RoomsDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -11,28 +11,21 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Join channel</string>
+   <string>Rooms</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QLabel" name="joinChannelLabel">
+    <widget class="QLabel" name="channelsLabel">
      <property name="text">
-      <string>Please select or enter channel to join</string>
+      <string>Check channels you want to join automatically at startup</string>
+     </property>
+     <property name="buddy">
+      <cstring>channelsView</cstring>
      </property>
     </widget>
    </item>
    <item>
-    <widget class="QListView" name="channelsView">
-     <property name="editTriggers">
-      <set>QAbstractItemView::NoEditTriggers</set>
-     </property>
-     <property name="selectionBehavior">
-      <enum>QAbstractItemView::SelectRows</enum>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QLineEdit" name="channelEdit"/>
+    <widget class="QListView" name="channelsView"/>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
@@ -51,12 +44,12 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>JoinChannelDialog</receiver>
+   <receiver>RoomsDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>257</x>
+     <y>175</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -67,12 +60,12 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>JoinChannelDialog</receiver>
+   <receiver>RoomsDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>325</x>
+     <y>175</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>

@@ -25,42 +25,13 @@
      <number>2</number>
     </property>
     <item>
-     <widget class="QTabWidget" name="channelsWidget">
+     <widget class="RoomsTabWidget" name="roomsWidget">
       <property name="tabPosition">
        <enum>QTabWidget::South</enum>
       </property>
       <property name="movable">
        <bool>true</bool>
       </property>
-      <widget class="QWidget" name="tabServer">
-       <attribute name="title">
-        <string>Server</string>
-       </attribute>
-       <layout class="QVBoxLayout" name="serverLayout">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-        <item>
-         <widget class="QTextBrowser" name="serverBrowser">
-          <property name="frameShape">
-           <enum>QFrame::NoFrame</enum>
-          </property>
-          <property name="openLinks">
-           <bool>false</bool>
-          </property>
-         </widget>
-        </item>
-       </layout>
-      </widget>
      </widget>
     </item>
    </layout>
@@ -92,16 +63,16 @@
     <addaction name="actionAbout"/>
     <addaction name="actionAboutQt"/>
    </widget>
-   <widget class="QMenu" name="menuChannel">
+   <widget class="QMenu" name="menuRoom">
     <property name="title">
-     <string>Channel</string>
+     <string>Room</string>
     </property>
     <addaction name="actionJoin"/>
     <addaction name="actionPart"/>
-    <addaction name="actionKnownChannels"/>
+    <addaction name="actionKnownRooms"/>
    </widget>
    <addaction name="menuFile"/>
-   <addaction name="menuChannel"/>
+   <addaction name="menuRoom"/>
    <addaction name="menuHelp"/>
   </widget>
   <action name="actionSettings">
@@ -167,7 +138,7 @@
     <string>Part</string>
    </property>
   </action>
-  <action name="actionKnownChannels">
+  <action name="actionKnownRooms">
    <property name="text">
     <string>Known channels</string>
    </property>
@@ -176,6 +147,14 @@
    </property>
   </action>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>RoomsTabWidget</class>
+   <extends>QTabWidget</extends>
+   <header>roomstabwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
