@@ -155,14 +155,11 @@ bool MainWindow::event(QEvent *e)
 {
 	if (e->type() == QEvent::WindowActivate)
 	{
-//		roomsWidget->onRoomFocus(window && window->isActive() ? roomsWidget->currentIndex():-1);
 		roomsWidget->onRoomFocus(roomsWidget->currentIndex());
-		qDebug() << "focus in";
 	}
 	else if (e->type() == QEvent::WindowDeactivate)
 	{
 		roomsWidget->onRoomFocus(-1);
-		qDebug() << "focus out";
 	}
 
 	return QMainWindow::event(e);
