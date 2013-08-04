@@ -128,7 +128,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 
 					if (downloadImage(image) && !images.contains(image)) images << image;
 
-					html += QString("<img alt=\"%1\" width=\"%2\" height=\"%3\" title=\"%4\" src=\"%5\" />").arg(alt).arg(width).arg(height).arg(title).arg(image.localUrl);
+					html += QString("<img alt=\"%1\" width=\"%2\" height=\"%3\" title=\"%4\" src=\"%5\" local=\"%6\" />").arg(alt).arg(width).arg(height).arg(title).arg(image.remoteUrl).arg(image.localUrl);
 					text += alt;
 				}
 				else if (id == "dev")
@@ -151,7 +151,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 
 					if (downloadImage(image) && !images.contains(image)) images << image;
 
-					html += QString("<a href=\"http://%1.deviantart.com\"><img alt=\"%1\" width=\"50\" height=\"50\" title=\"%1\" src=\"%2\" /></a>").arg(name).arg(image.localUrl);
+					html += QString("<a href=\"http://%1.deviantart.com\"><img alt=\"%1\" width=\"50\" height=\"50\" title=\"%1\" src=\"%2\" local=\"%3\" /></a>").arg(name).arg(image.remoteUrl).arg(image.localUrl);
 					text += QString(":icon%1:").arg(name);
 				}
 				else if (id == "thumb")
@@ -229,7 +229,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 
 					QString link = QString("http://www.deviantart.com/art/%1-%2").arg(title2).arg(number);
 
-					html += QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(image.localUrl).arg(link).arg(width).arg(height);
+					html += QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" local=\"%6\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(image.remoteUrl).arg(link).arg(width).arg(height).arg(image.localUrl);
 					text += QString(":thumb%1:").arg(number);
 				}
 				else if (id == "iframe" || id == "embed")
@@ -254,7 +254,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 
 					if (downloadImage(image) && !images.contains(image)) images << image;
 
-					html += QString("<img src=\"%1\" alt=\"\" width=\"%2\" height=\"%3\" />").arg(url).arg(width).arg(height);
+					html += QString("<img src=\"%1\" local=\"%4\" alt=\"\" width=\"%2\" height=\"%3\" />").arg(image.remoteUrl).arg(width).arg(height).arg(image.localUrl);
 					text += url;
 				}
 				else if (id == "link")
