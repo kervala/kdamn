@@ -19,7 +19,6 @@
 
 #include "common.h"
 #include "mainwindow.h"
-//#include "functions.h"
 #include <iostream>
 #include <fcntl.h>
 
@@ -91,10 +90,8 @@ int main(int argv, char *args[])
 		app.installTranslator(&qtTranslator);
 	}
 
-//	setFilterDebugHook();
-
 	MainWindow mainWindow;
-	mainWindow.setWindowTitle(QString("%1 %2").arg(app.applicationName()).arg(app.applicationVersion()));
+	mainWindow.setWindowTitle(app.applicationName());
 	mainWindow.show();
 
 	// only memory leaks are from plugins
