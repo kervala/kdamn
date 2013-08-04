@@ -20,7 +20,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#ifndef _WIN32_WINNT
+#if defined(_WIN32) && !defined(_WIN32_WINNT)
 #define _WIN32_WINNT 0x0510
 #endif
 
@@ -29,9 +29,17 @@
 #include <QtGui/QtGui>
 #include <QtNetwork/QtNetwork>
 #include <QtXml/QtXml>
-#include <QtSql/QtSql>
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
+#define USE_QT5
+#endif
+
+#ifdef USE_QT5
 #include <QtWidgets/QtWidgets>
 #include <QtConcurrent/QtConcurrent>
+#else
+#include <QtScript/QtScript>
+#endif
 
 #if defined(_MSC_VER) && defined(_DEBUG)
 	#define _CRTDBG_MAP_ALLOC

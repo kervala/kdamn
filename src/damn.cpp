@@ -108,7 +108,15 @@ bool DAmn::downloadImage(DAmnImage &image)
 
 	if (!image.valid) return false;
 
-	QString dir(QDir::fromNativeSeparators(QStandardPaths::writableLocation(QStandardPaths::CacheLocation)));
+	QString cachePath;
+
+#ifdef USE_QT5
+	cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+#else
+	cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
+#endif
+
+	QString dir(QDir::fromNativeSeparators(cachePath));
 
 	image.md5 = QCryptographicHash::hash(image.remoteUrl.toLatin1(), QCryptographicHash::Md5).toHex();
 	image.filename = QString("%1/%2").arg(dir).arg(image.md5);
