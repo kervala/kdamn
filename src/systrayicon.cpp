@@ -20,6 +20,8 @@
 #include "common.h"
 #include "systrayicon.h"
 
+#ifdef USE_QT5
+
 #ifdef UNITY_HACK
 #undef signals
 
@@ -29,6 +31,8 @@ extern "C"
 }
 
 #define signals public
+#endif
+
 #endif
 
 #ifdef DEBUG_NEW
@@ -53,6 +57,7 @@ bool SystrayIcon::create()
 {
 	if (!QSystemTrayIcon::isSystemTrayAvailable()) return false;
 
+#ifdef USE_QT5
 	QString desktop = getenv("XDG_CURRENT_DESKTOP");
 	bool is_unity = (desktop.toLower() == "unity");
 
@@ -74,28 +79,31 @@ bool SystrayIcon::create()
 		//object so external function can access current object
 //		gtk_widget_show(item);
 
-		indicator = app_indicator_new("unique-application-name", "indicator-messages", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
+		indicator = app_indicator_new("kdamn", "kdamn", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
 
 		app_indicator_set_status(indicator, APP_INDICATOR_STATUS_ACTIVE);
 //		app_indicator_set_menu(indicator, GTK_MENU(menu));
+
+		return true;
 #else
 		qDebug() << "Unity hack not enabled";
+
+		return false;
 #endif
 	}
-	else
-	{
-		m_icon = new QSystemTrayIcon(QIcon(":/icons/kdamn.svg"), this);
+#endif
 
-//		QMenu *trayMenu = new QMenu(m_trayIcon);
-//		QAction *restoreAction = trayMenu->addAction(tr("Restore"));
-//		connect(restoreAction, SIGNAL(triggered()), this, SLOT(trayActivated()));
-//		QAction *quitAction = trayMenu->addAction(tr("Quit"));
-//		connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
-		
-//		m_trayIcon->setContextMenu(trayMenu);
-//		connect(m_icon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayActivated(QSystemTrayIcon::ActivationReason)));
-		m_icon->show();
-	}
+	m_icon = new QSystemTrayIcon(QIcon(":/icons/kdamn.svg"), this);
+
+//	QMenu *trayMenu = new QMenu(m_trayIcon);
+//	QAction *restoreAction = trayMenu->addAction(tr("Restore"));
+//	connect(restoreAction, SIGNAL(triggered()), this, SLOT(trayActivated()));
+//	QAction *quitAction = trayMenu->addAction(tr("Quit"));
+//	connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
+
+//	m_trayIcon->setContextMenu(trayMenu);
+//	connect(m_icon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayActivated(QSystemTrayIcon::ActivationReason)));
+	m_icon->show();
 
 	return true;
 }
@@ -123,7 +131,7 @@ void SystrayIcon::updateStatus()
 		default: break;
 	}
 
-	m_icon->setIcon(QIcon(icon));
+	if (m_icon) m_icon->setIcon(QIcon(icon));
 }
 
 SystrayStatus SystrayIcon::getStatus(const QString &room) const
