@@ -93,6 +93,12 @@ public:
 	QString getDAmnToken() const;
 	void setDAmnToken(const QString &token);
 
+	QString getAccessToken() const;
+	void setAccessToken(const QString &token);
+
+	QString getRefreshToken() const;
+	void setRefreshToken(const QString &token);
+
 	DAmnTokenMethod getDAmnTokenMethod() const;
 	void setDAmnTokenMethod(DAmnTokenMethod method);
 
@@ -118,6 +124,8 @@ private:
 	QString m_damnToken;
 	DAmnTokenMethod m_method;
 	ConfigRooms m_rooms;
+	QString m_accessToken;
+	QString m_refreshToken;
 };
 
 #endif

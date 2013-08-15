@@ -77,9 +77,6 @@ bool ConfigFile::loadVersion1()
 
 	m_settings.endGroup();
 
-	// clear all entries
-	m_settings.clear();
-
 	return true;
 }
 
@@ -91,8 +88,10 @@ bool ConfigFile::loadVersion2()
 	m_login = m_settings.value("login").toString();
 	m_password = m_settings.value("password").toString();
 	m_rememberPassword = m_settings.value("remember_password", true).toBool();
-	m_damnToken = m_settings.value("authtoken").toString();
-	m_method = m_settings.value("authtoken_method", "oauth2").toString() == "oauth2" ? MethodOAuth2:MethodSite;
+	m_damnToken = m_settings.value("damntoken").toString();
+	m_accessToken = m_settings.value("accesstoken").toString();
+	m_refreshToken = m_settings.value("refreshtoken").toString();
+	m_method = m_settings.value("damntoken_method", "oauth2").toString() == "oauth2" ? MethodOAuth2:MethodSite;
 
 	m_settings.endGroup();
 
@@ -115,6 +114,9 @@ bool ConfigFile::loadVersion2()
 
 bool ConfigFile::save()
 {
+	// clear previous entries
+	m_settings.clear();
+
 	// general parameters
 	m_settings.setValue("version", 2);
 
@@ -124,7 +126,9 @@ bool ConfigFile::save()
 	m_settings.setValue("login", m_login);
 	m_settings.setValue("password", m_password);
 	m_settings.setValue("remember_password", m_rememberPassword);
-	m_settings.setValue("authtoken", m_damnToken);
+	m_settings.setValue("damntoken", m_damnToken);
+	m_settings.setValue("accesstoken", m_accessToken);
+	m_settings.setValue("refreshtoken", m_refreshToken);
 
 	m_settings.endGroup();
 
@@ -183,6 +187,26 @@ QString ConfigFile::getDAmnToken() const
 void ConfigFile::setDAmnToken(const QString &token)
 {
 	m_damnToken = token;
+}
+
+QString ConfigFile::getAccessToken() const
+{
+	return m_accessToken;
+}
+
+void ConfigFile::setAccessToken(const QString &token)
+{
+	m_accessToken = token;
+}
+
+QString ConfigFile::getRefreshToken() const
+{
+	return m_refreshToken;
+}
+
+void ConfigFile::setRefreshToken(const QString &token)
+{
+	m_refreshToken = token;
 }
 
 DAmnTokenMethod ConfigFile::getDAmnTokenMethod() const
