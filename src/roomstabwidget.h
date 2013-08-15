@@ -49,7 +49,8 @@ public slots:
 	// slots activated from DAmn signals
 	void onRequestDAmnToken();
 	void onText(const QString &room, const QString &user, MessageType type, const QString &text, bool html);
-	void onReceiveAuthtoken(const QString &login, const QString &authtoken);
+	void onReceiveDAmnToken(const QString &login, const QString &authtoken);
+	void onReceiveAccessToken(const QString &access, const QString &refresh);
 	void onConnectServer();
 	void onUsers(const QString &room, const QStringList &users);
 	void onJoinRoom(const QString &room);

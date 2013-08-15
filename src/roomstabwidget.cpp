@@ -49,7 +49,8 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent)
 
 	OAuth2 *oauth = new OAuth2(this);
 	connect(oauth, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
-	connect(oauth, SIGNAL(damnTokenReceived(QString, QString)), this, SLOT(onReceiveAuthtoken(QString, QString)));
+	connect(oauth, SIGNAL(damnTokenReceived(QString, QString)), this, SLOT(onReceiveDAmnToken(QString, QString)));
+	connect(oauth, SIGNAL(accessTokenReceived(QString, QString)), this, SLOT(onReceiveAccessToken(QString, QString)));
 
 	connect(this, SIGNAL(currentChanged(int)), this, SLOT(onRoomFocus(int)));
 }
@@ -150,19 +151,14 @@ void RoomsTabWidget::onRequestDAmnToken()
 	QString log = ConfigFile::getInstance()->getLogin();
 	QString password = ConfigFile::getInstance()->getPassword();
 
-	// delete previous authtoken because invalid
+	// delete previous dAmn token because invalid
 	ConfigFile::getInstance()->setDAmnToken("");
+	OAuth2::getInstance()->setDAmnToken("");
+	DAmn::getInstance()->setToken("");
 
 	if (ConfigFile::getInstance()->isRememberPassword() && !log.isEmpty() && !password.isEmpty())
 	{
-		if (ConfigFile::getInstance()->getDAmnTokenMethod() == MethodOAuth2)
-		{
-			OAuth2::getInstance()->login(log, password);
-		}
-		else
-		{
-			OAuth2::getInstance()->loginSite(log, password);
-		}
+		OAuth2::getInstance()->login(ConfigFile::getInstance()->getDAmnTokenMethod() == MethodOAuth2);
 	}
 	else
 	{
@@ -170,7 +166,7 @@ void RoomsTabWidget::onRequestDAmnToken()
 	}
 }
 
-void RoomsTabWidget::onReceiveAuthtoken(const QString &login, const QString &authtoken)
+void RoomsTabWidget::onReceiveDAmnToken(const QString &login, const QString &authtoken)
 {
 	ConfigFile::getInstance()->setLogin(login);
 	ConfigFile::getInstance()->setDAmnToken(authtoken);
@@ -179,6 +175,12 @@ void RoomsTabWidget::onReceiveAuthtoken(const QString &login, const QString &aut
 	DAmn::getInstance()->setToken(authtoken);
 
 	DAmn::getInstance()->connectToServer();
+}
+
+void RoomsTabWidget::onReceiveAccessToken(const QString &access, const QString &refresh)
+{
+	ConfigFile::getInstance()->setAccessToken(access);
+	ConfigFile::getInstance()->setRefreshToken(refresh);
 }
 
 void RoomsTabWidget::onText(const QString &room, const QString &user, MessageType type, const QString &text, bool html)
@@ -199,8 +201,6 @@ void RoomsTabWidget::onText(const QString &room, const QString &user, MessageTyp
 					case MessageTitle: if (!text.isEmpty()) frame->setSystem(tr("Title changed by %1: %2").arg(user).arg(text)); break;
 					default: break;
 				}
-
-				updateSystrayIcon(room, user, text);
 			}
 		}
 		else
@@ -211,6 +211,11 @@ void RoomsTabWidget::onText(const QString &room, const QString &user, MessageTyp
 	else
 	{
 		// TODO: write to logs
+
+		if (!room.isEmpty())
+		{
+			updateSystrayIcon(room, user, text);
+		}
 	}
 }
 
@@ -311,7 +316,7 @@ void RoomsTabWidget::onRoomFocus(int index)
 	}
 }
 
-void RoomsTabWidget::updateSystrayIcon(const QString &room, const QString &user, const QString &html)
+void RoomsTabWidget::updateSystrayIcon(const QString &room, const QString &user, const QString &text)
 {
 	RoomFrame *frame = NULL;
 	int index = 0;
@@ -352,7 +357,7 @@ void RoomsTabWidget::updateSystrayIcon(const QString &room, const QString &user,
 	if (login == user.toLower()) return;
 
 	SystrayStatus oldStatus = SystrayIcon::getInstance()->getStatus(room);
-	SystrayStatus newStatus = html.toLower().indexOf(login) > -1 ? StatusTalkMe:StatusTalkOther;
+	SystrayStatus newStatus = text.toLower().indexOf(login) > -1 ? StatusTalkMe:StatusTalkOther;
 
 	if (newStatus > oldStatus)
 	{
@@ -365,20 +370,20 @@ void RoomsTabWidget::login()
 {
 	QString log = ConfigFile::getInstance()->getLogin();
 	QString password = ConfigFile::getInstance()->getPassword();
-	QString token = ConfigFile::getInstance()->getDAmnToken();
+	QString damnToken = ConfigFile::getInstance()->getDAmnToken();
+	QString accessToken = ConfigFile::getInstance()->getAccessToken();
+	QString refreshToken = ConfigFile::getInstance()->getRefreshToken();
+
+	OAuth2::getInstance()->setLogin(log);
+	OAuth2::getInstance()->setPassword(password);
+	OAuth2::getInstance()->setDAmnToken(damnToken);
+	OAuth2::getInstance()->setAccessToken(accessToken, refreshToken);
 
 	DAmn::getInstance()->setLogin(log);
-	DAmn::getInstance()->setToken(token);
+	DAmn::getInstance()->setToken(damnToken);
 
 	if (!DAmn::getInstance()->connectToServer())
 	{
-		if (ConfigFile::getInstance()->getDAmnTokenMethod() == MethodOAuth2)
-		{
-			OAuth2::getInstance()->login(log, password);
-		}
-		else
-		{
-			OAuth2::getInstance()->loginSite(log, password);
-		}
+		OAuth2::getInstance()->login(ConfigFile::getInstance()->getDAmnTokenMethod() == MethodOAuth2);
 	}
 }
