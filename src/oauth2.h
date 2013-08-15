@@ -20,6 +20,20 @@
 #ifndef OAUTH2_H
 #define OAUTH2_H
 
+struct StashFile
+{
+	QString filename;
+	QString room;
+
+	bool operator == (const StashFile &other)
+	{
+		return other.filename.toLower() == filename.toLower();
+	}
+};
+
+typedef QList<StashFile> StashFiles;
+typedef StashFiles::iterator StashFilesIterator;
+
 class OAuth2 : public QObject
 {
 	Q_OBJECT
@@ -30,24 +44,40 @@ public:
 
 	static OAuth2* getInstance() { return s_instance; }
 
-	bool login(const QString &login, const QString &password);
-	bool loginSite(const QString &login, const QString &password);
+	void setLogin(const QString &login) { m_login = login; }
+	void setPassword(const QString &password) { m_password = password; }
+	void setDAmnToken(const QString &token) { m_damnToken = token; }
+	void setAccessToken(const QString &access, const QString &refresh) { m_accessToken = access; m_refreshToken = refresh; }
 
+	bool login(bool oauth2);
+	bool uploadToStash(const QString &filename, const QString &room);
+
+	// OAuth2 steps
+	bool loginOAuth2();
 	bool requestAuthorization();
-	bool requestAuthToken();
-	bool requestToken(const QString &code);
+	bool requestToken(const QString &code = "");
+	bool requestPlacebo();
 	bool requestUserInfo();
 	bool requestDAmnToken();
+	bool requestStash(const QString &filename, const QString &room);
 	bool authorizeApplication(bool authorize);
+
+	// site process
+	bool getValidateToken();
+	bool loginSite(const QString &validationToken, const QString &validationKey);
+	bool requestAuthToken();
+
 	bool get(const QString &url, const QString &referer = "");
-	bool uploadToStash(const QString &filename);
+	bool post(const QString &url, const QByteArray &data, const QString &referer = "");
 
 	static QString getSupportedImageFormatsFilter();
 
 signals:
 	void errorReceived(const QString &error);
+	void accessTokenReceived(const QString &access, const QString &refresh);
 	void damnTokenReceived(const QString &login, const QString &damntoken);
 	void imageDownloaded(const QString &md5);
+	void imageUploaded(const QString &room, const QString &url);
 
 public slots:
 	void onReply(QNetworkReply *reply);
@@ -57,13 +87,17 @@ public slots:
 
 private:
 	QNetworkAccessManager *m_manager;
-	QString m_token;
-	QString m_refreshToken;
 	QString m_login;
+	QString m_password;
+	QString m_accessToken;
+	QString m_refreshToken;
 	QString m_damnToken;
 	int m_clientId;
 	QString m_clientSecret;
 	int m_expiresIn;
+	QString m_userAgent;
+	QDateTime m_lastAccessTokenTime;
+	StashFiles m_filesToUpload;
 
 	static OAuth2 *s_instance;
 };

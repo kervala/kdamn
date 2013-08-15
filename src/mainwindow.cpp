@@ -140,12 +140,20 @@ void MainWindow::trayActivated(QSystemTrayIcon::ActivationReason reseaon)
 void MainWindow::autoConnect()
 {
 	QString login = ConfigFile::getInstance()->getLogin();
-	QString token = ConfigFile::getInstance()->getDAmnToken();
+	QString password = ConfigFile::getInstance()->getPassword();
+	QString damnToken = ConfigFile::getInstance()->getDAmnToken();
+	QString accessToken = ConfigFile::getInstance()->getAccessToken();
+	QString refreshToken = ConfigFile::getInstance()->getRefreshToken();
 
-	if (!login.isEmpty() && !token.isEmpty())
+	OAuth2::getInstance()->setLogin(login);
+	OAuth2::getInstance()->setPassword(password);
+	OAuth2::getInstance()->setDAmnToken(damnToken);
+	OAuth2::getInstance()->setAccessToken(accessToken, refreshToken);
+
+	if (!login.isEmpty() && !damnToken.isEmpty())
 	{
 		DAmn::getInstance()->setLogin(login);
-		DAmn::getInstance()->setToken(token);
+		DAmn::getInstance()->setToken(damnToken);
 
 		DAmn::getInstance()->connectToServer();
 	}

@@ -24,14 +24,80 @@
 	#define new DEBUG_NEW
 #endif
 
+static QString base36enc(uint64_t value)
+{
+	static const QString base36("0123456789abcdefghijklmnopqrstuvwxyz");
+
+	QString res;
+
+	do
+	{
+		res.prepend(base36[(int)(value % 36)]);
+	}
+	while (value /= 36);
+
+	return res;
+}
+
 OAuth2* OAuth2::s_instance = NULL;
 
 OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0), m_expiresIn(0)
 {
 	if (s_instance == NULL) s_instance = this;
 
+	QString system;
+#ifdef Q_OS_WIN32
+	system = "Windows ";
+
+	switch (QSysInfo::WindowsVersion)
+	{
+		case QSysInfo::WV_32s: system += "3.1 with Win32s"; break;
+		case QSysInfo::WV_95: system += "95"; break;
+		case QSysInfo::WV_98: system += "98"; break;
+		case QSysInfo::WV_Me: system += "Me"; break;
+		case QSysInfo::WV_DOS_based: system += "DOS"; break;
+
+		case QSysInfo::WV_4_0: system += "NT 4.0"; break;
+		case QSysInfo::WV_5_0: system += "NT 5.0"; break;
+		case QSysInfo::WV_5_1: system += "NT 5.1"; break;
+		case QSysInfo::WV_5_2: system += "NT 5.2"; break;
+		case QSysInfo::WV_6_0: system += "NT 6.0"; break;
+		case QSysInfo::WV_6_1: system += "NT 6.1"; break;
+		case QSysInfo::WV_6_2: system += "NT 6.2"; break;
+		case QSysInfo::WV_NT_based: system += "NT"; break;
+
+		case QSysInfo::WV_CE: system += "CE"; break;
+		case QSysInfo::WV_CENET: system += "CE Net"; break;
+		case QSysInfo::WV_CE_5: system += "CE 5"; break;
+		case QSysInfo::WV_CE_6: system += "CE 6"; break;
+		case QSysInfo::WV_CE_based: system += "CE"; break;
+	}
+
+	system += "; ";
+
+	// TODO: check for real Windows version (32 or 64 bits)
+#ifdef _WIN64
+	system += "Win64";
+#else
+	system += "Win32";
+#endif
+
+	system += "; ";
+
+#ifdef _WIN64
+	system += "x64; ";
+#else
+	system += "i386;";
+#endif
+
+	// TODO: use the real locale
+	system += "en-US";
+#else
+#endif
+
 	m_clientId = 474;
 	m_clientSecret = "6a8b3dacb0d41c5d177d6f189df772d1";
+	m_userAgent = QString("%1/%2 (%3)").arg(QApplication::applicationName()).arg(QApplication::applicationVersion()).arg(system);
 
 	m_manager = new QNetworkAccessManager(this);
 
@@ -48,7 +114,7 @@ bool OAuth2::get(const QString &url, const QString &referer)
 {
 	QNetworkRequest req;
 	req.setUrl(QUrl(url));
-//	req.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.8) Gecko/20100731 Firefox/3.6.8 (Swiftfox)");
+	req.setHeader(QNetworkRequest::UserAgentHeader, m_userAgent);
 	if (!referer.isEmpty()) req.setRawHeader("Referer", referer.toLatin1());
 
 	QNetworkReply *reply = m_manager->get(req);
@@ -59,20 +125,24 @@ bool OAuth2::get(const QString &url, const QString &referer)
 	return true;
 }
 
-bool OAuth2::requestAuthorization()
+bool OAuth2::post(const QString &url, const QByteArray &data, const QString &referer)
 {
-	return get(QString("https://www.deviantart.com/oauth2/draft15/authorize?response_type=code&client_id=%1&redirect_uri=kdamn://oauth2/login").arg(m_clientId));
+	QNetworkRequest req;
+	req.setUrl(QUrl(url));
+	req.setHeader(QNetworkRequest::UserAgentHeader, m_userAgent);
+	req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+	if (!referer.isEmpty()) req.setRawHeader("Referer", referer.toLatin1());
+
+	QNetworkReply *reply = m_manager->post(req, data);
+
+	connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onReplyError(QNetworkReply::NetworkError)));
+	connect(reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(onSslErrors(QList<QSslError>)));
+
+	return true;
 }
 
 bool OAuth2::authorizeApplication(bool authorize)
 {
-	QString siteurl("https://www.deviantart.com/settings/update-applications");
-
-	QNetworkRequest req;
-	req.setUrl(QUrl(siteurl));
-//	req.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.8) Gecko/20100731 Firefox/3.6.8 (Swiftfox)");
-	req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-
 #ifdef USE_QT5
 	QUrlQuery params;
 #else
@@ -91,25 +161,43 @@ bool OAuth2::authorizeApplication(bool authorize)
 	data = params.encodedQuery();
 #endif
 
-	QNetworkReply *reply = m_manager->post(req, data);
-
-	connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onReplyError(QNetworkReply::NetworkError)));
-	connect(reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(onSslErrors(QList<QSslError>)));
-
-	return true;
+	return post("https://www.deviantart.com/settings/update-applications", data);
 }
 
-bool OAuth2::login(const QString &login, const QString &password)
+bool OAuth2::login(bool oauth2)
 {
-	m_login = login;
+	if (oauth2)
+	{
+		// try to reuse an access token
+		if (!m_accessToken.isEmpty()) return requestPlacebo();
 
-	QString siteurl("https://www.deviantart.com/join/oauth2");
+		return loginOAuth2();
+	}
+		
+	return getValidateToken();
+}
 
-	QNetworkRequest req;
-	req.setUrl(QUrl(siteurl));
-//	req.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.8) Gecko/20100731 Firefox/3.6.8 (Swiftfox)");
-	req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+bool OAuth2::uploadToStash(const QString &filename, const QString &room)
+{
+	if (m_accessToken.isEmpty())
+	{
+		emit errorReceived(tr("No access token, please use the OAuth2 login method"));
 
+		return false;
+	}
+
+	StashFile file;
+	file.filename = filename;
+	file.room = room;
+
+	if (m_filesToUpload.indexOf(file) < 0) m_filesToUpload.push_back(file);
+
+	// only check access token for the first file
+	return m_filesToUpload.size() == 1 ? requestPlacebo():true;
+}
+
+bool OAuth2::loginOAuth2()
+{
 #ifdef USE_QT5
 	QUrlQuery params;
 #else
@@ -118,8 +206,8 @@ bool OAuth2::login(const QString &login, const QString &password)
 
 	params.addQueryItem("subdomain", "www");
 	params.addQueryItem("oauth2", "1");
-	params.addQueryItem("username", login);
-	params.addQueryItem("password", password);
+	params.addQueryItem("username", m_login);
+	params.addQueryItem("password", m_password);
 
 	QByteArray data;
 
@@ -129,57 +217,95 @@ bool OAuth2::login(const QString &login, const QString &password)
 	data = params.encodedQuery();
 #endif
 
-	QNetworkReply *reply = m_manager->post(req, data);
+	return post("https://www.deviantart.com/join/oauth2", data);
+}
 
-	connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onReplyError(QNetworkReply::NetworkError)));
-	connect(reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(onSslErrors(QList<QSslError>)));
-
-	return true;
+bool OAuth2::requestAuthorization()
+{
+	return get(QString("https://www.deviantart.com/oauth2/draft15/authorize?response_type=code&client_id=%1&redirect_uri=kdamn://oauth2/login").arg(m_clientId));
 }
 
 bool OAuth2::requestToken(const QString &code)
 {
-	return get(QString("https://www.deviantart.com/oauth2/draft15/token?client_id=%1&client_secret=%2&grant_type=%3&code=%4&refresh_token=%5").arg(m_clientId).arg(m_clientSecret).arg(m_token.isEmpty() ? "authorization_code":"refresh_token").arg(code).arg(m_refreshToken));
+	QString query;
+	
+	if (!code.isEmpty())
+	{
+		query = QString("authorization_code&code=%1").arg(code);
+	}
+	else
+	{
+		m_accessToken.clear();
+		query = QString("refresh_token&refresh_token=%1").arg(m_refreshToken);
+	}
+
+	return get(QString("https://www.deviantart.com/oauth2/draft15/token?client_id=%1&client_secret=%2&grant_type=%3").arg(m_clientId).arg(m_clientSecret).arg(query));
+}
+
+bool OAuth2::requestPlacebo()
+{
+	return get(QString("https://www.deviantart.com/api/draft15/placebo?access_token=%1").arg(m_accessToken));
 }
 
 bool OAuth2::requestUserInfo()
 {
-	return get(QString("https://www.deviantart.com/api/draft15/user/whoami?access_token=%1").arg(m_token));
+	return get(QString("https://www.deviantart.com/api/draft15/user/whoami?access_token=%1").arg(m_accessToken));
 }
 
 bool OAuth2::requestDAmnToken()
 {
-	return get(QString("https://www.deviantart.com/api/draft15/user/damntoken?access_token=%1").arg(m_token));
+	// don't request dAmn token if already got
+	if (!m_damnToken.isEmpty()) return true;
+
+	return get(QString("https://www.deviantart.com/api/draft15/user/damntoken?access_token=%1").arg(m_accessToken));
 }
 
-bool OAuth2::uploadToStash(const QString &filename)
+bool OAuth2::requestStash(const QString &filename, const QString &room)
 {
-	QString siteurl(QString("https://www.deviantart.com/api/draft15/stash/submit?access_token=%1").arg(m_token));
+	QFile file(filename);
+
+	if (!file.open(QIODevice::ReadOnly))
+	{
+		emit errorReceived(tr("Unable to read file %1").arg(filename));
+
+		return false;
+	}
+
+	QFileInfo info(filename);
+
+	QString mime;
+	QString ext = info.suffix().toLower();
+
+	if (ext == "png") mime = "image/png";
+	else if (ext == "jpg" || ext == "jpeg") mime = "image/jpeg";
+	else if (ext == "gif") mime = "image/gif";
+	else mime = "application/binary";
 
 	QNetworkRequest req;
-	req.setUrl(QUrl(siteurl));
-//	req.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.8) Gecko/20100731 Firefox/3.6.8 (Swiftfox)");
+	req.setUrl(QUrl(QString("https://www.deviantart.com/api/draft15/stash/submit?access_token=%1").arg(m_accessToken)));
+	req.setHeader(QNetworkRequest::UserAgentHeader, m_userAgent);
 
-	QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType);
+	QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType, this);
 
-//	QHttpPart textPart;
-//	textPart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"text\""));
-//	textPart.setBody("my text");
+	QHttpPart folderPart;
+	folderPart.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"folder\"");
+	folderPart.setBody(QString("kdamn_%1").arg(room).toUtf8());
 
-	QFile *file = new QFile(filename, multiPart);
-	file->open(QIODevice::ReadOnly);
+	QHttpPart titlePart;
+	titlePart.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"title\"");
+	titlePart.setBody(info.baseName().toUtf8());
 
 	QHttpPart imagePart;
-	imagePart.setHeader(QNetworkRequest::ContentTypeHeader, QVariant("image/jpeg"));
-	imagePart.setHeader(QNetworkRequest::ContentDispositionHeader, QVariant("form-data; name=\"image\""));
-	imagePart.setBodyDevice(file);
+	imagePart.setHeader(QNetworkRequest::ContentTypeHeader, mime);
+	imagePart.setHeader(QNetworkRequest::ContentDispositionHeader, QString("form-data; name=\"image\"; filename=\"%1\"").arg(info.fileName()));
+//	imagePart.setRawHeader("Content-Transfer-Encoding", "binary");
+	imagePart.setBody(file.readAll());
 
-//	multiPart->append(textPart);
+	multiPart->append(folderPart);
+	multiPart->append(titlePart);
 	multiPart->append(imagePart);
 
-	QNetworkAccessManager manager;
-	QNetworkReply *reply = manager.post(req, multiPart);
-	multiPart->setParent(reply);
+	QNetworkReply *reply = m_manager->post(req, multiPart);
 
 	connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onReplyError(QNetworkReply::NetworkError)));
 	connect(reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(onSslErrors(QList<QSslError>)));
@@ -209,28 +335,26 @@ QString OAuth2::getSupportedImageFormatsFilter()
 }
 
 
-bool OAuth2::loginSite(const QString &login, const QString &password)
+bool OAuth2::getValidateToken()
 {
-	m_login = login;
+	return get("https://www.deviantart.com/users/rockedout");
+}
 
-	QString siteurl("https://www.deviantart.com/users/login");
-
-	QNetworkRequest req;
-	req.setUrl(QUrl(siteurl));
-//	req.setHeader(QNetworkRequest::UserAgentHeader, "Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.9.2.8) Gecko/20100731 Firefox/3.6.8 (Swiftfox)");
-	req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-	req.setRawHeader("Referer", "http://www.deviantart.com/users/rockedout");
-
+bool OAuth2::loginSite(const QString &validationToken, const QString &validationKey)
+{
 #ifdef USE_QT5
 	QUrlQuery params;
 #else
 	QUrl params;
 #endif
 
-	params.addQueryItem("ref", siteurl);
-	params.addQueryItem("username", login);
-	params.addQueryItem("password", password);
+	params.addQueryItem("ref", "");
+	params.addQueryItem("username", m_login);
+	params.addQueryItem("password", m_password);
 	params.addQueryItem("remember_me", "1");
+	params.addQueryItem("action", "Login");
+	params.addQueryItem("validate_token", validationToken);
+	params.addQueryItem("validate_key", validationKey);
 
 	QByteArray data;
 
@@ -240,12 +364,7 @@ bool OAuth2::loginSite(const QString &login, const QString &password)
 	data = params.encodedQuery();
 #endif
 
-	QNetworkReply *reply = m_manager->post(req, data);
-
-	connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onReplyError(QNetworkReply::NetworkError)));
-	connect(reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(onSslErrors(QList<QSslError>)));
-
-	return true;
+	return post("https://www.deviantart.com/users/login", data, "https://www.deviantart.com/users/rockedout");
 }
 
 bool OAuth2::requestAuthToken()
@@ -261,6 +380,13 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
 	QString url = reply->url().toString();
+
+	QUrlQuery query(reply->url().query());
+
+	bool isJson = query.hasQueryItem("access_token") || query.hasQueryItem("grant_type");
+	QString path = reply->url().path();
+
+	reply->deleteLater();
 
 	if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
 	{
@@ -285,24 +411,54 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 		emit imageDownloaded(md5);
 	}
-	else if (url.indexOf("/whoami") > -1)
+	else if (isJson)
 	{
+		// we received JSON response
 		QByteArray json = reply->readAll();
 
+		QString status, error, errorDescription;
+
 #ifdef USE_QT5
-		QJsonParseError error;
-		QJsonDocument doc = QJsonDocument::fromJson(json, &error);
+		QJsonParseError jsonError;
+		QJsonDocument doc = QJsonDocument::fromJson(json, &jsonError);
 
-		if (error.error == QJsonParseError::NoError)
+		if (jsonError.error != QJsonParseError::NoError)
 		{
-			QJsonObject object = doc.object();
+			emit errorReceived(jsonError.errorString());
+			return;
+		}
 
-			QJsonObject::const_iterator it = object.constFind("username");
+		QJsonObject object = doc.object();
+		QJsonObject::const_iterator it;
 
-			if (it != object.constEnd())
+		it = object.constFind("status");
+		if (it != object.constEnd()) status = it.value().toString();
+
+		it = object.constFind("error");
+		if (it != object.constEnd()) error = it.value().toString();
+
+		it = object.constFind("error_description");
+		if (it != object.constEnd()) errorDescription = it.value().toString();
+#else
+		QScriptEngine engine;
+		QScriptValue sc = engine.evaluate("(" + QString(json) + ")");
+
+		status = sc.property("status").toString();
+		error = sc.property("error").toString();
+#endif
+
+		if (path.endsWith("/whoami"))
+		{
+#ifdef USE_QT5
+			it = object.constFind("username");
+
+			if (it != object.constEnd()) m_login = it.value().toString();
+#else
+			m_login = sc.property("username").toString();
+#endif
+
+			if (!m_login.isEmpty())
 			{
-				m_login = it.value().toString();
-
 				requestDAmnToken();
 			}
 			else
@@ -310,44 +466,37 @@ void OAuth2::onReply(QNetworkReply *reply)
 				emit errorReceived(tr("No login received"));
 			}
 		}
-		else
+		else if (path.endsWith("/placebo"))
 		{
-			emit errorReceived(error.errorString());
-		}
-#else
-		QScriptEngine engine;
-		QScriptValue sc = engine.evaluate("(" + QString(json) + ")");
-
-		m_login = sc.property("username").toString();
-
-		if (!m_login.isEmpty())
-		{
-			requestDAmnToken();
-		}
-		else
-		{
-			emit errorReceived(tr("No login received"));
-		}
-#endif
-	}
-	else if (url.indexOf("/damntoken") > -1)
-	{
-		QByteArray json = reply->readAll();
-
-#ifdef USE_QT5
-		QJsonParseError error;
-		QJsonDocument doc = QJsonDocument::fromJson(json, &error);
-
-		if (error.error == QJsonParseError::NoError)
-		{
-			QJsonObject object = doc.object();
-
-			QJsonObject::const_iterator it = object.constFind("damntoken");
-
-			if (it != object.constEnd())
+			if (status == "success")
 			{
-				m_damnToken = it.value().toString();
+				if (!m_filesToUpload.isEmpty())
+				{
+					StashFile file = m_filesToUpload.front();
 
+					requestStash(file.filename, file.room);
+				}
+			}
+			else if (error == "expired_token")
+			{
+				// we are fixing the error ourself
+				status.clear();
+
+				requestToken();
+			}
+		}
+		else if (path.endsWith("/user/damntoken"))
+		{
+#ifdef USE_QT5
+			it = object.constFind("damntoken");
+
+			if (it != object.constEnd()) m_damnToken = it.value().toString();
+#else
+			m_damnToken = sc.property("damntoken").toString();
+#endif
+
+			if (!m_damnToken.isEmpty())
+			{
 				emit damnTokenReceived(m_login, m_damnToken);
 			}
 			else
@@ -355,129 +504,148 @@ void OAuth2::onReply(QNetworkReply *reply)
 				emit errorReceived(tr("No dAmn token received"));
 			}
 		}
-		else
+		else if (path.endsWith("/token"))
 		{
-			emit errorReceived(error.errorString());
-		}
+			if (status == "success")
+			{
+#ifdef USE_QT5
+				// seconds number before a session expire
+				it = object.constFind("expires_in");
+				if (it != object.constEnd()) m_expiresIn = (int)it.value().toDouble();
+
+				it = object.constFind("access_token");
+				if (it != object.constEnd()) m_accessToken = it.value().toString();
+
+				it = object.constFind("refresh_token");
+				if (it != object.constEnd()) m_refreshToken = it.value().toString();
 #else
-		QScriptEngine engine;
-		QScriptValue sc = engine.evaluate("(" + QString(json) + ")");
-
-		m_damnToken = sc.property("damntoken").toString();
-
-		if (!m_damnToken.isEmpty())
-		{
-			emit damnTokenReceived(m_login, m_damnToken);
-		}
-		else
-		{
-			emit errorReceived(tr("No dAmn token received"));
-		}
+				m_expiresIn = sc.property("expires_in").toInt32();
+				m_token = sc.property("access_token").toString();
+				m_refreshToken = sc.property("access_token").toString();
 #endif
-	}
-	else if (url.indexOf("/token") > -1)
-	{
-		QByteArray json = reply->readAll();
-		QString status;
+				m_lastAccessTokenTime = QDateTime::currentDateTime();
+
+				emit accessTokenReceived(m_accessToken, m_refreshToken);
+
+				if (m_login.indexOf('@') > -1)
+				{
+					// we have an email, we need to request the login
+					requestUserInfo();
+				}
+				else if (m_damnToken.isEmpty())
+				{
+					// login is good, request DAmn token
+					requestDAmnToken();
+				}
+				else if (!m_filesToUpload.isEmpty())
+				{
+					StashFile file = m_filesToUpload.front();
+
+					requestStash(file.filename, file.room);
+				}
+			}
+			else if (error == "invalid_grant")
+			{
+				// we are fixing the error ourself
+				status.clear();
+
+				// refresh token invalid
+				m_refreshToken.clear();
+
+				loginOAuth2();
+			}
+		}
+		else if (path.endsWith("/submit"))
+		{
+			if (status == "success")
+			{
+				QString folder;
+				uint64_t stashId, folderId;
 
 #ifdef USE_QT5
-		QJsonParseError error;
-		QJsonDocument doc = QJsonDocument::fromJson(json, &error);
+				// seconds number before a session expire
+				it = object.constFind("stashid");
+				if (it != object.constEnd()) stashId = (uint64_t)it.value().toDouble();
 
-		if (error.error == QJsonParseError::NoError)
-		{
-			QJsonObject object = doc.object();
+				it = object.constFind("folder");
+				if (it != object.constEnd()) folder = it.value().toString();
 
-			QJsonObject::const_iterator it;
-
-			it = object.constFind("status");
-
-			if (it != object.constEnd())
-			{
-				status = it.value().toString();
-
-				if (status == "success")
-				{
-					// seconds number before a session expire
-					it = object.constFind("expires_in");
-
-					if (it != object.constEnd()) m_expiresIn = (int)it.value().toDouble();
-
-					it = object.constFind("access_token");
-
-					if (it != object.constEnd()) m_token = it.value().toString();
-
-					it = object.constFind("refresh_token");
-
-					if (it != object.constEnd()) m_refreshToken = it.value().toString();
-				}
-				else
-				{
-					emit errorReceived(status);
-				}
-			}
-			else
-			{
-				emit errorReceived(tr("No JSON status received"));
-			}
-		}
+				it = object.constFind("folderid");
+				if (it != object.constEnd()) folderId = (uint64_t)it.value().toDouble();
 #else
-		QScriptEngine engine;
-		QScriptValue sc = engine.evaluate("(" + QString(json) + ")");
-
-		status = sc.property("status").toString();
-
-		if (status == "success")
-		{
-			m_expiresIn = sc.property("expires_in").toInt32();
-			m_token = sc.property("access_token").toString();
-			m_refreshToken = sc.property("access_token").toString();
-		}
+				stashId = sc.property("stashid").toInt64();
+				folder = sc.property("folder").toString();
+				folderId = sc.property("folderid").toInt64();
 #endif
 
-		if (status == "success")
-		{
-			if (m_login.indexOf('@') > -1)
-			{
-				// we have an email, we need to request the login
-				requestUserInfo();
-			}
-			else
-			{
-				// login is good, request DAmn token
-				requestDAmnToken();
+				StashFile file = m_filesToUpload.front();
+
+				m_filesToUpload.pop_front();
+
+				if (!m_filesToUpload.isEmpty())
+				{
+					StashFile newFile = m_filesToUpload.front();
+
+					requestStash(newFile.filename, newFile.room);
+				}
+
+				QString ret = base36enc(stashId);
+
+				emit imageUploaded(file.room, QString("http://sta.sh/%1").arg(ret));
+
+				qDebug() << stashId << folder << folderId;
 			}
 		}
 		else
 		{
-			emit errorReceived(status);
+			qDebug() << "JSON data for " << url << "not processed" << json;
+		}
+	
+		if (status == "error")
+		{
+			emit errorReceived(tr("API error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
 		}
 	}
-	else if (url.indexOf("/oauth2") > -1 && redirection.indexOf("/blank") > -1)
+	else if (redirection.endsWith("/login?bad_form=1"))
+	{
+		emit errorReceived(tr("Bad form"));
+	}
+	else if (url.endsWith("/join/oauth2") && redirection.endsWith("/join/blank"))
 	{
 		// login successful, authorize the application now
 		requestAuthorization();
 	}
-	else if (url.indexOf("/authorize") > -1 && redirection.indexOf("/applications") > -1)
-	{
-		get(redirection, url);
-	}
 	else if (redirection.startsWith("kdamn://"))
 	{
+#ifdef USE_QT5
+		QUrlQuery query(QUrl(redirection).query());
+
+		if (query.hasQueryItem("code"))
+		{
+			requestToken(query.queryItemValue("code"));
+		}
+		else if (query.hasQueryItem("error"))
+		{
+			emit errorReceived(query.queryItemValue("error_description"));
+		}
+#else
 		QRegExp reg("^kdamn://oauth2/login\\?code=([0-9]+)$");
 
 		if (reg.indexIn(redirection) > -1)
 		{
-			QString code = reg.cap(1);
-
-			requestToken(code);
+			requestToken(reg.cap(1));
+		}
+#endif
+		else
+		{
+			emit errorReceived(tr("Unknown error while redirected to %1").arg(redirection));
 		}
 	}
-	else if (redirection.indexOf("/login") > -1)
+	else if (url.endsWith("/users/login"))
 	{
 		requestAuthToken();
 	}
-	else if (url.indexOf("/Botdom") > -1)
+	else if (url.endsWith("/Botdom"))
 	{
 		QRegExp reg("dAmn_Login\\( \"([A-Za-z0-9_-]+)\", \"([a-f0-9]{32})\"");
 
@@ -490,10 +658,52 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 			emit damnTokenReceived(m_login, m_damnToken);
 		}
+		else
+		{
+			emit errorReceived(tr("Unable to find dAmn_Login"));
+		}
 	}
-	else if (url.indexOf("/applications") > -1)
+	else if (url.indexOf(QString("/applications?client_id=%1").arg(m_clientId)) > -1)
 	{
+		// TODO: ask authorization to user
 		authorizeApplication(true);
+	}
+	else if (url.endsWith("/rockedout"))
+	{
+		QString validationToken, validationKey;
+
+		QString html = reply->readAll();
+
+		QRegExp reg;
+		
+		reg.setPattern("name=\"validate_token\" value=\"([0-9a-f]{20})\"");
+
+		if (reg.indexIn(html) > -1)
+		{
+			validationToken = reg.cap(1);
+		}
+
+		reg.setPattern("name=\"validate_key\" value=\"([0-9]{10})\"");
+
+		if (reg.indexIn(html) > -1)
+		{
+			validationKey = reg.cap(1);
+		}
+
+		if (!validationToken.isEmpty() && !validationKey.isEmpty())
+		{
+			loginSite(validationToken, validationKey);
+		}
+		else
+		{
+			emit errorReceived(tr("Unable to find validate token or key"));
+		}
+	}
+	else if (!redirection.isEmpty() && redirection != url)
+	{
+		qDebug() << "Redirected from" << url << "to" << redirection;
+
+		get(redirection, url);
 	}
 	else
 	{
@@ -501,8 +711,6 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 		qDebug() << html;
 	}
-
-	reply->deleteLater();
 }
 
 void OAuth2::onReplyError(QNetworkReply::NetworkError error)
