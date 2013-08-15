@@ -29,11 +29,9 @@
 
 DAmn *DAmn::s_instance = NULL;
 
-DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_readbuffer(NULL), m_buffersize(8192)
+DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL)
 {
 	if (s_instance == NULL) s_instance = this;
-
-	m_readbuffer = new char[m_buffersize];
 }
 
 DAmn::~DAmn()
@@ -41,8 +39,6 @@ DAmn::~DAmn()
 	foreach(WaitingMessage *msg, m_waitingMessages) delete msg;
 	foreach(DAmnRoom *room, m_rooms) delete room;
 	foreach(DAmnUser *user, m_users) delete user;
-
-	delete [] m_readbuffer;
 
 	s_instance = NULL;
 }
@@ -186,32 +182,16 @@ bool DAmn::updateWaitingMessages(const QString &md5)
 
 bool DAmn::read()
 {
-	qint64 size = 0;
-
-	do
-	{
-		size += m_socket->read(m_readbuffer + size, m_buffersize - size);
-
-		// no data
-		if (size == 0) return false;
-
-		// to much data
-		if (size >= m_buffersize)
-		{
-			emit errorReceived(tr("Buffer too large (> 8192)"));
-		}
-	}
-	while(m_readbuffer[size-1]);
-
-//	QString data = QString::fromUtf8(m_socket->readAll());
-	QString data = QString::fromLatin1(m_readbuffer, size-1);
+	QByteArray data = m_socket->readAll();
 
 	// split all packets
-	QStringList packets = data.split(QChar(0));
+	QList<QByteArray> packets = data.split(0);
 
-	foreach(const QString &packet, packets)
+	foreach(const QByteArray &packet, packets)
 	{
-		QStringList lines = packet.split("\n");
+		if (packet.isEmpty()) continue;
+
+		QStringList lines = QString::fromLatin1(packet).split("\n");
 
 		// at least one line
 		if (lines.size() > 0) parseAllMessages(lines);
@@ -262,8 +242,10 @@ DAmnUser* DAmn::createUser(const QString &user)
 	// already exists
 	if (u) return u;
 
+	// create new user
 	u = new DAmnUser(user, this);
 
+	// add him to the list
 	m_users << u;
 
 	return u;

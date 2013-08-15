@@ -189,8 +189,6 @@ private:
 	QString m_login;
 	QString m_token;
 	QByteArray m_writebuffer;
-	char *m_readbuffer;
-	qint64 m_buffersize;
 	QString m_serverversion;
 
 	QList<DAmnUser*> m_users;
