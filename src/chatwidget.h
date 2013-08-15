@@ -42,6 +42,9 @@ public:
 
 	void setFocus(bool focus);
 
+	QString getRoom() const { return m_room; }
+	void setRoom(const QString &room) { m_room = room; }
+
 public slots:
 	// when user click on a link
 	void onUrl(const QUrl &url);
@@ -49,10 +52,16 @@ public slots:
 	void animate(int frame);
 
 protected:
+	void dragEnterEvent(QDragEnterEvent *event);
+	void dragMoveEvent(QDragMoveEvent *event);
+	void dragLeaveEvent(QDragLeaveEvent *event);
+	void dropEvent(QDropEvent *event);
+
 	QString getTimestamp() const;
 
 	QHash<QMovie*, QUrl> m_urls;
 	bool m_focus;
+	QString m_room;
 };
 
 class AnimationStart : public QObject

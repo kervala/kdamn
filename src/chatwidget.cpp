@@ -19,6 +19,8 @@
 
 #include "common.h"
 #include "chatwidget.h"
+#include "roomframe.h"
+#include "oauth2.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -30,7 +32,9 @@ ChatWidget::ChatWidget(QWidget *parent):QTextBrowser(parent), m_focus(false)
 {
 	connect(this, SIGNAL(anchorClicked(QUrl)), this, SLOT(onUrl(QUrl)));
 
-	document()->setDefaultStyleSheet(".timestamp { color: #999; }\n.username { font-weight: bold; }\n.error { color:  #f00; }");
+	document()->setDefaultStyleSheet(".timestamp { color: #999; }\n.username { font-weight: bold; }\n.error { color: #f00; }");
+
+	setAcceptDrops(true);
 }
 
 ChatWidget::~ChatWidget()
@@ -60,13 +64,43 @@ void ChatWidget::setSystem(const QString &text)
 
 void ChatWidget::setError(const QString &error)
 {
-	append(QString("<div class=\"error\">%1%1</div>").arg(getTimestamp()).arg(error));
+	append(QString("<div class=\"error\">%1%2</div>").arg(getTimestamp()).arg(error));
 }
 
 void ChatWidget::onUrl(const QUrl &url)
 {
 	// open URL in default browser
 	QDesktopServices::openUrl(url);
+}
+
+void ChatWidget::dragEnterEvent(QDragEnterEvent *event)
+{
+	if (event->mimeData()->hasUrls()) event->acceptProposedAction();
+}
+
+void ChatWidget::dragMoveEvent(QDragMoveEvent *event)
+{
+	if (event->mimeData()->hasUrls()) event->acceptProposedAction();
+}
+
+void ChatWidget::dropEvent(QDropEvent *event)
+{
+	const QMimeData *mimeData = event->mimeData();
+
+	if (mimeData->hasUrls())
+	{
+		foreach(const QUrl &url, mimeData->urls())
+		{
+			if (!OAuth2::getInstance()->uploadToStash(url.toLocalFile(), m_room)) break;
+		}
+
+		event->acceptProposedAction();
+	}
+}
+
+void ChatWidget::dragLeaveEvent(QDragLeaveEvent *event)
+{
+    event->accept();
 }
 
 QString ChatWidget::getTimestamp() const

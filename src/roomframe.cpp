@@ -36,6 +36,8 @@ RoomFrame::RoomFrame(QWidget *parent, const QString &room):TabFrame(parent), m_r
 
 	m_usersModel = new QStringListModel(this);
 	usersView->setModel(m_usersModel);
+
+	outputBrowser->setRoom(room);
 }
 
 RoomFrame::~RoomFrame()
