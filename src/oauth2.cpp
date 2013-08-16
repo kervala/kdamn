@@ -589,11 +589,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 					requestStash(newFile.filename, newFile.room);
 				}
 
-				QString ret = base36enc(stashId);
-
-				emit imageUploaded(file.room, QString("http://sta.sh/%1").arg(ret));
-
-				qDebug() << stashId << folder << folderId;
+				emit imageUploaded(file.room, QString("http://sta.sh/0%1").arg(base36enc(stashId)));
 			}
 		}
 		else
