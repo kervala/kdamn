@@ -147,14 +147,13 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
         <translation>Impossible de parser la privclass : %1</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="82"/>
+        <location filename="../src/damn.cpp" line="78"/>
         <source>Socket error: %1</source>
         <translation>Erreur de socket : %1</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="201"/>
         <source>Buffer too large (&gt; 8192)</source>
-        <translation>Buffer trop large (&gt; 8192)</translation>
+        <translation type="obsolete">Buffer trop large (&gt; 8192)</translation>
     </message>
 </context>
 <context>
@@ -301,34 +300,66 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
 <context>
     <name>OAuth2</name>
     <message>
-        <location filename="../src/oauth2.cpp" line="313"/>
-        <location filename="../src/oauth2.cpp" line="332"/>
+        <location filename="../src/oauth2.cpp" line="466"/>
         <source>No login received</source>
         <translation>Aucun identifiant reçu</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="358"/>
-        <location filename="../src/oauth2.cpp" line="377"/>
+        <location filename="../src/oauth2.cpp" line="504"/>
         <source>No dAmn token received</source>
         <translation>Aucun jeton dAmn reçu</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="424"/>
         <source>No JSON status received</source>
-        <translation>Aucun status JSON reçu</translation>
+        <translation type="obsolete">Aucun status JSON reçu</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="515"/>
+        <location filename="../src/oauth2.cpp" line="184"/>
+        <source>No access token, please use the OAuth2 login method</source>
+        <translation>Aucun jeton d&apos;accès, veuillez utiliser la méthode d&apos;identification OAuth2</translation>
+    </message>
+    <message>
+        <location filename="../src/oauth2.cpp" line="269"/>
+        <source>Unable to read file %1</source>
+        <translation>Impossible d&apos;accéder au fichier %1</translation>
+    </message>
+    <message>
+        <location filename="../src/oauth2.cpp" line="602"/>
+        <source>API error: %1</source>
+        <translation>Erreur API : %1</translation>
+    </message>
+    <message>
+        <location filename="../src/oauth2.cpp" line="607"/>
+        <source>Bad form</source>
+        <translation>Mauvais formulaire</translation>
+    </message>
+    <message>
+        <location filename="../src/oauth2.cpp" line="637"/>
+        <source>Unknown error while redirected to %1</source>
+        <translation>Error inconnue lors de la redirection vers %1</translation>
+    </message>
+    <message>
+        <location filename="../src/oauth2.cpp" line="659"/>
+        <source>Unable to find dAmn_Login</source>
+        <translation>Impossible de trouver dAmn_Login</translation>
+    </message>
+    <message>
+        <location filename="../src/oauth2.cpp" line="695"/>
+        <source>Unable to find validate token or key</source>
+        <translation>Impossible de valider le jeton ou la clé</translation>
+    </message>
+    <message>
+        <location filename="../src/oauth2.cpp" line="716"/>
         <source>Network error: %1</source>
         <translation>Erreur réseau : %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="524"/>
+        <location filename="../src/oauth2.cpp" line="725"/>
         <source>SSL errors: %1</source>
         <translation>Erreur SSL : %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="532"/>
+        <location filename="../src/oauth2.cpp" line="733"/>
         <source>Authentication required</source>
         <translation>Authentification requise</translation>
     </message>
@@ -336,12 +367,12 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
 <context>
     <name>RoomFrame</name>
     <message>
-        <location filename="../src/roomframe.cpp" line="84"/>
+        <location filename="../src/roomframe.cpp" line="86"/>
         <source>%1 has joined</source>
         <translation>%1 a rejoint le salon</translation>
     </message>
     <message>
-        <location filename="../src/roomframe.cpp" line="98"/>
+        <location filename="../src/roomframe.cpp" line="100"/>
         <source>%1 has left</source>
         <translation>%1 a quitté le salon</translation>
     </message>
@@ -362,37 +393,37 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
 <context>
     <name>RoomsTabWidget</name>
     <message>
-        <location filename="../src/roomstabwidget.cpp" line="63"/>
+        <location filename="../src/roomstabwidget.cpp" line="65"/>
         <source>Server</source>
         <translation>Serveur</translation>
     </message>
     <message>
-        <location filename="../src/roomstabwidget.cpp" line="123"/>
+        <location filename="../src/roomstabwidget.cpp" line="136"/>
         <source>Connected to server</source>
         <translation>Connecté au serveur</translation>
     </message>
     <message>
-        <location filename="../src/roomstabwidget.cpp" line="187"/>
+        <location filename="../src/roomstabwidget.cpp" line="206"/>
         <source>Topic changed by %1: %2</source>
         <translation>Sujet modifié par %1 : %2</translation>
     </message>
     <message>
-        <location filename="../src/roomstabwidget.cpp" line="188"/>
+        <location filename="../src/roomstabwidget.cpp" line="207"/>
         <source>Title changed by %1: %2</source>
         <translation>Titre modifié par %1 : %2</translation>
     </message>
     <message>
-        <location filename="../src/roomstabwidget.cpp" line="228"/>
+        <location filename="../src/roomstabwidget.cpp" line="250"/>
         <source>%1 has been made a member of %2 by %3</source>
         <translation>%1 a été promu comme membre de %2 par %3</translation>
     </message>
     <message>
-        <location filename="../src/roomstabwidget.cpp" line="242"/>
+        <location filename="../src/roomstabwidget.cpp" line="264"/>
         <source>You joined room &lt;b&gt;%1&lt;/b&gt;</source>
         <translation>Vous avez rejoint le salon &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
     <message>
-        <location filename="../src/roomstabwidget.cpp" line="251"/>
+        <location filename="../src/roomstabwidget.cpp" line="273"/>
         <source>You leaved room &lt;b&gt;%1&lt;/b&gt;</source>
         <translation>Vous avez quitté le salon &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
