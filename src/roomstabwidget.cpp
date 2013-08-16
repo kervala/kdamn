@@ -51,6 +51,7 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent)
 	connect(oauth, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
 	connect(oauth, SIGNAL(damnTokenReceived(QString, QString)), this, SLOT(onReceiveDAmnToken(QString, QString)));
 	connect(oauth, SIGNAL(accessTokenReceived(QString, QString)), this, SLOT(onReceiveAccessToken(QString, QString)));
+	connect(oauth, SIGNAL(imageUploaded(QString, QString)), this, SLOT(onUploadImage(QString, QString)));
 
 	connect(this, SIGNAL(currentChanged(int)), this, SLOT(onRoomFocus(int)));
 }
@@ -181,6 +182,11 @@ void RoomsTabWidget::onReceiveAccessToken(const QString &access, const QString &
 {
 	ConfigFile::getInstance()->setAccessToken(access);
 	ConfigFile::getInstance()->setRefreshToken(refresh);
+}
+
+void RoomsTabWidget::onUploadImage(const QString &room, const QString &url)
+{
+	DAmn::getInstance()->send(room, url);
 }
 
 void RoomsTabWidget::onText(const QString &room, const QString &user, MessageType type, const QString &text, bool html)

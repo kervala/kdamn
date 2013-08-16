@@ -51,6 +51,7 @@ public slots:
 	void onText(const QString &room, const QString &user, MessageType type, const QString &text, bool html);
 	void onReceiveDAmnToken(const QString &login, const QString &authtoken);
 	void onReceiveAccessToken(const QString &access, const QString &refresh);
+	void onUploadImage(const QString &room, const QString &url);
 	void onConnectServer();
 	void onUsers(const QString &room, const QStringList &users);
 	void onJoinRoom(const QString &room);
