@@ -117,7 +117,7 @@ bool DAmnRoom::removeUser(const QString &name)
 
 	if (it == m_users.end()) return false;
 
-	if (--it->count >= 0) return false;
+	if (--it->count > 0) return false;
 
 	m_users.erase(it);
 
