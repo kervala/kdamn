@@ -290,7 +290,9 @@ void RoomsTabWidget::onError(const QString &error)
 
 void RoomsTabWidget::setSystem(const QString &text)
 {
-//	serverBrowser->append(QString("<div class=\"system\">%1</div>").arg(text));
+	ServerFrame *frame = getServerFrame();
+
+	if (frame) frame->setSystem(text);
 }
 
 void RoomsTabWidget::onRoomFocus(int index)
