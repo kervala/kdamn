@@ -37,6 +37,7 @@ public:
 
 	QVariant loadResource(int type, const QUrl &name);
 
+	bool alreadyLoaded(const QString &url) const;
 	void startAnimations(const QString &html);
 	bool addAnimation(const QString &url, const QString &file);
 
@@ -62,6 +63,7 @@ protected:
 	QHash<QMovie*, QUrl> m_urls;
 	bool m_focus;
 	QString m_room;
+	QDateTime m_lastReload;
 };
 
 class AnimationStart : public QObject

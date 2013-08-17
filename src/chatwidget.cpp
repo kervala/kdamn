@@ -21,6 +21,7 @@
 #include "chatwidget.h"
 #include "roomframe.h"
 #include "oauth2.h"
+#include "configfile.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -28,11 +29,11 @@
 
 #define DELAY_ANIMATION 1000
 
-ChatWidget::ChatWidget(QWidget *parent):QTextBrowser(parent), m_focus(false)
+ChatWidget::ChatWidget(QWidget *parent):QTextBrowser(parent), m_focus(false), m_lastReload(QDateTime::currentDateTime())
 {
 	connect(this, SIGNAL(anchorClicked(QUrl)), this, SLOT(onUrl(QUrl)));
 
-	document()->setDefaultStyleSheet(".timestamp { color: #999; }\n.username { font-weight: bold; }\n.error { color: #f00; }");
+	document()->setDefaultStyleSheet(".timestamp { color: #999; }\n.username { font-weight: bold; }\n.error { color: #f00; }\n.system { color: #666; }");
 
 	setAcceptDrops(true);
 }
@@ -116,6 +117,20 @@ QVariant ChatWidget::loadResource(int type, const QUrl &name)
 	return QVariant(QImage());
 }
 
+bool ChatWidget::alreadyLoaded(const QString &url) const
+{
+	QHash<QMovie*, QUrl>::const_iterator it = m_urls.cbegin();
+
+	while(it != m_urls.end())
+	{
+		if (it->toString() == url) return true;
+
+		++it;
+	}
+
+	return false;
+}
+
 void ChatWidget::startAnimations(const QString &html)
 {
 	// parse HTML code to find local images
@@ -129,22 +144,7 @@ void ChatWidget::startAnimations(const QString &html)
 		QString url = reg.cap(1);
 		QString file = reg.cap(3);
 
-		QHash<QMovie*, QUrl>::iterator it = m_urls.begin();
-
-		bool found = false;
-
-		while(it != m_urls.end())
-		{
-			if (it->toString() == url)
-			{
-				found = true;
-				break;
-			}
-
-			++it;
-		}
-
-		if (!found) new AnimationStart(url, file, this);
+		if (!alreadyLoaded(url)) new AnimationStart(url, file, this);
 
 		pos += reg.matchedLength();
 	}
@@ -152,6 +152,8 @@ void ChatWidget::startAnimations(const QString &html)
 
 bool ChatWidget::addAnimation(const QString& url, const QString &file)
 {
+	if (alreadyLoaded(url)) return true;
+
 	QUrl remoteUrl(url);
 	QUrl localUrl(file);
 
@@ -215,7 +217,20 @@ void ChatWidget::animate(int frame)
 	if (QMovie* movie = qobject_cast<QMovie*>(sender()))
 	{
 		document()->addResource(QTextDocument::ImageResource, m_urls.value(movie), movie->currentPixmap());
-		setLineWrapColumnOrWidth(lineWrapColumnOrWidth()); // causes reload
+
+		QDateTime current = QDateTime::currentDateTime();
+
+		// to improve performances, only reload page at regular interval
+		if (m_lastReload.msecsTo(current) > ConfigFile::getInstance()->getAnimationFrameDelay())
+		{
+//			setLineWrapColumnOrWidth(lineWrapColumnOrWidth()); // causes reload
+//			viewport()->update();
+			QRectF r(rect());
+			r.translate(0, verticalScrollBar()->value());
+			document()->documentLayout()->update(r);
+
+			m_lastReload = current;
+		}
 	}
 }
 
