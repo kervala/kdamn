@@ -35,6 +35,9 @@
       <property name="horizontalScrollBarPolicy">
        <enum>Qt::ScrollBarAlwaysOff</enum>
       </property>
+      <property name="acceptRichText">
+       <bool>false</bool>
+      </property>
       <property name="openLinks">
        <bool>false</bool>
       </property>
