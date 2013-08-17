@@ -30,7 +30,8 @@
 
 ConfigFile* ConfigFile::s_instance = NULL;
 
-ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT)
+ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT),
+	m_rememberPassword(true), m_method(MethodOAuth2), m_animationFrameDelay(100)
 {
 	if (!s_instance) s_instance = this;
 
@@ -95,6 +96,13 @@ bool ConfigFile::loadVersion2()
 
 	m_settings.endGroup();
 
+	// chat parameters
+	m_settings.beginGroup("chat");
+
+	m_animationFrameDelay = m_settings.value("animation_frame_delay", 100).toInt();
+
+	m_settings.endGroup();
+
 	// load rooms
 	m_settings.beginGroup("rooms");
 
@@ -129,6 +137,13 @@ bool ConfigFile::save()
 	m_settings.setValue("damntoken", m_damnToken);
 	m_settings.setValue("accesstoken", m_accessToken);
 	m_settings.setValue("refreshtoken", m_refreshToken);
+
+	m_settings.endGroup();
+
+	// chat parameters
+	m_settings.beginGroup("chat");
+
+	m_settings.setValue("animation_frame_delay", m_animationFrameDelay);
 
 	m_settings.endGroup();
 
@@ -217,6 +232,16 @@ DAmnTokenMethod ConfigFile::getDAmnTokenMethod() const
 void ConfigFile::setDAmnTokenMethod(DAmnTokenMethod method)
 {
 	m_method = method;
+}
+
+int ConfigFile::getAnimationFrameDelay() const
+{
+	return m_animationFrameDelay;
+}
+
+void ConfigFile::setAnimationFrameDelay(int delay)
+{
+	m_animationFrameDelay = delay;
 }
 
 ConfigRooms ConfigFile::getRooms() const

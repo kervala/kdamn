@@ -102,6 +102,9 @@ public:
 	DAmnTokenMethod getDAmnTokenMethod() const;
 	void setDAmnTokenMethod(DAmnTokenMethod method);
 
+	int getAnimationFrameDelay() const;
+	void setAnimationFrameDelay(int delay);
+
 	ConfigRooms getRooms() const;
 	ConfigRoomsIterator getRoom(const QString &name, bool insert = false);
 	void setRoomValue(const QString &room, int value);
@@ -126,6 +129,7 @@ private:
 	ConfigRooms m_rooms;
 	QString m_accessToken;
 	QString m_refreshToken;
+	int m_animationFrameDelay;
 };
 
 #endif
