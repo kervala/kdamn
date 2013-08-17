@@ -85,8 +85,8 @@ public:
 	DAmn(QObject *parent);
 	virtual ~DAmn();
 
-	bool begin();
-	bool writeLine(const QString &line = "");
+	void begin();
+	void writeLine(const QString &line = "");
 	bool end();
 
 	void setLogin(const QString &login);
@@ -143,7 +143,7 @@ signals:
 	void errorReceived(const QString &error);
 
 private:
-	bool sendChat(const QString &room);
+	void sendChat(const QString &room);
 	bool replaceTablumps(const QString &data, QString &html, QString &text, DAmnImages &images);
 
 	bool downloadImage(DAmnImage &image);
@@ -197,6 +197,8 @@ private:
 	QList<WaitingMessage*> m_waitingMessages;
 
 	QMap<QString, int> m_stats;
+
+	QMutex m_writeMutex;
 
 	static DAmn *s_instance;
 };

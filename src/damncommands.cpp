@@ -33,9 +33,7 @@ bool DAmn::client()
 	begin();
 	writeLine("dAmnClient 0.2");
 	writeLine(QString("agent=%1 %2").arg(PRODUCT).arg(VERSION));
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::login()
@@ -43,9 +41,7 @@ bool DAmn::login()
 	begin();
 	writeLine(QString("login %1").arg(m_login));
 	writeLine(QString("pk=%1").arg(m_token));
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::join(const QString &room)
@@ -54,9 +50,7 @@ bool DAmn::join(const QString &room)
 
 	begin();
 	writeLine(QString("join chat:%1").arg(room));
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::joinPrivate(const QStringList &users)
@@ -65,36 +59,28 @@ bool DAmn::joinPrivate(const QStringList &users)
 
 	begin();
 	writeLine("join pchat:" + users.join(":"));
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::part(const QString &room)
 {
 	begin();
 	writeLine(QString("part chat:%1").arg(room));
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::partPrivate(const QStringList &users)
 {
 	begin();
 	writeLine("part pchat:" + users.join(":"));
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::pong()
 {
 	begin();
 	writeLine("pong");
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::sendMessage(const QString &room, const QString &text)
@@ -104,9 +90,7 @@ bool DAmn::sendMessage(const QString &room, const QString &text)
 	writeLine("msg main");
 	writeLine();
 	writeLine(text);
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::sendAction(const QString &room, const QString &text)
@@ -116,9 +100,7 @@ bool DAmn::sendAction(const QString &room, const QString &text)
 	writeLine("action main");
 	writeLine();
 	writeLine(text);
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::sendNonParsedMessage(const QString &room, const QString &text)
@@ -128,9 +110,7 @@ bool DAmn::sendNonParsedMessage(const QString &room, const QString &text)
 	writeLine("npmsg main");
 	writeLine();
 	writeLine(text);
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::promote(const QString &room, const QString &username, const QString &privclass)
@@ -145,9 +125,7 @@ bool DAmn::promote(const QString &room, const QString &username, const QString &
 		writeLine(privclass);
 	}
 
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::demote(const QString &room, const QString &username, const QString &privclass)
@@ -162,9 +140,7 @@ bool DAmn::demote(const QString &room, const QString &username, const QString &p
 		writeLine(privclass);
 	}
 
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::ban(const QString &room, const QString &username)
@@ -172,9 +148,7 @@ bool DAmn::ban(const QString &room, const QString &username)
 	sendChat(room);
 
 	writeLine("ban " + username);
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::unban(const QString &room, const QString &username)
@@ -182,9 +156,7 @@ bool DAmn::unban(const QString &room, const QString &username)
 	sendChat(room);
 
 	writeLine("unban " + username);
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::kick(const QString &room, const QString &username, const QString &reason)
@@ -199,9 +171,7 @@ bool DAmn::kick(const QString &room, const QString &username, const QString &rea
 		writeLine(reason);
 	}
 
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::getChatProperty(const QString &room, const QString &prop)
@@ -210,9 +180,7 @@ bool DAmn::getChatProperty(const QString &room, const QString &prop)
 	begin();
 	writeLine("get chat:" + room);
 	writeLine("p=" + prop);
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::getUserInfo(const QString &username)
@@ -220,9 +188,7 @@ bool DAmn::getUserInfo(const QString &username)
 	begin();
 	writeLine("get login:" + username);
 	writeLine("p=info");
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::setChatProperty(const QString &room, const QString &prop, const QString &value)
@@ -233,9 +199,7 @@ bool DAmn::setChatProperty(const QString &room, const QString &prop, const QStri
 	writeLine("p=" + prop);
 	writeLine();
 	writeLine(value);
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::admin(const QString &room, const QString &command)
@@ -245,18 +209,14 @@ bool DAmn::admin(const QString &room, const QString &command)
 	writeLine("admin");
 	writeLine();
 	writeLine(command);
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::disconnect()
 {
 	begin();
 	writeLine("disconnect");
-	end();
-
-	return true;
+	return end();
 }
 
 bool DAmn::kill(const QString &username, const QString &reason)
@@ -270,18 +230,14 @@ bool DAmn::kill(const QString &username, const QString &reason)
 		writeLine(reason);
 	}
 
-	end();
-
-	return true;
+	return end();
 }
 
-bool DAmn::sendChat(const QString &room)
+void DAmn::sendChat(const QString &room)
 {
 	begin();
 	writeLine("send chat:" + room);
 	writeLine();
-
-	return true;
 }
 
 bool DAmn::send(const QString &room, const QString &text)
@@ -354,26 +310,31 @@ bool DAmn::send(const QString &room, const QStringList &lines)
 	return true;
 }
 
-bool DAmn::begin()
+void DAmn::begin()
 {
-	m_writebuffer.clear();
+	m_writeMutex.lock();
 
-	return true;
+	m_writebuffer.clear();
 }
 
-bool DAmn::writeLine(const QString &line)
+void DAmn::writeLine(const QString &line)
 {
-//	m_writebuffer.append(line.toUtf8() + "\n");
 	m_writebuffer.append(line.toLatin1() + "\n");
-
-	return true;
 }
 
 bool DAmn::end()
 {
-	if (!m_socket) return false;
+	if (!m_socket)
+	{
+		m_writeMutex.unlock();
+		return false;
+	}
 
 	m_writebuffer.append('\0'); // every message ends with a \0
 
-	return m_socket->write(m_writebuffer) == m_writebuffer.size();
+	bool res = m_socket->write(m_writebuffer) == m_writebuffer.size();
+
+	m_writeMutex.unlock();
+
+	return res;
 }
