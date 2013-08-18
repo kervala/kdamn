@@ -39,65 +39,15 @@ static QString base36enc(qint64 value)
 	return res;
 }
 
+QString OAuth2::s_userAgent;
 OAuth2* OAuth2::s_instance = NULL;
 
 OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0), m_expiresIn(0)
 {
 	if (s_instance == NULL) s_instance = this;
 
-	QString system;
-#ifdef Q_OS_WIN32
-	system = "Windows ";
-
-	switch (QSysInfo::WindowsVersion)
-	{
-		case QSysInfo::WV_32s: system += "3.1 with Win32s"; break;
-		case QSysInfo::WV_95: system += "95"; break;
-		case QSysInfo::WV_98: system += "98"; break;
-		case QSysInfo::WV_Me: system += "Me"; break;
-		case QSysInfo::WV_DOS_based: system += "DOS"; break;
-
-		case QSysInfo::WV_4_0: system += "NT 4.0"; break;
-		case QSysInfo::WV_5_0: system += "NT 5.0"; break;
-		case QSysInfo::WV_5_1: system += "NT 5.1"; break;
-		case QSysInfo::WV_5_2: system += "NT 5.2"; break;
-		case QSysInfo::WV_6_0: system += "NT 6.0"; break;
-		case QSysInfo::WV_6_1: system += "NT 6.1"; break;
-		case QSysInfo::WV_6_2: system += "NT 6.2"; break;
-		case QSysInfo::WV_NT_based: system += "NT"; break;
-
-		case QSysInfo::WV_CE: system += "CE"; break;
-		case QSysInfo::WV_CENET: system += "CE Net"; break;
-		case QSysInfo::WV_CE_5: system += "CE 5"; break;
-		case QSysInfo::WV_CE_6: system += "CE 6"; break;
-		case QSysInfo::WV_CE_based: system += "CE"; break;
-	}
-
-	system += "; ";
-
-	// TODO: check for real Windows version (32 or 64 bits)
-#ifdef _WIN64
-	system += "Win64";
-#else
-	system += "Win32";
-#endif
-
-	system += "; ";
-
-#ifdef _WIN64
-	system += "x64; ";
-#else
-	system += "i386;";
-#endif
-
-	// TODO: use the real locale
-	system += "en-US";
-#else
-#endif
-
 	m_clientId = 474;
 	m_clientSecret = "6a8b3dacb0d41c5d177d6f189df772d1";
-	m_userAgent = QString("%1/%2 (%3)").arg(QApplication::applicationName()).arg(QApplication::applicationVersion()).arg(system);
 
 	m_manager = new QNetworkAccessManager(this);
 
@@ -112,10 +62,10 @@ OAuth2::~OAuth2()
 
 void OAuth2::addUserAgent(QNetworkRequest &req) const
 {
-	if (m_userAgent.isEmpty()) return;
+	if (s_userAgent.isEmpty()) return;
 
 #ifdef USE_QT5
-	req.setHeader(QNetworkRequest::UserAgentHeader, m_userAgent);
+	req.setHeader(QNetworkRequest::UserAgentHeader, s_userAgent);
 #else
 	req.setRawHeader("User-Agent", m_userAgent.toLatin1());
 #endif
@@ -311,7 +261,6 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 	QHttpPart imagePart;
 	imagePart.setHeader(QNetworkRequest::ContentTypeHeader, mime);
 	imagePart.setHeader(QNetworkRequest::ContentDispositionHeader, QString("form-data; name=\"image\"; filename=\"%1\"").arg(info.fileName()));
-//	imagePart.setRawHeader("Content-Transfer-Encoding", "binary");
 	imagePart.setBody(file.readAll());
 
 	multiPart->append(folderPart);
@@ -347,6 +296,63 @@ QString OAuth2::getSupportedImageFormatsFilter()
 	return s_imagesFilter;
 }
 
+QString OAuth2::getUserAgent()
+{
+	if (s_userAgent.isEmpty())
+	{
+		QString system;
+#ifdef Q_OS_WIN32
+		system = "Windows ";
+
+		switch (QSysInfo::WindowsVersion)
+		{
+			case QSysInfo::WV_32s: system += "3.1 with Win32s"; break;
+			case QSysInfo::WV_95: system += "95"; break;
+			case QSysInfo::WV_98: system += "98"; break;
+			case QSysInfo::WV_Me: system += "Me"; break;
+			case QSysInfo::WV_DOS_based: system += "DOS"; break;
+
+			case QSysInfo::WV_4_0: system += "NT 4.0"; break;
+			case QSysInfo::WV_5_0: system += "NT 5.0"; break;
+			case QSysInfo::WV_5_1: system += "NT 5.1"; break;
+			case QSysInfo::WV_5_2: system += "NT 5.2"; break;
+			case QSysInfo::WV_6_0: system += "NT 6.0"; break;
+			case QSysInfo::WV_6_1: system += "NT 6.1"; break;
+			case QSysInfo::WV_6_2: system += "NT 6.2"; break;
+			case QSysInfo::WV_NT_based: system += "NT"; break;
+
+			case QSysInfo::WV_CE: system += "CE"; break;
+			case QSysInfo::WV_CENET: system += "CE Net"; break;
+			case QSysInfo::WV_CE_5: system += "CE 5"; break;
+			case QSysInfo::WV_CE_6: system += "CE 6"; break;
+			case QSysInfo::WV_CE_based: system += "CE"; break;
+		}
+
+		system += "; ";
+
+		// TODO: check for real Windows version (32 or 64 bits)
+#ifdef _WIN64
+		system += "Win64";
+#else
+		system += "Win32";
+#endif
+
+		system += "; ";
+
+#ifdef _WIN64
+		system += "x64; ";
+#else
+		system += "i386;";
+#endif
+
+		system += QLocale::system().name().replace('_', '-');
+#else
+#endif
+		s_userAgent = QString("%1/%2 (%3)").arg(QApplication::applicationName()).arg(QApplication::applicationVersion()).arg(system);
+	}
+
+	return s_userAgent;
+}
 
 bool OAuth2::getValidateToken()
 {

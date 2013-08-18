@@ -53,6 +53,7 @@ public:
 	bool uploadToStash(const QString &filename, const QString &room);
 
 	static QString getSupportedImageFormatsFilter();
+	static QString getUserAgent();
 
 	bool get(const QString &url, const QString &referer = "");
 	bool post(const QString &url, const QByteArray &data, const QString &referer = "");
@@ -97,9 +98,10 @@ private:
 	int m_clientId;
 	QString m_clientSecret;
 	int m_expiresIn;
-	QString m_userAgent;
 	QDateTime m_lastAccessTokenTime;
 	StashFiles m_filesToUpload;
+
+	static QString s_userAgent;
 
 	static OAuth2 *s_instance;
 };
