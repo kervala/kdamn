@@ -316,6 +316,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 	}
 
 	html += data.mid(pos2);
+	text += data.mid(pos2);
 
 	return images.isEmpty();
 }
