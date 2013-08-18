@@ -55,10 +55,12 @@ QStringList InputEdit::getLines() const
 {
 	QStringList lines = text().split('\n');
 
+	if (lines.size() == 1 && lines[0].isEmpty()) lines.clear();
+
 	for(int i = 0; i < lines.size(); ++i)
 	{
-		if (lines[i].isEmpty()) lines[i] = "&nbsp;";
-		else if (lines[i].right(1) == " ") lines[i] = lines[i].left(lines[i].length()-1);
+		if (lines[i].isEmpty()) lines[i] = "\t";
+		else if (lines[i].right(1) == " ") lines[i].truncate(lines[i].length()-1);
 	}
 
 	return lines;
