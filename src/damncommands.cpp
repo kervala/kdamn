@@ -291,6 +291,8 @@ bool DAmn::send(const QString &room, const QString &text)
 
 bool DAmn::send(const QString &room, const QStringList &lines)
 {
+	if (lines.isEmpty()) return false;
+
 	foreach(const QString &line, lines)
 	{
 		send(room, line);
