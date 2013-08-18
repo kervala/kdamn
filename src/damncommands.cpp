@@ -303,12 +303,12 @@ void DAmn::begin()
 {
 	m_writeMutex.lock();
 
-	m_writebuffer.clear();
+	m_writeBuffer.clear();
 }
 
 void DAmn::writeLine(const QString &line)
 {
-	m_writebuffer.append(line.toLatin1() + "\n");
+	m_writeBuffer.append(line.toLatin1() + "\n");
 }
 
 bool DAmn::end()
@@ -319,9 +319,9 @@ bool DAmn::end()
 		return false;
 	}
 
-	m_writebuffer.append('\0'); // every message ends with a \0
+	m_writeBuffer.append('\0'); // every message ends with a \0
 
-	bool res = m_socket->write(m_writebuffer) == m_writebuffer.size();
+	bool res = m_socket->write(m_writeBuffer) == m_writeBuffer.size();
 
 	m_writeMutex.unlock();
 

@@ -188,8 +188,10 @@ private:
 	QTcpSocket *m_socket;
 	QString m_login;
 	QString m_token;
-	QByteArray m_writebuffer;
 	QString m_serverversion;
+
+	QByteArray m_writeBuffer;
+	QByteArray m_readBuffer;
 
 	QList<DAmnUser*> m_users;
 	QList<DAmnRoom*> m_rooms;

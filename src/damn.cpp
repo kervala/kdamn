@@ -182,10 +182,15 @@ bool DAmn::updateWaitingMessages(const QString &md5)
 
 bool DAmn::read()
 {
-	QByteArray data = m_socket->readAll();
+	m_readBuffer.append(m_socket->readAll());
+
+	if (m_readBuffer.isEmpty()) return false;
+
+	// truncated data, process later
+	if (m_readBuffer.at(m_readBuffer.length()-1) != 0) return false;
 
 	// split all packets
-	QList<QByteArray> packets = data.split(0);
+	QList<QByteArray> packets = m_readBuffer.split(0);
 
 	foreach(const QByteArray &packet, packets)
 	{
@@ -196,6 +201,9 @@ bool DAmn::read()
 		// at least one line
 		if (lines.size() > 0) parseAllMessages(lines);
 	}
+
+	// empty buffer because processed
+	m_readBuffer.clear();
 
 	return true;
 }
