@@ -34,12 +34,16 @@ struct StashFile
 typedef QList<StashFile> StashFiles;
 typedef StashFiles::iterator StashFilesIterator;
 
+#ifdef Q_OS_WIN
+	struct ITaskbarList3;
+#endif
+
 class OAuth2 : public QObject
 {
 	Q_OBJECT
 
 public:
-	OAuth2(QObject *parent);
+	OAuth2(QWidget *parent);
 	virtual ~OAuth2();
 
 	static OAuth2* getInstance() { return s_instance; }
@@ -54,6 +58,7 @@ public:
 
 	static QString getSupportedImageFormatsFilter();
 	static QString getUserAgent();
+	static void setMainWindowId(WId id);
 
 	bool get(const QString &url, const QString &referer = "");
 	bool post(const QString &url, const QByteArray &data, const QString &referer = "");
@@ -70,6 +75,8 @@ public slots:
 	void onAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth);
 	void onReplyError(QNetworkReply::NetworkError error);
 	void onSslErrors(const QList<QSslError> &errors);
+	void onUploadProgress(qint64 readBytes, qint64 totalBytes);
+	void onUploadFinished();
 
 private:
 	// OAuth2 steps
@@ -102,8 +109,12 @@ private:
 	StashFiles m_filesToUpload;
 
 	static QString s_userAgent;
-
+	static WId s_mainWindowId;
 	static OAuth2 *s_instance;
+
+#ifdef Q_OS_WIN
+	ITaskbarList3* m_taskbarList;
+#endif
 };
 
 #endif

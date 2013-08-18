@@ -40,6 +40,8 @@ MainWindow::MainWindow():QMainWindow()
 {
 	setupUi(this);
 
+	OAuth2::setMainWindowId(winId());
+
 	// Server menu
 	connect(actionConnect, SIGNAL(triggered()), this, SLOT(onConnect()));
 	connect(actionDisconnect, SIGNAL(triggered()), this, SLOT(onDisconnect()));
