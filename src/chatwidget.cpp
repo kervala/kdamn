@@ -27,7 +27,7 @@
 	#define new DEBUG_NEW
 #endif
 
-#define DELAY_ANIMATION 1000
+#define DELAY_ANIMATION 100
 
 ChatWidget::ChatWidget(QWidget *parent):QTextBrowser(parent), m_focus(false), m_lastReload(QDateTime::currentDateTime())
 {
@@ -114,7 +114,7 @@ QString ChatWidget::getTimestamp() const
 QVariant ChatWidget::loadResource(int type, const QUrl &name)
 {
 	// return an empty variant to not trigger an error
-	return QVariant(QImage());
+	return QVariant(QImage(":/images/blank.png"));
 }
 
 bool ChatWidget::alreadyLoaded(const QString &url) const
@@ -223,6 +223,8 @@ void ChatWidget::animate(int frame)
 		// to improve performances, only reload page at regular interval
 		if (m_lastReload.msecsTo(current) > ConfigFile::getInstance()->getAnimationFrameDelay())
 		{
+			m_lastReload = current;
+
 #ifdef USE_QT5
 			QRectF r(rect());
 			r.translate(0, verticalScrollBar()->value());
@@ -230,9 +232,6 @@ void ChatWidget::animate(int frame)
 #else
 			viewport()->update(rect());
 #endif
-
-
-			m_lastReload = current;
 		}
 	}
 }
