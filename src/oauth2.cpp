@@ -24,7 +24,7 @@
 	#define new DEBUG_NEW
 #endif
 
-static QString base36enc(uint64_t value)
+static QString base36enc(qint64 value)
 {
 	static const QString base36("0123456789abcdefghijklmnopqrstuvwxyz");
 
@@ -110,11 +110,24 @@ OAuth2::~OAuth2()
 	s_instance = NULL;
 }
 
+void OAuth2::addUserAgent(QNetworkRequest &req) const
+{
+	if (m_userAgent.isEmpty()) return;
+
+#ifdef USE_QT5
+	req.setHeader(QNetworkRequest::UserAgentHeader, m_userAgent);
+#else
+	req.setRawHeader("User-Agent", m_userAgent.toLatin1());
+#endif
+}
+
 bool OAuth2::get(const QString &url, const QString &referer)
 {
 	QNetworkRequest req;
 	req.setUrl(QUrl(url));
-	req.setHeader(QNetworkRequest::UserAgentHeader, m_userAgent);
+
+	addUserAgent(req);
+
 	if (!referer.isEmpty()) req.setRawHeader("Referer", referer.toLatin1());
 
 	QNetworkReply *reply = m_manager->get(req);
@@ -129,7 +142,7 @@ bool OAuth2::post(const QString &url, const QByteArray &data, const QString &ref
 {
 	QNetworkRequest req;
 	req.setUrl(QUrl(url));
-	req.setHeader(QNetworkRequest::UserAgentHeader, m_userAgent);
+	addUserAgent(req);
 	req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
 	if (!referer.isEmpty()) req.setRawHeader("Referer", referer.toLatin1());
 
@@ -283,7 +296,7 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 
 	QNetworkRequest req;
 	req.setUrl(QUrl(QString("https://www.deviantart.com/api/draft15/stash/submit?access_token=%1").arg(m_accessToken)));
-	req.setHeader(QNetworkRequest::UserAgentHeader, m_userAgent);
+	addUserAgent(req);
 
 	QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType, this);
 
@@ -381,7 +394,11 @@ void OAuth2::onReply(QNetworkReply *reply)
 	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
 	QString url = reply->url().toString();
 
+#ifdef USE_QT5
 	QUrlQuery query(reply->url().query());
+#else
+	QUrl query = reply->url();
+#endif
 
 	bool isJson = query.hasQueryItem("access_token") || query.hasQueryItem("grant_type");
 	QString path = reply->url().path();
@@ -520,7 +537,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 				if (it != object.constEnd()) m_refreshToken = it.value().toString();
 #else
 				m_expiresIn = sc.property("expires_in").toInt32();
-				m_token = sc.property("access_token").toString();
+				m_accessToken = sc.property("access_token").toString();
 				m_refreshToken = sc.property("access_token").toString();
 #endif
 				m_lastAccessTokenTime = QDateTime::currentDateTime();
@@ -560,22 +577,22 @@ void OAuth2::onReply(QNetworkReply *reply)
 			if (status == "success")
 			{
 				QString folder;
-				uint64_t stashId, folderId;
+				qint64 stashId, folderId;
 
 #ifdef USE_QT5
 				// seconds number before a session expire
 				it = object.constFind("stashid");
-				if (it != object.constEnd()) stashId = (uint64_t)it.value().toDouble();
+				if (it != object.constEnd()) stashId = (qint64)it.value().toDouble();
 
 				it = object.constFind("folder");
 				if (it != object.constEnd()) folder = it.value().toString();
 
 				it = object.constFind("folderid");
-				if (it != object.constEnd()) folderId = (uint64_t)it.value().toDouble();
+				if (it != object.constEnd()) folderId = (qint64)it.value().toDouble();
 #else
-				stashId = sc.property("stashid").toInt64();
+				stashId = (qint64)sc.property("stashid").toNumber();
 				folder = sc.property("folder").toString();
-				folderId = sc.property("folderid").toInt64();
+				folderId = (qint64)sc.property("folderid").toNumber();
 #endif
 
 				StashFile file = m_filesToUpload.front();

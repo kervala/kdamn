@@ -119,7 +119,7 @@ QVariant ChatWidget::loadResource(int type, const QUrl &name)
 
 bool ChatWidget::alreadyLoaded(const QString &url) const
 {
-	QHash<QMovie*, QUrl>::const_iterator it = m_urls.cbegin();
+	QHash<QMovie*, QUrl>::const_iterator it = m_urls.constBegin();
 
 	while(it != m_urls.end())
 	{
@@ -223,11 +223,14 @@ void ChatWidget::animate(int frame)
 		// to improve performances, only reload page at regular interval
 		if (m_lastReload.msecsTo(current) > ConfigFile::getInstance()->getAnimationFrameDelay())
 		{
-//			setLineWrapColumnOrWidth(lineWrapColumnOrWidth()); // causes reload
-//			viewport()->update();
+#ifdef USE_QT5
 			QRectF r(rect());
 			r.translate(0, verticalScrollBar()->value());
 			document()->documentLayout()->update(r);
+#else
+			viewport()->update(rect());
+#endif
+
 
 			m_lastReload = current;
 		}

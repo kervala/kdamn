@@ -52,25 +52,10 @@ public:
 	bool login(bool oauth2);
 	bool uploadToStash(const QString &filename, const QString &room);
 
-	// OAuth2 steps
-	bool loginOAuth2();
-	bool requestAuthorization();
-	bool requestToken(const QString &code = "");
-	bool requestPlacebo();
-	bool requestUserInfo();
-	bool requestDAmnToken();
-	bool requestStash(const QString &filename, const QString &room);
-	bool authorizeApplication(bool authorize);
-
-	// site process
-	bool getValidateToken();
-	bool loginSite(const QString &validationToken, const QString &validationKey);
-	bool requestAuthToken();
+	static QString getSupportedImageFormatsFilter();
 
 	bool get(const QString &url, const QString &referer = "");
 	bool post(const QString &url, const QByteArray &data, const QString &referer = "");
-
-	static QString getSupportedImageFormatsFilter();
 
 signals:
 	void errorReceived(const QString &error);
@@ -86,6 +71,23 @@ public slots:
 	void onSslErrors(const QList<QSslError> &errors);
 
 private:
+	// OAuth2 steps
+	bool loginOAuth2();
+	bool requestAuthorization();
+	bool requestToken(const QString &code = "");
+	bool requestPlacebo();
+	bool requestUserInfo();
+	bool requestDAmnToken();
+	bool requestStash(const QString &filename, const QString &room);
+	bool authorizeApplication(bool authorize);
+
+	// site process
+	bool getValidateToken();
+	bool loginSite(const QString &validationToken, const QString &validationKey);
+	bool requestAuthToken();
+
+	void addUserAgent(QNetworkRequest &req) const;
+
 	QNetworkAccessManager *m_manager;
 	QString m_login;
 	QString m_password;
