@@ -91,24 +91,10 @@ void RoomFrame::setSystem(const QString &text)
 
 void RoomFrame::setUsers(const QStringList &users)
 {
-	int min = 65536;
-	int max = 0;
-
-	foreach(const QString &user, users)
-	{
-//		int width = usersView->fontMetrics().boundingRect(member.name).width();
-		int width = usersView->fontMetrics().width(user)+10;
-
-		if (width < min) min = width;
-		if (width > max) max = width;
-	}
-
 	m_usersModel->setStringList(users);
-
-	usersView->setMinimumWidth(min);
-	usersView->setMaximumWidth(max);
-
 	inputEdit->setUsers(users);
+
+	updateSplitter();
 }
 
 void RoomFrame::userJoin(const QString &user)
@@ -117,12 +103,14 @@ void RoomFrame::userJoin(const QString &user)
 
 	QStringList users = m_usersModel->stringList();
 
-	if (users.indexOf(user) == -1)
-	{
-		users << user;
+	if (users.indexOf(user) > -1) return;
 
-		m_usersModel->setStringList(users);
-	}
+	users << user;
+
+	m_usersModel->setStringList(users);
+	inputEdit->setUsers(users);
+
+	updateSplitter();
 }
 
 void RoomFrame::userPart(const QString &user, const QString &reason)
@@ -134,6 +122,9 @@ void RoomFrame::userPart(const QString &user, const QString &reason)
 	users.removeAll(user);
 
 	m_usersModel->setStringList(users);
+	inputEdit->setUsers(users);
+
+	updateSplitter();
 }
 
 void RoomFrame::onSend()
@@ -155,4 +146,24 @@ bool RoomFrame::setFocus(bool focus)
 	if (m_focus) inputEdit->setFocus();
 
 	return true;
+}
+
+void RoomFrame::updateSplitter()
+{
+	QStringList users = m_usersModel->stringList();
+
+	int min = 65536;
+	int max = 0;
+
+	foreach(const QString &user, users)
+	{
+//		int width = usersView->fontMetrics().boundingRect(member.name).width();
+		int width = usersView->fontMetrics().width(user)+10;
+
+		if (width < min) min = width;
+		if (width > max) max = width;
+	}
+
+	usersView->setMinimumWidth(min);
+	usersView->setMaximumWidth(max);
 }

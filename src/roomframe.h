@@ -55,6 +55,8 @@ public slots:
 	void onSend();
 
 protected:
+	void updateSplitter();
+
 	QStringListModel *m_usersModel;
 	QString m_room;
 };
