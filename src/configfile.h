@@ -78,9 +78,6 @@ public:
 
 	static ConfigFile* getInstance() { return s_instance; }
 
-	bool load();
-	bool save();
-
 	QString getLogin() const;
 	void setLogin(const QString &login);
 
@@ -102,8 +99,17 @@ public:
 	DAmnTokenMethod getDAmnTokenMethod() const;
 	void setDAmnTokenMethod(DAmnTokenMethod method);
 
+	QSize getWindowSize() const;
+	void setWindowSize(const QSize &size);
+
+	QPoint getWindowPosition() const;
+	void setWindowPosition(const QPoint &pos);
+
 	int getAnimationFrameDelay() const;
 	void setAnimationFrameDelay(int delay);
+
+	int getAutosaveDelay() const;
+	void setAutosaveDelay(int delay);
 
 	ConfigRooms getRooms() const;
 	ConfigRoomsIterator getRoom(const QString &name, bool insert = false);
@@ -113,7 +119,14 @@ public:
 	void setRoomFocused(const QString &room, bool focused);
 	void setRoomOrder(const QString &room, int order);
 
+public slots:
+	bool load();
+	bool save();
+
 private:
+	void autosave();
+	void modified(bool modified);
+
 	static ConfigFile* s_instance;
 
 	bool loadVersion1();
@@ -130,6 +143,12 @@ private:
 	QString m_accessToken;
 	QString m_refreshToken;
 	int m_animationFrameDelay;
+	int m_autosaveDelay;
+	bool m_modified;
+
+	QSize m_size;
+	QPoint m_position;
+	int m_splitter;
 };
 
 #endif

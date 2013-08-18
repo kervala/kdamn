@@ -58,6 +58,12 @@ MainWindow::MainWindow():QMainWindow()
 
 	new SystrayIcon(this);
 
+	QSize size = ConfigFile::getInstance()->getWindowSize();
+	if (!size.isNull()) resize(size);
+
+	QPoint pos = ConfigFile::getInstance()->getWindowPosition();
+	if (!pos.isNull()) move(pos);
+
 	autoConnect();
 }
 
@@ -65,11 +71,25 @@ MainWindow::~MainWindow()
 {
 }
 
-void MainWindow::closeEvent(QCloseEvent *event)
+void MainWindow::closeEvent(QCloseEvent *e)
 {
 	hide();
 
-	event->accept();
+	e->accept();
+}
+
+void MainWindow::resizeEvent(QResizeEvent *e)
+{
+	ConfigFile::getInstance()->setWindowSize(e->size());
+
+	e->accept();
+}
+
+void MainWindow::moveEvent(QMoveEvent *e)
+{
+	ConfigFile::getInstance()->setWindowPosition(QPoint(x(), y()));
+
+	e->accept();
 }
 
 void MainWindow::onAbout()

@@ -50,9 +50,10 @@ public slots:
 	void trayActivated(QSystemTrayIcon::ActivationReason reseaon);
 
 protected:
-	void closeEvent(QCloseEvent *event);
+	void closeEvent(QCloseEvent *e);
+	void resizeEvent(QResizeEvent *e);
+	void moveEvent(QMoveEvent *e);
 	bool event(QEvent *e);
-
 };
 
 #endif

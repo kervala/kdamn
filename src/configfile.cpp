@@ -31,7 +31,8 @@
 ConfigFile* ConfigFile::s_instance = NULL;
 
 ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT),
-	m_rememberPassword(true), m_method(MethodOAuth2), m_animationFrameDelay(100)
+	m_rememberPassword(true), m_method(MethodOAuth2), m_animationFrameDelay(100), m_autosaveDelay(30), m_modified(false),
+	m_size(), m_position(), m_splitter(0)
 {
 	if (!s_instance) s_instance = this;
 
@@ -49,10 +50,12 @@ bool ConfigFile::load()
 {
 	int version = m_settings.value("version", 1).toInt();
 
-	if (version == 1) return loadVersion1();
-	if (version == 2) return loadVersion2();
+	if (version == 2) loadVersion2();
+	else loadVersion1();
 
-	return false;
+	autosave();
+
+	return true;
 }
 
 bool ConfigFile::loadVersion1()
@@ -83,6 +86,8 @@ bool ConfigFile::loadVersion1()
 
 bool ConfigFile::loadVersion2()
 {
+	m_autosaveDelay = m_settings.value("autosave").toInt();
+
 	// server parameters
 	m_settings.beginGroup("server");
 
@@ -93,6 +98,15 @@ bool ConfigFile::loadVersion2()
 	m_accessToken = m_settings.value("accesstoken").toString();
 	m_refreshToken = m_settings.value("refreshtoken").toString();
 	m_method = m_settings.value("damntoken_method", "oauth2").toString() == "oauth2" ? MethodOAuth2:MethodSite;
+
+	m_settings.endGroup();
+
+	// window parameters
+	m_settings.beginGroup("window");
+
+	m_size = QSize(m_settings.value("width", 0).toInt(), m_settings.value("height", 0).toInt());
+	m_position = QPoint(m_settings.value("x", 0).toInt(), m_settings.value("y", 0).toInt());
+	m_splitter = m_settings.value("splitter", 0).toInt();
 
 	m_settings.endGroup();
 
@@ -122,6 +136,13 @@ bool ConfigFile::loadVersion2()
 
 bool ConfigFile::save()
 {
+	// no need to save because no change has been made
+	if (!m_modified)
+	{
+		autosave();
+		return true;
+	}
+
 	// clear previous entries
 	m_settings.clear();
 
@@ -137,6 +158,17 @@ bool ConfigFile::save()
 	m_settings.setValue("damntoken", m_damnToken);
 	m_settings.setValue("accesstoken", m_accessToken);
 	m_settings.setValue("refreshtoken", m_refreshToken);
+
+	m_settings.endGroup();
+
+	// window parameters
+	m_settings.beginGroup("window");
+
+	m_settings.setValue("width", m_size.width());
+	m_settings.setValue("height", m_size.height());
+	m_settings.setValue("x", m_position.x());
+	m_settings.setValue("y", m_position.y());
+	m_settings.setValue("splitter", m_splitter);
 
 	m_settings.endGroup();
 
@@ -161,6 +193,10 @@ bool ConfigFile::save()
 
 	m_settings.endGroup();
 
+	modified(false);
+
+	autosave();
+
 	return true;
 }
 
@@ -171,7 +207,10 @@ QString ConfigFile::getLogin() const
 
 void ConfigFile::setLogin(const QString &login)
 {
+	if (m_login == login) return;
+
 	m_login = login;
+	modified(true);
 }
 
 QString ConfigFile::getPassword() const
@@ -181,7 +220,10 @@ QString ConfigFile::getPassword() const
 
 void ConfigFile::setPassword(const QString &password)
 {
+	if (m_password == password) return;
+
 	m_password = password;
+	modified(true);
 }
 
 bool ConfigFile::isRememberPassword() const
@@ -191,7 +233,10 @@ bool ConfigFile::isRememberPassword() const
 
 void ConfigFile::rememberPassword(bool remember)
 {
+	if (m_rememberPassword == remember) return;
+
 	m_rememberPassword = remember;
+	modified(true);
 }
 
 QString ConfigFile::getDAmnToken() const
@@ -201,7 +246,10 @@ QString ConfigFile::getDAmnToken() const
 
 void ConfigFile::setDAmnToken(const QString &token)
 {
+	if (m_damnToken == token) return;
+
 	m_damnToken = token;
+	modified(true);
 }
 
 QString ConfigFile::getAccessToken() const
@@ -211,7 +259,10 @@ QString ConfigFile::getAccessToken() const
 
 void ConfigFile::setAccessToken(const QString &token)
 {
+	if (m_accessToken == token) return;
+
 	m_accessToken = token;
+	modified(true);
 }
 
 QString ConfigFile::getRefreshToken() const
@@ -221,7 +272,10 @@ QString ConfigFile::getRefreshToken() const
 
 void ConfigFile::setRefreshToken(const QString &token)
 {
+	if (m_refreshToken == token) return;
+
 	m_refreshToken = token;
+	modified(true);
 }
 
 DAmnTokenMethod ConfigFile::getDAmnTokenMethod() const
@@ -231,7 +285,36 @@ DAmnTokenMethod ConfigFile::getDAmnTokenMethod() const
 
 void ConfigFile::setDAmnTokenMethod(DAmnTokenMethod method)
 {
+	if (m_method == method) return;
+
 	m_method = method;
+	modified(true);
+}
+
+QSize ConfigFile::getWindowSize() const
+{
+	return m_size;
+}
+
+void ConfigFile::setWindowSize(const QSize &size)
+{
+	if (m_size == size || size.width() < 10 || size.height() < 10) return;
+
+	m_size = size;
+	modified(true);
+}
+
+QPoint ConfigFile::getWindowPosition() const
+{
+	return m_position;
+}
+
+void ConfigFile::setWindowPosition(const QPoint &pos)
+{
+	if (m_position == pos || pos.isNull()) return;
+
+	m_position = pos;
+	modified(true);
 }
 
 int ConfigFile::getAnimationFrameDelay() const
@@ -241,7 +324,23 @@ int ConfigFile::getAnimationFrameDelay() const
 
 void ConfigFile::setAnimationFrameDelay(int delay)
 {
+	if (m_animationFrameDelay == delay) return;
+
 	m_animationFrameDelay = delay;
+	modified(true);
+}
+
+int ConfigFile::getAutosaveDelay() const
+{
+	return m_autosaveDelay;
+}
+
+void ConfigFile::setAutosaveDelay(int delay)
+{
+	if (m_autosaveDelay == delay) return;
+
+	m_autosaveDelay = delay;
+	modified(true);
 }
 
 ConfigRooms ConfigFile::getRooms() const
@@ -266,6 +365,8 @@ ConfigRoomsIterator ConfigFile::getRoom(const QString &name, bool insert)
 		room.name = name;
 
 		it = m_rooms.insert(it, room);
+
+		modified(true);
 	}
 
 	return it;
@@ -275,38 +376,68 @@ void ConfigFile::setRoomAutoConnect(const QString &name, bool autoconnect)
 {
 	ConfigRoomsIterator it = getRoom(name, true);
 
+	if (it->autoconnect == autoconnect) return;
+
 	it->autoconnect = autoconnect;
 	it->updateToValue();
+
+	modified(true);
 }
 
 void ConfigFile::setRoomConnected(const QString &name, bool connected)
 {
 	ConfigRoomsIterator it = getRoom(name, true);
 
+	if (it->connected == connected) return;
+
 	it->connected = connected;
 	it->updateToValue();
+
+	modified(true);
 }
 
 void ConfigFile::setRoomFocused(const QString &name, bool focused)
 {
 	ConfigRoomsIterator it = getRoom(name, true);
 
+	if (it->focused == focused) return;
+
 	it->focused = focused;
 	it->updateToValue();
+
+	modified(true);
 }
 
 void ConfigFile::setRoomOrder(const QString &name, int order)
 {
 	ConfigRoomsIterator it = getRoom(name, true);
 
+	if (it->order == order) return;
+
 	it->order = order;
 	it->updateToValue();
+
+	modified(true);
 }
 
 void ConfigFile::setRoomValue(const QString &name, int value)
 {
 	ConfigRoomsIterator it = getRoom(name, true);
 
+	if (it->value == value) return;
+
 	it->value = value;
 	it->updateFromValue();
+
+	modified(true);
+}
+
+void ConfigFile::autosave()
+{
+	if (m_autosaveDelay > 0) QTimer::singleShot(m_autosaveDelay * 60 * 1000, this, SLOT(save()));
+}
+
+void ConfigFile::modified(bool modified)
+{
+	m_modified = modified;
 }
