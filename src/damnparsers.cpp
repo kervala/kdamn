@@ -81,7 +81,7 @@ bool DAmn::parsePacket(const QString &cmd, const QStringList &lines, int &i, DAm
 
 			pos += reg.matchedLength();
 
-			reg.setPattern(":([A-Za-z0-9_.~ -]+)");
+			reg.setPattern(":([:A-Za-z0-9_.~ -]+)");
 
 			while ((pos = reg.indexIn(lines[i], pos)) != -1)
 			{
@@ -91,8 +91,6 @@ bool DAmn::parsePacket(const QString &cmd, const QStringList &lines, int &i, DAm
 		}
 		else
 		{
-			qDebug() << lines[i];
-
 			emit errorReceived(tr("Unable to parse parameter: %1").arg(lines[i]));
 
 			return false;
@@ -124,8 +122,6 @@ void DAmn::parseProperties(const QStringList &lines, int &i, DAmnProperties &pro
 		}
 		else
 		{
-			qDebug() << lines[i];
-
 			emit errorReceived(tr("Unable to parse property: %1").arg(lines[i]));
 		}
 	}
@@ -156,6 +152,7 @@ bool DAmn::parseError(const QString &error)
 	if (error == "ok") return true;
 
 	static DAmnError s_errors[] = {
+		{ "bad namespace", tr("Bad namespace") },
 		{ "bad parameter", tr("Bad parameter") },
 		{ "unknown property", tr("Unknown property") },
 		{ "authentication failed", tr("Authentication failed") },
@@ -334,6 +331,26 @@ bool DAmn::parseRecv(const QStringList &lines)
 		// promote/demote
 		if (parsePacket("privchg", lines, i, p)) return parsePriv(room, p.params[0], p.args["i"] == "1", p.args["by"], p.args["pc"], lines, i);
 	}
+	else if (p.params[0] == "pchat")
+	{
+		QString room = p.params[1];
+		QString html, text;
+
+		// text
+		if (parsePacket("msg", lines, i, p)) return parseText(room, p.args["from"], MessageText, lines, i, html, text);
+		if (parsePacket("action", lines, i, p))	return parseText(room, p.args["from"], MessageAction, lines, i, html, text);
+
+		// join/part messages
+		if (parsePacket("join", lines, i, p)) return parseJoin(room, p.params[0], p.args["s"] == "1", lines, i);
+		if (parsePacket("part", lines, i, p)) return parsePart(room, p.params[0], p.args["s"] == "1", p.args["r"], lines, i);
+
+		// promote/demote
+		if (parsePacket("privchg", lines, i, p)) return parsePriv(room, p.params[0], p.args["i"] == "1", p.args["by"], p.args["pc"], lines, i);
+	}
+	else
+	{
+		emit errorReceived(tr("Unable to recognize param %1").arg(p.params[0]));
+	}
 
 	emit errorReceived(tr("Unable to recognize param %1").arg(p.params[0]));
 
@@ -349,6 +366,8 @@ bool DAmn::parseSend(const QStringList &lines)
 	if (!parsePacket("send", lines, i, p)) return false;
 
 	if (!parseError(p.args["e"])) return true;
+
+	emit errorReceived(tr("Not implemented: %1").arg(lines[i]));
 
 	return true;
 }
@@ -371,7 +390,13 @@ bool DAmn::parseJoin(const QStringList &lines)
 	}
 	else if (p.params[0] == "pchat")
 	{
-		emit errorReceived(tr("Private chats not yet implemented"));
+		createRoom(p.params[1]);
+
+		emit roomJoined(p.params[1]);
+	}
+	else
+	{
+		emit errorReceived(tr("Not implemented: %1").arg(lines[i]));
 	}
 
 	return true;
@@ -561,6 +586,16 @@ bool DAmn::parseProperty(const QStringList &lines)
 	{
 		if (prop == "info") return parseUserProperties(p.params[1], lines, i);
 	}
+	else if (p.params[0] == "pchat")
+	{
+		// extract all arguments
+		if (prop == "members") return parseRoomMembers(p.params[1], lines, i);
+		if (prop == "topic" || prop == "title") return parseRoomProperty(p.params[1], p.args, lines, i);
+	}
+	else
+	{
+		emit errorReceived(tr("Not implemented: %1").arg(p.params[0]));
+	}
 
 	emit errorReceived(tr("Unable to recognize property: %1").arg(prop));
 
@@ -575,9 +610,9 @@ bool DAmn::parseGet(const QStringList &lines)
 
 	if (!parsePacket("get", lines, i, p)) return false;
 
-//	if (p.param1 == "login" && p.args["p"] == "info") return parseUserProperties(p.param2, lines, i);
-
 	if (!parseError(p.args["e"])) return false;
+
+	emit errorReceived(tr("Not implemented: %1").arg(lines[i]));
 
 	return true;
 }
@@ -590,9 +625,9 @@ bool DAmn::parseSet(const QStringList &lines)
 
 	if (!parsePacket("set", lines, i, p)) return false;
 
-//	if (p.param1 == "login" && p.args["p"] == "info") return parseUserProperties(p.param2, lines, i);
-
 	if (!parseError(p.args["e"])) return false;
+
+	emit errorReceived(tr("Not implemented: %1").arg(lines[i]));
 
 	return true;
 }
@@ -607,7 +642,7 @@ bool DAmn::parseDisconnect(const QStringList &lines)
 
 	if (!parseError(p.args["e"])) return true;
 
-	qDebug() << lines;
+	emit errorReceived(tr("Not implemented: %1").arg(lines[i]));
 
 	return true;
 }

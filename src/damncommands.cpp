@@ -28,6 +28,11 @@
 	#define new DEBUG_NEW
 #endif
 
+QString DAmn::getRoomType(const QString &room) const
+{
+	return room.indexOf(':') > -1 ? "pchat":"chat";
+}
+
 bool DAmn::client()
 {
 	begin();
@@ -49,30 +54,14 @@ bool DAmn::join(const QString &room)
 	if (room.isEmpty()) return false;
 
 	begin();
-	writeLine(QString("join chat:%1").arg(room));
-	return end();
-}
-
-bool DAmn::joinPrivate(const QStringList &users)
-{
-	if (users.isEmpty()) return false;
-
-	begin();
-	writeLine("join pchat:" + users.join(":"));
+	writeLine(QString("join %1:%2").arg(getRoomType(room)).arg(room));
 	return end();
 }
 
 bool DAmn::part(const QString &room)
 {
 	begin();
-	writeLine(QString("part chat:%1").arg(room));
-	return end();
-}
-
-bool DAmn::partPrivate(const QStringList &users)
-{
-	begin();
-	writeLine("part pchat:" + users.join(":"));
+	writeLine(QString("part %1:%2").arg(getRoomType(room)).arg(room));
 	return end();
 }
 
@@ -162,7 +151,7 @@ bool DAmn::unban(const QString &room, const QString &username)
 bool DAmn::kick(const QString &room, const QString &username, const QString &reason)
 {
 	begin();
-	writeLine("kick chat:" + room);
+	writeLine(QString("kick %1:%2").arg(getRoomType(room)).arg(room));
 	writeLine("u=" + username);
 
 	if (!reason.isEmpty())
@@ -178,7 +167,7 @@ bool DAmn::getChatProperty(const QString &room, const QString &prop)
 {
 	// title topic privclasses members
 	begin();
-	writeLine("get chat:" + room);
+	writeLine(QString("get %1:%2").arg(getRoomType(room)).arg(room));
 	writeLine("p=" + prop);
 	return end();
 }
@@ -195,7 +184,7 @@ bool DAmn::setChatProperty(const QString &room, const QString &prop, const QStri
 {
 	// title topic
 	begin();
-	writeLine("set chat:" + room);
+	writeLine(QString("set %1:%2").arg(getRoomType(room)).arg(room));
 	writeLine("p=" + prop);
 	writeLine();
 	writeLine(value);
@@ -236,7 +225,7 @@ bool DAmn::kill(const QString &username, const QString &reason)
 void DAmn::sendChat(const QString &room)
 {
 	begin();
-	writeLine("send chat:" + room);
+	writeLine(QString("send %1:%2").arg(getRoomType(room)).arg(room));
 	writeLine();
 }
 

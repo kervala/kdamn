@@ -101,9 +101,7 @@ public slots:
 	bool client();
 	bool login();
 	bool join(const QString &room);
-	bool joinPrivate(const QStringList &users);
 	bool part(const QString &room);
-	bool partPrivate(const QStringList &users);
 	bool pong();
 	bool sendMessage(const QString &room, const QString &text);
 	bool sendAction(const QString &room, const QString &text);
@@ -155,6 +153,8 @@ private:
 
 	DAmnUser* createUser(const QString &user);
 	DAmnUser* getUser(const QString &user);
+
+	QString getRoomType(const QString &room) const;
 
 	// parser helpers
 	bool parseAllMessages(const QStringList &lines);
