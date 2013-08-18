@@ -44,19 +44,49 @@ RoomFrame::~RoomFrame()
 {
 }
 
-void RoomFrame::setAction(const QString &user, const QString &text)
+void RoomFrame::setAction(const QString &user, const QString &text, bool html)
 {
-	outputBrowser->setAction(user, text);
+	if (html) outputBrowser->setAction(user, text, html);
 }
 
-void RoomFrame::setText(const QString &user, const QString &text)
+void RoomFrame::setText(const QString &user, const QString &text, bool html)
 {
-	outputBrowser->setText(user, text);
+	outputBrowser->setText(user, text, html);
+}
+
+void RoomFrame::setSystem(const QString &text, bool html)
+{
+	outputBrowser->setSystem(text, html);
+}
+
+void RoomFrame::setTopic(const QString &user, const QString &topic, bool html)
+{
+	if (topic.isEmpty())
+	{
+		outputBrowser->setSystem(tr("Topic was removed by %1").arg(user), html);
+	}
+	else
+	{
+		outputBrowser->setSystem(tr("Topic changed by %1: %2").arg(user).arg(topic), html);
+	}
+}
+
+void RoomFrame::setTitle(const QString &user, const QString &title, bool html)
+{
+	if (title.isEmpty())
+	{
+		outputBrowser->setSystem(tr("Title was removed by %1").arg(user), html);
+	}
+	else
+	{
+		outputBrowser->setSystem(tr("Title changed by %1: %2").arg(user).arg(title), html);
+	}
 }
 
 void RoomFrame::setSystem(const QString &text)
 {
-	outputBrowser->setSystem(text);
+	outputBrowser->setSystem(text, true);
+	outputBrowser->setSystem(text, false);
 }
 
 void RoomFrame::setUsers(const QStringList &users)

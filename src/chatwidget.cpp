@@ -29,43 +29,72 @@
 
 #define DELAY_ANIMATION 100
 
+QString ChatWidget::s_css = \
+	".timestamp { color: #999; }\n" \
+	".username { font-weight: bold; }\n" \
+	".error { color: #f00; }\n" \
+	".system { color: #666; }\n";
+
 ChatWidget::ChatWidget(QWidget *parent):QTextBrowser(parent), m_focus(false), m_lastReload(QDateTime::currentDateTime())
 {
 	connect(this, SIGNAL(anchorClicked(QUrl)), this, SLOT(onUrl(QUrl)));
 
-	document()->setDefaultStyleSheet(".timestamp { color: #999; }\n.username { font-weight: bold; }\n.error { color: #f00; }\n.system { color: #666; }");
+	document()->setDefaultStyleSheet(s_css);
 
 	setAcceptDrops(true);
 }
 
 ChatWidget::~ChatWidget()
 {
+	closeLogs();
 }
 
-void ChatWidget::setAction(const QString &user, const QString &text)
+void ChatWidget::setAction(const QString &user, const QString &text, bool html)
 {
-	append(QString("<div class=\"normal\">%1<span class=\"username\">%2</span> %3</div>").arg(getTimestamp()).arg(user).arg(text));
+	if (html)
+	{
+		appendHtml(QString("<div class=\"normal\">%1<span class=\"username\">%2</span> %3</div>").arg(getTimestamp(true)).arg(user).arg(text));
 
-	startAnimations(text);
+		startAnimations(text);
+	}
+	else
+	{
+		appendText(QString("%1%2 %3").arg(getTimestamp(false)).arg(user).arg(text));
+	}
 }
 
-void ChatWidget::setText(const QString &user, const QString &text)
+void ChatWidget::setText(const QString &user, const QString &text, bool html)
 {
-	append(QString("<div class=\"normal\">%1<span class=\"username\">&lt;%2&gt;</span> %3</div>").arg(getTimestamp()).arg(user).arg(text));
+	if (html)
+	{
+		appendHtml(QString("<div class=\"normal\">%1<span class=\"username\">&lt;%2&gt;</span> %3</div>").arg(getTimestamp(true)).arg(user).arg(text));
 
-	startAnimations(text);
+		startAnimations(text);
+	}
+	else
+	{
+		appendText(QString("%1<%2> %3").arg(getTimestamp(false)).arg(user).arg(text));
+	}
 }
 
-void ChatWidget::setSystem(const QString &text)
+void ChatWidget::setSystem(const QString &text, bool html)
 {
-	append(QString("<div class=\"system\">%1%2</div>").arg(getTimestamp()).arg(text));
+	if (html)
+	{
+		appendHtml(QString("<div class=\"system\">%1%2</div>").arg(getTimestamp(true)).arg(text));
 
-	startAnimations(text);
+		startAnimations(text);
+	}
+	else
+	{
+		appendText(QString("%1%2").arg(getTimestamp(false)).arg(text));
+	}
 }
 
 void ChatWidget::setError(const QString &error)
 {
-	append(QString("<div class=\"error\">%1%2</div>").arg(getTimestamp()).arg(error));
+	appendHtml(QString("<div class=\"error\">%1%2</div>").arg(getTimestamp(true)).arg(error));
+	appendText(QString("%1%2").arg(getTimestamp(false)).arg(error));
 }
 
 void ChatWidget::onUrl(const QUrl &url)
@@ -104,11 +133,25 @@ void ChatWidget::dragLeaveEvent(QDragLeaveEvent *event)
     event->accept();
 }
 
-QString ChatWidget::getTimestamp() const
+QString ChatWidget::getTimestamp(bool html) const
 {
+	// TODO: check if user doesn't want to display timestamp
+
 	QString timestamp = QTime::currentTime().toString();
 
-	return QString("<span class=\"timestamp\">%1</span> ").arg(timestamp);
+	return QString(html ? "<span class=\"timestamp\">%1</span> ":"[%1] ").arg(timestamp);
+}
+
+void ChatWidget::appendHtml(const QString &html)
+{
+	append(html);
+
+	if (m_htmlFile.isOpen()) m_htmlFile.write(html.toUtf8());
+}
+
+void ChatWidget::appendText(const QString &text)
+{
+	if (m_textFile.isOpen()) m_textFile.write(text.toUtf8() + "\n");
 }
 
 QVariant ChatWidget::loadResource(int type, const QUrl &name)
@@ -210,6 +253,63 @@ void ChatWidget::setFocus(bool focus)
 
 		++it;
 	}
+}
+
+void ChatWidget::setRoom(const QString &room)
+{
+	m_room = room;
+
+	openLogs();
+}
+
+void ChatWidget::openLogs()
+{
+	QString cachePath;
+
+#ifdef USE_QT5
+	cachePath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#else
+	cachePath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#endif
+
+	QString dir(QDir::fromNativeSeparators(cachePath));
+
+	QString filename = QString("%1/%2-%3").arg(dir).arg(m_room).arg(QDate::currentDate().toString(Qt::ISODate));
+
+	m_htmlFile.setFileName(filename + ".htm");
+
+	if (m_htmlFile.open(QIODevice::Append))
+	{
+		QString header;
+		header += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+		header += "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n";
+		header += "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n";
+		header += "<head>\n";
+		header += "<style type=\"text/css\">\n";
+		header += s_css;
+		header += "</style>\n";
+		header += "</head>\n";
+		header += "<body>\n";
+
+		m_htmlFile.write(header.toUtf8());
+	}
+
+	m_textFile.setFileName(filename + ".txt");
+
+	if (m_textFile.open(QIODevice::Append))
+	{
+	}
+}
+
+void ChatWidget::closeLogs()
+{
+	if (m_htmlFile.isOpen())
+	{
+		m_htmlFile.write("</body></html>");
+		m_htmlFile.close();
+	}
+
+	m_textFile.close();
 }
 
 void ChatWidget::animate(int frame)

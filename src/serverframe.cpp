@@ -35,7 +35,8 @@ ServerFrame::~ServerFrame()
 
 void ServerFrame::setSystem(const QString &text)
 {
-	serverBrowser->setSystem(text);
+	serverBrowser->setSystem(text, true);
+	serverBrowser->setSystem(text, false);
 }
 
 void ServerFrame::setError(const QString &error)

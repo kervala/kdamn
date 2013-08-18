@@ -191,37 +191,31 @@ void RoomsTabWidget::onUploadImage(const QString &room, const QString &url)
 
 void RoomsTabWidget::onText(const QString &room, const QString &user, MessageType type, const QString &text, bool html)
 {
-	if (html)
+	if (!room.isEmpty())
 	{
-		if (!room.isEmpty())
-		{
-			RoomFrame *frame = getRoomFrame(room);
+		RoomFrame *frame = getRoomFrame(room);
 
-			if (frame)
+		if (frame)
+		{
+			switch(type)
 			{
-				switch(type)
-				{
-					case MessageText: frame->setText(user, text); break;
-					case MessageAction: if (!text.isEmpty()) frame->setAction(user, text); break;
-					case MessageTopic: if (!text.isEmpty()) frame->setSystem(tr("Topic changed by %1: %2").arg(user).arg(text)); break;
-					case MessageTitle: if (!text.isEmpty()) frame->setSystem(tr("Title changed by %1: %2").arg(user).arg(text)); break;
-					default: break;
-				}
+				case MessageText: frame->setText(user, text, html); break;
+				case MessageAction: frame->setAction(user, text, html); break;
+				case MessageTopic: frame->setTopic(user, text, html); break;
+				case MessageTitle: frame->setTitle(user, text, html); break;
+				default: break;
 			}
 		}
 		else
 		{
-			setSystem(text);
+			onError(tr("Room %1 doesn't exist").arg(room));
 		}
+
+		if (!html) updateSystrayIcon(room, user, text);
 	}
 	else
 	{
-		// TODO: write to logs
-
-		if (!room.isEmpty())
-		{
-			updateSystrayIcon(room, user, text);
-		}
+		setSystem(text);
 	}
 }
 
@@ -261,7 +255,7 @@ void RoomsTabWidget::onJoinRoom(const QString &room)
 {
 	createRoomFrame(room);
 
-	setSystem(tr("You joined room <b>%1</b>").arg(room));
+	setSystem(tr("You joined room %1").arg(room));
 
 	ConfigFile::getInstance()->setRoomConnected(room, true);
 }
@@ -270,7 +264,7 @@ void RoomsTabWidget::onPartRoom(const QString &room, const QString &reason)
 {
 	removeRoomFrame(room);
 
-	QString str = tr("You leaved room <b>%1</b>").arg(room);
+	QString str = tr("You left room %1").arg(room);
 
 	if (!reason.isEmpty()) str += QString(" (%1)").arg(reason);
 

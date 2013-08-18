@@ -30,9 +30,9 @@ public:
 	ChatWidget(QWidget *parent);
 	virtual ~ChatWidget();
 
-	void setAction(const QString &user, const QString &text);
-	void setText(const QString &user, const QString &text);
-	void setSystem(const QString &text);
+	void setAction(const QString &user, const QString &text, bool html);
+	void setText(const QString &user, const QString &text, bool html);
+	void setSystem(const QString &text, bool html);
 	void setError(const QString &text);
 
 	QVariant loadResource(int type, const QUrl &name);
@@ -44,7 +44,7 @@ public:
 	void setFocus(bool focus);
 
 	QString getRoom() const { return m_room; }
-	void setRoom(const QString &room) { m_room = room; }
+	void setRoom(const QString &room);
 
 public slots:
 	// when user click on a link
@@ -53,17 +53,28 @@ public slots:
 	void animate(int frame);
 
 protected:
+	void appendHtml(const QString &html);
+	void appendText(const QString &text);
+
+	void openLogs();
+	void closeLogs();
+
 	void dragEnterEvent(QDragEnterEvent *event);
 	void dragMoveEvent(QDragMoveEvent *event);
 	void dragLeaveEvent(QDragLeaveEvent *event);
 	void dropEvent(QDropEvent *event);
 
-	QString getTimestamp() const;
+	QString getTimestamp(bool html) const;
 
 	QHash<QMovie*, QUrl> m_urls;
 	bool m_focus;
 	QString m_room;
 	QDateTime m_lastReload;
+
+	QFile m_htmlFile;
+	QFile m_textFile;
+
+	static QString s_css;
 };
 
 class AnimationStart : public QObject
