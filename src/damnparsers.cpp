@@ -222,6 +222,8 @@ bool DAmn::parsePing(const QStringList &lines)
 
 	if (!parsePacket("ping", lines, i, p)) return false;
 
+	m_lastPing = QDateTime::currentDateTime();
+
 	return pong();
 }
 
@@ -307,6 +309,19 @@ bool DAmn::parsePriv(const QString &room, const QString &user, bool show, const 
 	return true;
 }
 
+bool DAmn::parseKicked(const QString &room, const QString &user, bool show, const QString &by, const QStringList &lines, int &i)
+{
+	if (show) emit userKicked(room, user, by);
+
+	DAmnRoom *r = getRoom(room);
+
+	if (!r) return false;
+
+	qDebug() << "Not implemented";
+
+	return true;
+}
+
 bool DAmn::parseRecv(const QStringList &lines)
 {
 	int i = 0;
@@ -330,6 +345,9 @@ bool DAmn::parseRecv(const QStringList &lines)
 
 		// promote/demote
 		if (parsePacket("privchg", lines, i, p)) return parsePriv(room, p.params[0], p.args["i"] == "1", p.args["by"], p.args["pc"], lines, i);
+
+		// kicked
+		if (parsePacket("kicked", lines, i, p)) return parseKicked(room, p.params[0], p.args["i"] == "1", p.args["by"], lines, i);
 	}
 	else if (p.params[0] == "pchat")
 	{
@@ -349,10 +367,10 @@ bool DAmn::parseRecv(const QStringList &lines)
 	}
 	else
 	{
-		emit errorReceived(tr("Unable to recognize param %1").arg(p.params[0]));
+		emit errorReceived(tr("Unable to recognize param: %1").arg(p.params[0]));
 	}
 
-	emit errorReceived(tr("Unable to recognize param %1").arg(p.params[0]));
+	emit errorReceived(tr("Unable to recognize command: %1").arg(lines[i]));
 
 	return true;
 }
