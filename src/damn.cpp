@@ -32,6 +32,12 @@ DAmn *DAmn::s_instance = NULL;
 DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL)
 {
 	if (s_instance == NULL) s_instance = this;
+
+	m_socket = new QTcpSocket(this);
+
+	connect(m_socket, SIGNAL(connected()), this, SLOT(client()));
+	connect(m_socket, SIGNAL(readyRead()), this, SLOT(read()));
+	connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(onError(QAbstractSocket::SocketError)));
 }
 
 DAmn::~DAmn()
@@ -47,12 +53,6 @@ bool DAmn::connectToServer()
 {
 	if (!m_login.isEmpty() && !m_token.isEmpty())
 	{
-		m_socket = new QTcpSocket(this);
-
-		connect(m_socket, SIGNAL(connected()), this, SLOT(client()));
-		connect(m_socket, SIGNAL(readyRead()), this, SLOT(read()));
-		connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(onError(QAbstractSocket::SocketError)));
-
 		m_socket->connectToHost("chat.deviantart.com", 3900);
 
 		return true;
@@ -73,9 +73,12 @@ void DAmn::setToken(const QString &authtoken)
 
 void DAmn::onError(QAbstractSocket::SocketError error)
 {
-	qDebug() << "Error:" << error;
-
 	emit errorReceived(tr("Socket error: %1").arg(error));
+
+	if (error == QAbstractSocket::RemoteHostClosedError)
+	{
+		connectToServer();
+	}
 }
 
 bool DAmn::downloadImage(DAmnImage &image)
@@ -182,6 +185,8 @@ bool DAmn::updateWaitingMessages(const QString &md5)
 
 bool DAmn::read()
 {
+	m_lastMessage = QDateTime::currentDateTime();
+
 	m_readBuffer.append(m_socket->readAll());
 
 	if (m_readBuffer.isEmpty()) return false;

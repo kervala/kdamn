@@ -137,6 +137,7 @@ signals:
 	void userJoined(const QString &room, const QString &user, bool show);
 	void userParted(const QString &room, const QString &user, const QString &reason, bool show);
 	void userPrivChanged(const QString &room, const QString &user, const QString &by, const QString &pc);
+	void userKicked(const QString &room, const QString &user, const QString &by);
 	void usersReceived(const QString &room, const QStringList &users);
 	void errorReceived(const QString &error);
 
@@ -170,6 +171,7 @@ private:
 	bool parseJoin(const QString &room, const QString &user, bool show, const QStringList &lines, int &i);
 	bool parsePart(const QString &room, const QString &user, bool show, const QString &reason, const QStringList &lines, int &i);
 	bool parsePriv(const QString &room, const QString &user, bool show, const QString &by, const QString &pc, const QStringList &lines, int &i);
+	bool parseKicked(const QString &room, const QString &user, bool show, const QString &by, const QStringList &lines, int &i);
 	bool parseError(const QString &error);
 
 	// parse message sent from server
@@ -201,6 +203,8 @@ private:
 	QMap<QString, int> m_stats;
 
 	QMutex m_writeMutex;
+	QDateTime m_lastPing;
+	QDateTime m_lastMessage;
 
 	static DAmn *s_instance;
 };
