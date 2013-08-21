@@ -180,36 +180,6 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 						height = tokens[1].toInt();
 					}
 
-					tokens = url.split(':');
-
-					if (tokens.size() == 2)
-					{
-						pre = tokens[0];
-						post = tokens[1];
-					}
-
-					if (width > 150 || height > 150)
-					{
-						url = QString("http://th%1.deviantart.net/%2/150/%3");
-
-						if (height > width)
-						{
-							width = width * 150 / height;
-							height = 150;
-						}
-						else
-						{
-							height = height * 150 / width;
-							width = 150;
-						}
-					}
-					else
-					{
-						url = QString("http://fc%1.deviantart.net/%2/%3");
-					}
-
-					url = url.arg(tnserver, 2, '0').arg(pre).arg(post);
-
 					tokens = flags.split(':');
 
 					if (tokens.size() == 3)
@@ -219,17 +189,57 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 						nopriv = tokens[2].toInt() > 0;
 					}
 
-					DAmnImage image;
-					image.remoteUrl = url;
-
-					if (downloadImage(image) && !images.contains(image)) images << image;
-
 					QString title2 = title;
-					title2.replace(" ", "-");
+					title2.replace(QRegExp("[() ]+"), "-");
 
 					QString link = QString("http://www.deviantart.com/art/%1-%2").arg(title2).arg(number);
 
-					html += QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" local=\"%6\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(image.remoteUrl).arg(link).arg(width).arg(height).arg(image.localUrl);
+					// journal entry
+					if (url == "images.deviantart.com/shared/poetry.jpg")
+					{
+						html += QString("<a href=\"%1\">%2</a>").arg(link).arg(title);
+					}
+					else
+					{
+						tokens = url.split(':');
+
+
+						if (tokens.size() == 2)
+						{
+							pre = tokens[0];
+							post = tokens[1];
+						}
+
+						if (width > 150 || height > 150)
+						{
+							url = QString("http://th%1.deviantart.net/%2/150/%3");
+
+							if (height > width)
+							{
+								width = width * 150 / height;
+								height = 150;
+							}
+							else
+							{
+								height = height * 150 / width;
+								width = 150;
+							}
+						}
+						else
+						{
+							url = QString("http://fc%1.deviantart.net/%2/%3");
+						}
+
+						url = url.arg(tnserver, 2, '0').arg(pre).arg(post);
+
+						DAmnImage image;
+						image.remoteUrl = url;
+
+						if (downloadImage(image) && !images.contains(image)) images << image;
+
+						html += QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" local=\"%6\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(image.remoteUrl).arg(link).arg(width).arg(height).arg(image.localUrl);
+					}
+
 					text += QString(":thumb%1:").arg(number);
 				}
 				else if (id == "iframe" || id == "embed")
