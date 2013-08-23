@@ -144,6 +144,9 @@ QString ChatWidget::getTimestamp(bool html) const
 
 void ChatWidget::appendHtml(const QString &html)
 {
+	// reset previous formatting, to cancel wrong behavior from previous HTML tags
+	setTextCursor(QTextCursor(document()));
+
 	append(html);
 
 	if (m_htmlFile.isOpen()) m_htmlFile.write(html.toUtf8());
