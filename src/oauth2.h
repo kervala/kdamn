@@ -43,11 +43,12 @@ class OAuth2 : public QObject
 	Q_OBJECT
 
 public:
-	OAuth2(QWidget *parent);
+	OAuth2(QObject *parent);
 	virtual ~OAuth2();
 
 	static OAuth2* getInstance() { return s_instance; }
 
+	void init();
 	void setLogin(const QString &login) { m_login = login; }
 	void setPassword(const QString &password) { m_password = password; }
 	void setDAmnToken(const QString &token) { m_damnToken = token; }

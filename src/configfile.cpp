@@ -131,6 +131,20 @@ bool ConfigFile::loadVersion2()
 
 	m_settings.endGroup();
 
+	// load cookies
+	m_settings.beginGroup("cookies");
+
+	QStringList cookies = m_settings.childKeys();
+
+	m_cookies.clear();
+
+	foreach(const QString &cookie, cookies)
+	{
+		m_cookies << QNetworkCookie::parseCookies(cookie.toUtf8());
+	}
+
+	m_settings.endGroup();
+
 	return true;
 }
 
@@ -189,6 +203,16 @@ bool ConfigFile::save()
 		m_settings.setValue(it->name, it->value);
 
 		++it;
+	}
+
+	m_settings.endGroup();
+
+	// save cookies
+	m_settings.beginGroup("cookies");
+
+	for(int i = 0; i < m_cookies.size(); ++i)
+	{
+		m_settings.setValue(QString::number(i), m_cookies.at(i).toRawForm());
 	}
 
 	m_settings.endGroup();
@@ -440,4 +464,16 @@ void ConfigFile::autosave()
 void ConfigFile::modified(bool modified)
 {
 	m_modified = modified;
+}
+
+QList<QNetworkCookie> ConfigFile::getCookies() const
+{
+	return m_cookies;
+}
+
+void ConfigFile::setCookies(const QList<QNetworkCookie> &cookies)
+{
+	m_cookies = cookies;
+
+	modified(true);
 }

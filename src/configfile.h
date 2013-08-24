@@ -119,6 +119,9 @@ public:
 	void setRoomFocused(const QString &room, bool focused);
 	void setRoomOrder(const QString &room, int order);
 
+	QList<QNetworkCookie> getCookies() const;
+	void setCookies(const QList<QNetworkCookie> &cookies);
+
 public slots:
 	bool load();
 	bool save();
@@ -149,6 +152,8 @@ private:
 	QSize m_size;
 	QPoint m_position;
 	int m_splitter;
+
+	QList<QNetworkCookie> m_cookies;
 };
 
 #endif

@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "oauth2.h"
+#include "cookies.h"
 
 #ifdef Q_OS_WIN
 	#include <sdkddkver.h>
@@ -53,17 +54,12 @@ QString OAuth2::s_userAgent;
 WId OAuth2::s_mainWindowId = NULL;
 OAuth2* OAuth2::s_instance = NULL;
 
-OAuth2::OAuth2(QWidget *parent):QObject(parent), m_manager(NULL), m_clientId(0), m_expiresIn(0)
+OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0), m_expiresIn(0)
 {
 	if (s_instance == NULL) s_instance = this;
 
 	m_clientId = 474;
 	m_clientSecret = "6a8b3dacb0d41c5d177d6f189df772d1";
-
-	m_manager = new QNetworkAccessManager(this);
-
-	connect(m_manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(onReply(QNetworkReply*)));
-	connect(m_manager, SIGNAL(proxyAuthenticationRequired(QNetworkProxy, QAuthenticator *)), SLOT(onAuthentication(QNetworkProxy, QAuthenticator *)));
 
 #ifdef TASKBAR_PROGRESS
 	m_taskbarList = NULL;
@@ -85,6 +81,17 @@ OAuth2::~OAuth2()
 #endif
 }
 
+void OAuth2::init()
+{
+	if (m_manager) return;
+
+	m_manager = new QNetworkAccessManager(this);
+	m_manager->setCookieJar(new Cookies(m_manager));
+
+	connect(m_manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(onReply(QNetworkReply*)));
+	connect(m_manager, SIGNAL(proxyAuthenticationRequired(QNetworkProxy, QAuthenticator *)), SLOT(onAuthentication(QNetworkProxy, QAuthenticator *)));
+}
+
 void OAuth2::addUserAgent(QNetworkRequest &req) const
 {
 	if (s_userAgent.isEmpty()) return;
@@ -98,6 +105,8 @@ void OAuth2::addUserAgent(QNetworkRequest &req) const
 
 bool OAuth2::get(const QString &url, const QString &referer)
 {
+	init();
+
 	QNetworkRequest req;
 	req.setUrl(QUrl(url));
 
@@ -115,6 +124,8 @@ bool OAuth2::get(const QString &url, const QString &referer)
 
 bool OAuth2::post(const QString &url, const QByteArray &data, const QString &referer)
 {
+	init();
+
 	QNetworkRequest req;
 	req.setUrl(QUrl(url));
 	addUserAgent(req);
