@@ -158,6 +158,7 @@ bool DAmn::parseError(const QString &error)
 		{ "authentication failed", tr("Authentication failed") },
 		{ "nothing to send", tr("Nothing to send") },
 		{ "already joined", tr("Already joined") },
+		{ "no login", tr("No login") },
 		{ "", "" }
 	};
 
