@@ -89,7 +89,8 @@ void OAuth2::init()
 	m_manager->setCookieJar(new Cookies(m_manager));
 
 	connect(m_manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(onReply(QNetworkReply*)));
-	connect(m_manager, SIGNAL(proxyAuthenticationRequired(QNetworkProxy, QAuthenticator *)), SLOT(onAuthentication(QNetworkProxy, QAuthenticator *)));
+	connect(m_manager, SIGNAL(authenticationRequired(QNetworkReply*, QAuthenticator *)), this, SLOT(onAuthentication(QNetworkReply*, QAuthenticator *)));
+	connect(m_manager, SIGNAL(proxyAuthenticationRequired(QNetworkProxy, QAuthenticator *)), SLOT(onProxyAuthentication(QNetworkProxy, QAuthenticator *)));
 }
 
 void OAuth2::addUserAgent(QNetworkRequest &req) const
@@ -813,9 +814,16 @@ void OAuth2::onSslErrors(const QList<QSslError> &errors)
 	}
 }
 
-void OAuth2::onAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth)
+void OAuth2::onAuthentication(QNetworkReply *reply, QAuthenticator *auth)
 {
 	qDebug() << "auth";
 
-	emit errorReceived(tr("Authentication required"));
+	emit errorReceived(tr("Authentication required for %1").arg(reply->url().toString()));
+}
+
+void OAuth2::onProxyAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth)
+{
+	qDebug() << "proxy auth";
+
+	emit errorReceived(tr("Proxy authentication required"));
 }

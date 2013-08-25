@@ -73,7 +73,8 @@ signals:
 
 public slots:
 	void onReply(QNetworkReply *reply);
-	void onAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth);
+	void onAuthentication(QNetworkReply *reply, QAuthenticator *auth);
+	void onProxyAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth);
 	void onReplyError(QNetworkReply::NetworkError error);
 	void onSslErrors(const QList<QSslError> &errors);
 	void onUploadProgress(qint64 readBytes, qint64 totalBytes);
