@@ -564,6 +564,10 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 					requestStash(file.filename, file.room);
 				}
+				else if (m_damnToken.isEmpty())
+				{
+					requestDAmnToken();
+				}
 			}
 			else if (error == "expired_token")
 			{
