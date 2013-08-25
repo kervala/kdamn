@@ -296,11 +296,19 @@ void ChatWidget::openLogs()
 
 		m_htmlFile.write(header.toUtf8());
 	}
+	else
+	{
+		qDebug() << "Unable to open file" << (filename + ".htm");
+	}
 
 	m_textFile.setFileName(filename + ".txt");
 
 	if (m_textFile.open(QIODevice::Append))
 	{
+	}
+	else
+	{
+		qDebug() << "Unable to open file" << (filename + ".txt");
 	}
 }
 
