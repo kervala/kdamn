@@ -99,7 +99,7 @@ void OAuth2::addUserAgent(QNetworkRequest &req) const
 #ifdef USE_QT5
 	req.setHeader(QNetworkRequest::UserAgentHeader, s_userAgent);
 #else
-	req.setRawHeader("User-Agent", m_userAgent.toLatin1());
+	req.setRawHeader("User-Agent", s_userAgent.toLatin1());
 #endif
 }
 
