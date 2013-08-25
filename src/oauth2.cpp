@@ -51,7 +51,7 @@ static QString base36enc(qint64 value)
 }
 
 QString OAuth2::s_userAgent;
-WId OAuth2::s_mainWindowId = NULL;
+WId OAuth2::s_mainWindowId = 0;
 OAuth2* OAuth2::s_instance = NULL;
 
 OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0), m_expiresIn(0)
