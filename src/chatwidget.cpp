@@ -33,7 +33,8 @@ QString ChatWidget::s_css = \
 	".timestamp { color: #999; }\n" \
 	".username { font-weight: bold; }\n" \
 	".error { color: #f00; }\n" \
-	".system { color: #666; }\n";
+	".system { color: #666; }\n" \
+	".hidden { display: none; }\n";
 
 ChatWidget::ChatWidget(QWidget *parent):QTextBrowser(parent), m_focus(false), m_lastReload(QDateTime::currentDateTime())
 {
@@ -145,11 +146,18 @@ QString ChatWidget::getTimestamp(bool html) const
 void ChatWidget::appendHtml(const QString &html)
 {
 	// reset previous formatting, to cancel wrong behavior from previous HTML tags
-	setTextCursor(QTextCursor(document()));
+	if (!textCursor().blockFormat().properties().isEmpty())
+	{
+		// create a new empty block to keep previous forrmatting
+		append("<div class=\"hidden\" />");
+
+		// reset block formatting
+		textCursor().setBlockFormat(QTextBlockFormat());
+	}
 
 	append(html);
 
-	if (m_htmlFile.isOpen()) m_htmlFile.write(html.toUtf8());
+	if (m_htmlFile.isOpen()) m_htmlFile.write(html.toUtf8() + "\n");
 }
 
 void ChatWidget::appendText(const QString &text)
