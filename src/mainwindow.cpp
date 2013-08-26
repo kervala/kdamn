@@ -179,6 +179,10 @@ void MainWindow::autoConnect()
 
 		DAmn::getInstance()->connectToServer();
 	}
+	else
+	{
+		onConnect();
+	}
 }
 
 bool MainWindow::event(QEvent *e)
