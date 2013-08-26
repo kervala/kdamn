@@ -140,7 +140,7 @@ bool ConfigFile::loadVersion2()
 
 	foreach(const QString &cookie, cookies)
 	{
-		m_cookies << QNetworkCookie::parseCookies(cookie.toUtf8());
+		m_cookies << QNetworkCookie::parseCookies(m_settings.value(cookie).toString().toUtf8());
 	}
 
 	m_settings.endGroup();
@@ -212,7 +212,7 @@ bool ConfigFile::save()
 
 	for(int i = 0; i < m_cookies.size(); ++i)
 	{
-		m_settings.setValue(QString::number(i), m_cookies.at(i).toRawForm());
+		m_settings.setValue(QString::number(i), QString::fromUtf8(m_cookies.at(i).toRawForm()));
 	}
 
 	m_settings.endGroup();
@@ -473,6 +473,8 @@ QList<QNetworkCookie> ConfigFile::getCookies() const
 
 void ConfigFile::setCookies(const QList<QNetworkCookie> &cookies)
 {
+	if (m_cookies == cookies) return;
+
 	m_cookies = cookies;
 
 	modified(true);
