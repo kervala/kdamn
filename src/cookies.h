@@ -30,6 +30,9 @@ public:
 
 	bool loadFromDisk();
 	bool saveToDisk();
+
+protected:
+	void removeExpiredCookies(QList<QNetworkCookie> &cookies);
 };
 
 #endif

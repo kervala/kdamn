@@ -37,14 +37,33 @@ Cookies::~Cookies()
 
 bool Cookies::loadFromDisk()
 {
-	setAllCookies(ConfigFile::getInstance()->getCookies());
+	QList<QNetworkCookie> cookies = ConfigFile::getInstance()->getCookies();
+
+	removeExpiredCookies(cookies);
+
+	setAllCookies(cookies);
 
 	return true;
 }
 
 bool Cookies::saveToDisk()
 {
-	ConfigFile::getInstance()->setCookies(allCookies());
+	QList<QNetworkCookie> cookies = allCookies();
+
+	removeExpiredCookies(cookies);
+
+	ConfigFile::getInstance()->setCookies(cookies);
 
 	return true;
 }
+
+void Cookies::removeExpiredCookies(QList<QNetworkCookie> &cookies)
+{
+    QDateTime now = QDateTime::currentDateTime();
+
+    for (int i = cookies.count() - 1; i >= 0; --i)
+	{
+		if (cookies.at(i).expirationDate() < now) cookies.removeAt(i);
+	}
+}
+
