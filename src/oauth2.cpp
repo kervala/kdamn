@@ -171,10 +171,15 @@ bool OAuth2::authorizeApplication(bool authorize)
 
 bool OAuth2::login(bool oauth2)
 {
+	init();
+
 	if (oauth2)
 	{
 		// try to reuse an access token
 		if (!m_accessToken.isEmpty()) return requestPlacebo();
+
+		// try to reuse previous cookies
+		if (!m_manager->cookieJar()->cookiesForUrl(QUrl("https://www.deviantart.com/")).isEmpty()) return requestAuthorization();
 
 		return loginOAuth2();
 	}
@@ -461,6 +466,8 @@ void OAuth2::onReply(QNetworkReply *reply)
 	if (reply->error() == QNetworkReply::NoError)
 	{
 	}
+
+	qobject_cast<Cookies*>(m_manager->cookieJar())->saveToDisk();
 
 	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
 	QString url = reply->url().toString();
