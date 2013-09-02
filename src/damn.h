@@ -96,7 +96,6 @@ public:
 
 	static DAmn* getInstance() { return s_instance; }
 
-public slots:
 	// dAmn commands
 	bool client();
 	bool login();
@@ -121,9 +120,20 @@ public slots:
 	// implemented
 	bool send(const QString &room, const QString &text);
 	bool send(const QString &room, const QStringList &lines);
+
+public slots:
+	void onConnected();
+	void onDisconnected();
+	void onStageChanged(QAbstractSocket::SocketState state);
+	void onAboutToClose();
+	void onReadChannelFinished();
+
+	void onRead();
+	void onWritten(qint64 bytes);
+
 	void onError(QAbstractSocket::SocketError error);
-	bool read();
-	bool updateWaitingMessages(const QString &md5);
+
+	bool onUpdateWaitingMessages(const QString &md5);
 
 signals:
 	void authenticationFailed();

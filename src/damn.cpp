@@ -35,8 +35,15 @@ DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL)
 
 	m_socket = new QTcpSocket(this);
 
-	connect(m_socket, SIGNAL(connected()), this, SLOT(client()));
-	connect(m_socket, SIGNAL(readyRead()), this, SLOT(read()));
+	connect(m_socket, SIGNAL(connected()), this, SLOT(onConnected()));
+	connect(m_socket, SIGNAL(disconnected()), this, SLOT(onDisconnected()));
+	connect(m_socket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(onStageChanged(QAbstractSocket::SocketState)));
+	connect(m_socket, SIGNAL(aboutToClose()), this, SLOT(onAboutToClose()));
+	connect(m_socket, SIGNAL(readChannelFinished()), this, SLOT(onReadChannelFinished()));
+
+	connect(m_socket, SIGNAL(readyRead()), this, SLOT(onRead()));
+	connect(m_socket, SIGNAL(bytesWritten(qint64)), this, SLOT(onWritten(qint64)));
+
 	connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(onError(QAbstractSocket::SocketError)));
 }
 
@@ -73,12 +80,54 @@ void DAmn::setToken(const QString &authtoken)
 
 void DAmn::onError(QAbstractSocket::SocketError error)
 {
-	emit errorReceived(tr("Socket error: %1").arg(error));
-
-	if (error == QAbstractSocket::RemoteHostClosedError)
+	switch(error)
 	{
+		case QAbstractSocket::RemoteHostClosedError:
+		// server disconnected us, try to reconnect
+		emit errorReceived(tr("Remote host closed, trying to reconnect"));
 		connectToServer();
+		break;
+
+		case QAbstractSocket::OperationError:
+		// receive it when connectToServer() after received a QAbstractSocket::RemoteHostClosedError
+		emit errorReceived(tr("Operation error"));
+		break;
+
+		case QAbstractSocket::NetworkError:
+		emit errorReceived(tr("Unable to connect"));
+		break;
+
+		default:
+		emit errorReceived(tr("Socket error: %1").arg(error));
+		break;
 	}
+}
+
+void DAmn::onConnected()
+{
+	emit errorReceived(tr("Connected"));
+
+	client();
+}
+
+void DAmn::onDisconnected()
+{
+	emit errorReceived(tr("Disconnected"));
+}
+
+void DAmn::onStageChanged(QAbstractSocket::SocketState state)
+{
+	emit errorReceived(tr("Stage changed %1").arg(state));
+}
+
+void DAmn::onAboutToClose()
+{
+	emit errorReceived(tr("About to close"));
+}
+
+void DAmn::onReadChannelFinished()
+{
+	emit errorReceived(tr("Read channel finished"));
 }
 
 bool DAmn::downloadImage(DAmnImage &image)
@@ -89,7 +138,7 @@ bool DAmn::downloadImage(DAmnImage &image)
 
 	if (!s_connected)
 	{
-		connect(OAuth2::getInstance(), SIGNAL(imageDownloaded(QString)), this, SLOT(updateWaitingMessages(QString)));
+		connect(OAuth2::getInstance(), SIGNAL(imageDownloaded(QString)), this, SLOT(onUpdateWaitingMessages(QString)));
 		s_connected = true;
 	}
 
@@ -134,7 +183,7 @@ bool DAmn::downloadImage(DAmnImage &image)
 	return true;
 }
 
-bool DAmn::updateWaitingMessages(const QString &md5)
+bool DAmn::onUpdateWaitingMessages(const QString &md5)
 {
 	QString filename;
 	QStringList rooms;
@@ -183,16 +232,16 @@ bool DAmn::updateWaitingMessages(const QString &md5)
 	return true;
 }
 
-bool DAmn::read()
+void DAmn::onRead()
 {
 	m_lastMessage = QDateTime::currentDateTime();
 
 	m_readBuffer.append(m_socket->readAll());
 
-	if (m_readBuffer.isEmpty()) return false;
+	if (m_readBuffer.isEmpty()) return;
 
 	// truncated data, process later
-	if (m_readBuffer.at(m_readBuffer.length()-1) != 0) return false;
+	if (m_readBuffer.at(m_readBuffer.length()-1) != 0) return;
 
 	// split all packets
 	QList<QByteArray> packets = m_readBuffer.split(0);
@@ -209,8 +258,10 @@ bool DAmn::read()
 
 	// empty buffer because processed
 	m_readBuffer.clear();
+}
 
-	return true;
+void DAmn::onWritten(qint64 bytes)
+{
 }
 
 DAmnRoom* DAmn::createRoom(const QString &room)
