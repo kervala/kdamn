@@ -17,44 +17,18 @@
  *
  */
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef SETTINGSDIALOG_H
+#define SETTINGSDIALOG_H
 
-#include "ui_mainwindow.h"
+#include "ui_settingsdialog.h"
 
-class MainWindow : public QMainWindow, public Ui::MainWindow
+class SettingsDialog : public QDialog, public Ui::SettingsDialog
 {
 	Q_OBJECT
 
 public:
-	MainWindow();
-	virtual ~MainWindow();
-
-	void autoConnect();
-
-public slots:
-	// server menu
-	void onConnect();
-	void onDisconnect();
-	void onSettings();
-
-	// room menu
-	void onJoin();
-	void onPart();
-	void onRooms();
-
-	// help menu
-	void onAbout();
-	void onAboutQt();
-
-	// other
-	void trayActivated(QSystemTrayIcon::ActivationReason reseaon);
-
-protected:
-	void closeEvent(QCloseEvent *e);
-	void resizeEvent(QResizeEvent *e);
-	void moveEvent(QMoveEvent *e);
-	bool event(QEvent *e);
+	SettingsDialog(QWidget* parent);
+	virtual ~SettingsDialog();
 };
 
 #endif

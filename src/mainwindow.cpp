@@ -21,6 +21,7 @@
 #include "mainwindow.h"
 #include "moc_mainwindow.cpp"
 #include "connectdialog.h"
+#include "settingsdialog.h"
 #include "joinroomdialog.h"
 #include "configfile.h"
 #include "roomsdialog.h"
@@ -45,6 +46,7 @@ MainWindow::MainWindow():QMainWindow()
 	// Server menu
 	connect(actionConnect, SIGNAL(triggered()), this, SLOT(onConnect()));
 	connect(actionDisconnect, SIGNAL(triggered()), this, SLOT(onDisconnect()));
+	connect(actionSettings, SIGNAL(triggered()), this, SLOT(onSettings()));
 	connect(actionExit, SIGNAL(triggered()), this, SLOT(close()));
 
 	// Room menu
@@ -118,6 +120,15 @@ void MainWindow::onConnect()
 void MainWindow::onDisconnect()
 {
 	DAmn::getInstance()->disconnect();
+}
+
+void MainWindow::onSettings()
+{
+	SettingsDialog dialog(this);
+
+	if (dialog.exec())
+	{
+	}
 }
 
 void MainWindow::onJoin()
