@@ -88,10 +88,12 @@ void DAmn::onError(QAbstractSocket::SocketError error)
 		connectToServer();
 		break;
 
+#ifdef USE_QT5
 		case QAbstractSocket::OperationError:
 		// receive it when connectToServer() after received a QAbstractSocket::RemoteHostClosedError
 		emit errorReceived(tr("Operation error"));
 		break;
+#endif
 
 		case QAbstractSocket::NetworkError:
 		emit errorReceived(tr("Unable to connect"));
