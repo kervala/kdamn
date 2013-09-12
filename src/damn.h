@@ -141,7 +141,6 @@ signals:
 
 	void textReceived(const QString &room, const QString &user, MessageType type, const QString &text, bool html);
 
-	void imageDownloaded(const QString &md5);
 	void roomJoined(const QString &room);
 	void roomParted(const QString &room, const QString &reason);
 	void userJoined(const QString &room, const QString &user, bool show);
