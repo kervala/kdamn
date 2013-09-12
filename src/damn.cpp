@@ -206,8 +206,6 @@ bool DAmn::onUpdateWaitingMessages(const QString &md5)
 
 			if (md5 == it->md5)
 			{
-				++downloaded;
-
 				if (!it->downloaded)
 				{
 					it->downloaded = true;
@@ -216,6 +214,8 @@ bool DAmn::onUpdateWaitingMessages(const QString &md5)
 
 				if (!rooms.contains(msg->room)) rooms << msg->room;
 			}
+
+			if (it->downloaded) ++downloaded;
 
 			++it;
 		}
