@@ -20,11 +20,6 @@
 #ifndef COMMON_H
 #define COMMON_H
 
-#if defined(_WIN32) && !defined(_WIN32_WINNT)
-#define _WIN32_WINNT 0x0510
-#endif
-
-#ifndef APSTUDIO_READONLY_SYMBOLS
 #include <QtCore/QtCore>
 #include <QtGui/QtGui>
 #include <QtNetwork/QtNetwork>
@@ -48,5 +43,4 @@
 	#define DEBUG_NEW new(_NORMAL_BLOCK, __FILE__, __LINE__)
 #endif
 
-#endif
 #endif
