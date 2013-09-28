@@ -19,23 +19,33 @@
 
 #include "common.h"
 #include "mainwindow.h"
-#include <iostream>
-#include <fcntl.h>
 
 #ifdef HAVE_CONFIG_H
 	#include "config.h"
 #endif
 
+#ifdef QT_STATICPLUGIN
+
+#include <QtPlugin>
+
 #ifdef Q_OS_WIN32
-	#include <Windows.h>
-	#include <io.h>
+	Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+#endif
+	
+#ifdef Q_OS_MAC
+	Q_IMPORT_PLUGIN(QCocoaIntegrationPlugin)
+#endif
+
+	Q_IMPORT_PLUGIN(QSvgPlugin)
+	Q_IMPORT_PLUGIN(QSvgIconPlugin)
+	Q_IMPORT_PLUGIN(QMngPlugin)
 #endif
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
 #endif
 
-#if defined(_DEBUG) && defined(_WIN32)
+#if defined(_MSC_VER) && defined(_DEBUG)
 #pragma comment(linker,"/SUBSYSTEM:CONSOLE")
 #endif
 
