@@ -32,7 +32,7 @@ ConfigFile* ConfigFile::s_instance = NULL;
 
 ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT),
 	m_rememberPassword(true), m_method(MethodOAuth2), m_animationFrameDelay(100), m_autosaveDelay(30), m_modified(false),
-	m_size(), m_position(), m_splitter(0)
+	m_size(0, 0), m_position(0, 0), m_splitter(0)
 {
 	if (!s_instance) s_instance = this;
 
