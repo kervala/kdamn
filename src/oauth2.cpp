@@ -668,10 +668,19 @@ void OAuth2::onReply(QNetworkReply *reply)
 	{
 		emit errorReceived(tr("Bad form"));
 	}
-	else if (url.endsWith("/join/oauth2") && redirection.endsWith("/join/blank"))
+	else if (url.endsWith("/join/oauth2"))
 	{
-		// login successful, authorize the application now
-		requestAuthorization();
+		// when using oauth2
+		if (redirection.endsWith("/join/blank"))
+		{
+			// login successful, authorize the application now
+			requestAuthorization();
+		}
+		else
+		{
+			// wrong login
+			emit errorReceived(tr("Login '%1' doesn't exist").arg(m_login));
+		}
 	}
 	else if (redirection.startsWith("kdamn://"))
 	{
@@ -701,7 +710,18 @@ void OAuth2::onReply(QNetworkReply *reply)
 	}
 	else if (url.endsWith("/users/login"))
 	{
-		requestAuthToken();
+		if (redirection.endsWith(QString("/wrong-password")))
+		{
+			emit errorReceived(tr("Login '%1' doesn't exist").arg(m_login));
+		}
+		else if (redirection.endsWith(QString("/wrong-password?username=%1").arg(m_login)))
+		{
+			emit errorReceived(tr("Wrong password for user %1").arg(m_login));
+		}
+		else
+		{
+			requestAuthToken();
+		}
 	}
 	else if (url.endsWith("/Botdom"))
 	{
@@ -757,6 +777,11 @@ void OAuth2::onReply(QNetworkReply *reply)
 			emit errorReceived(tr("Unable to find validate token or key"));
 		}
 	}
+	else if (redirection.endsWith("/join/oauth2"))
+	{
+		// when using oauth2 and wrong password
+		emit errorReceived(tr("Wrong password for user %1").arg(m_login));
+	}
 	else if (!redirection.isEmpty() && redirection != url)
 	{
 		qDebug() << "Redirected from" << url << "to" << redirection;
@@ -773,9 +798,23 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 void OAuth2::onReplyError(QNetworkReply::NetworkError error)
 {
-	qDebug() << "Error:" << error;
+	QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
 
-	emit errorReceived(tr("Network error: %1").arg(error));
+	QString url;
+
+	if (reply) url = reply->url().toString();
+
+	switch(error)
+	{
+		case QNetworkReply::AuthenticationRequiredError:
+		emit errorReceived(tr("Authentication required while accessing %1").arg(url));
+		break;
+
+		default:
+		qDebug() << "Error:" << error;
+		emit errorReceived(tr("Network error: %1").arg(error));
+		break;
+	}
 }
 
 void OAuth2::onSslErrors(const QList<QSslError> &errors)
