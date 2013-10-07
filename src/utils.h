@@ -27,5 +27,15 @@ bool RestoreMinimizedWindow(WId &id);
 void MinimizeWindow(WId id);
 void PutForegroundWindow(WId id);
 bool IsUsingComposition();
+bool IsOS64bits();
+
+void SetMainWindowId(WId id);
+WId GetMainWindowId();
+
+bool InitSystemProgress();
+bool UninitSystemProgress();
+bool BeginSystemProgress();
+bool UpdateSystemProgress(qint64 value, qint64 total);
+bool EndSystemProgress();
 
 #endif

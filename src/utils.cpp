@@ -19,3 +19,16 @@
 
 #include "common.h"
 #include "utils.h"
+
+static WId s_winId = 0;
+
+void SetMainWindowId(WId id)
+{
+	s_winId = id;
+}
+
+WId GetMainWindowId()
+{
+	return s_winId;
+}
+

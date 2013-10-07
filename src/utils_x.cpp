@@ -129,4 +129,34 @@ void PutForegroundWindow(WId id)
 {
 }
 
+bool IsOS64bits()
+{
+	return true;
+}
+
+bool InitSystemProgress()
+{
+	return false;
+}
+
+bool UninitSystemProgress()
+{
+	return false;
+}
+
+bool BeginSystemProgress()
+{
+	return false;
+}
+
+bool UpdateSystemProgress(qint64 value, qint64 total)
+{
+	return false;
+}
+
+bool EndSystemProgress()
+{
+	return false;
+}
+
 #endif

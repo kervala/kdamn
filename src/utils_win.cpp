@@ -38,6 +38,14 @@ QPixmap qt_pixmapFromWinHBITMAP(HBITMAP bitmap, int hbitmapFormat = 0);
 #include <tchar.h>
 #include <stdio.h>
 #include <ShellAPI.h>
+#include <sdkddkver.h>
+
+#ifdef _WIN32_WINNT_WIN7
+	// only supported by Windows 7 Platform SDK
+	#include <BaseTyps.h>
+	#include <ShObjIdl.h>
+	#define TASKBAR_PROGRESS 1
+#endif
 
 static QPixmap fancyPants( ICONINFO const &icon_info )
 {
@@ -343,6 +351,99 @@ void PutForegroundWindow(WId id)
 {
 	SetForegroundWindow((HWND)id);
 	Sleep(500);
+}
+
+typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
+
+bool IsOS64bits()
+{
+	bool res;
+
+#ifdef _WIN644
+	res = true;
+#else
+	res = false;
+
+	// IsWow64Process is not available on all supported versions of Windows.
+	// Use GetModuleHandle to get a handle to the DLL that contains the function
+	// and GetProcAddress to get a pointer to the function if available.
+	LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS) GetProcAddress(GetModuleHandleA("kernel32"), "IsWow64Process");
+
+	if (fnIsWow64Process)
+	{
+		BOOL bIsWow64 = FALSE;
+
+		if (fnIsWow64Process(GetCurrentProcess(), &bIsWow64))
+		{
+			res = bIsWow64 == TRUE;
+		}
+	}
+#endif
+	return res;
+}
+
+static ITaskbarList3* s_taskbarList = NULL;
+
+bool InitSystemProgress()
+{
+	bool res = false;
+
+#ifdef TASKBAR_PROGRESS
+	s_taskbarList = NULL;
+	// instanciate the taskbar control COM object
+	res = SUCCEEDED(CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&s_taskbarList)));
+#endif
+
+	return res;
+}
+
+bool UninitSystemProgress()
+{
+#ifdef TASKBAR_PROGRESS
+    if (s_taskbarList)
+    {
+        s_taskbarList->Release();
+        s_taskbarList = NULL;
+    }
+#endif
+
+	return true;
+}
+
+bool BeginSystemProgress()
+{
+	bool res = false;
+
+#ifdef TASKBAR_PROGRESS
+	// update the taskbar progress
+	if (s_taskbarList && GetMainWindowId()) res = SUCCEEDED(s_taskbarList->SetProgressState((HWND)GetMainWindowId(), TBPF_NORMAL));
+#endif // TASKBAR_PROGRESS
+
+	return res;
+}
+
+bool UpdateSystemProgress(qint64 value, qint64 total)
+{
+	bool res = false;
+
+#ifdef TASKBAR_PROGRESS
+	// update the taskbar progress
+	if (s_taskbarList && GetMainWindowId()) res = SUCCEEDED(s_taskbarList->SetProgressValue((HWND)GetMainWindowId(), value, total));
+#endif // TASKBAR_PROGRESS
+
+	return res;
+}
+
+bool EndSystemProgress()
+{
+	bool res = false;
+
+#ifdef TASKBAR_PROGRESS
+	// update the taskbar progress
+	if (s_taskbarList && GetMainWindowId()) res = SUCCEEDED(s_taskbarList->SetProgressState((HWND)GetMainWindowId(), TBPF_NOPROGRESS));
+#endif // TASKBAR_PROGRESS
+
+	return res;
 }
 
 #endif

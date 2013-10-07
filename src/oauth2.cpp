@@ -20,16 +20,7 @@
 #include "common.h"
 #include "oauth2.h"
 #include "cookies.h"
-
-#ifdef Q_OS_WIN
-	#include <sdkddkver.h>
-	#ifdef _WIN32_WINNT_WIN7
-		// only supported by Windows 7 Platform SDK
-		#include <BaseTyps.h>
-		#include <ShObjIdl.h>
-		#define TASKBAR_PROGRESS 1
-	#endif
-#endif
+#include "utils.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -51,7 +42,6 @@ static QString base36enc(qint64 value)
 }
 
 QString OAuth2::s_userAgent;
-WId OAuth2::s_mainWindowId = 0;
 OAuth2* OAuth2::s_instance = NULL;
 
 OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0), m_expiresIn(0)
@@ -61,24 +51,14 @@ OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0),
 	m_clientId = 474;
 	m_clientSecret = "6a8b3dacb0d41c5d177d6f189df772d1";
 
-#ifdef TASKBAR_PROGRESS
-	m_taskbarList = NULL;
-	// instanciate the taskbar control COM object
-	CoCreateInstance(CLSID_TaskbarList, NULL, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&m_taskbarList));
-#endif
+	InitSystemProgress();
 }
 
 OAuth2::~OAuth2()
 {
 	s_instance = NULL;
 
-#ifdef TASKBAR_PROGRESS
-    if (m_taskbarList)
-    {
-        m_taskbarList->Release();
-        m_taskbarList = NULL;
-    }
-#endif
+	UninitSystemProgress();
 }
 
 void OAuth2::init()
@@ -139,11 +119,6 @@ bool OAuth2::post(const QString &url, const QByteArray &data, const QString &ref
 	connect(reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(onSslErrors(QList<QSslError>)));
 
 	return true;
-}
-
-void OAuth2::setMainWindowId(WId id)
-{
-	s_mainWindowId = id;
 }
 
 bool OAuth2::authorizeApplication(bool authorize)
@@ -321,28 +296,19 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 	connect(reply, SIGNAL(uploadProgress(qint64, qint64)), this, SLOT(onUploadProgress(qint64, qint64)));
 	connect(reply, SIGNAL(finished()), this, SLOT(onUploadFinished()));
 
-#ifdef TASKBAR_PROGRESS
-	// update the taskbar progress
-	if (m_taskbarList && s_mainWindowId) m_taskbarList->SetProgressState((HWND)s_mainWindowId, TBPF_NORMAL);
-#endif // TASKBAR_PROGRESS
+	BeginSystemProgress();
 
 	return true;
 }
 
 void OAuth2::onUploadProgress(qint64 readBytes, qint64 totalBytes)
 {
-#ifdef TASKBAR_PROGRESS
-	// update the taskbar progress
-	if (m_taskbarList && s_mainWindowId) m_taskbarList->SetProgressValue((HWND)s_mainWindowId, readBytes, totalBytes);
-#endif // TASKBAR_PROGRESS
+	UpdateSystemProgress(readBytes, totalBytes);
 }
 
 void OAuth2::onUploadFinished()
 {
-#ifdef TASKBAR_PROGRESS
-	// update the taskbar progress
-	if (m_taskbarList && s_mainWindowId) m_taskbarList->SetProgressState((HWND)s_mainWindowId, TBPF_NOPROGRESS);
-#endif // TASKBAR_PROGRESS
+	EndSystemProgress();
 }
 
 QString OAuth2::getSupportedImageFormatsFilter()
@@ -400,15 +366,12 @@ QString OAuth2::getUserAgent()
 
 		system += "; ";
 
-		// TODO: check for real Windows version (32 or 64 bits)
-#ifdef _WIN64
-		system += "Win64";
-#else
-		system += "Win32";
-#endif
+		// Windows target processor
+		system += QString("Win%1").arg(IsOS64bits() ? 64:32);
 
 		system += "; ";
 
+		// application target processor
 #ifdef _WIN64
 		system += "x64; ";
 #else

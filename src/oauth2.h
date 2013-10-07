@@ -34,10 +34,6 @@ struct StashFile
 typedef QList<StashFile> StashFiles;
 typedef StashFiles::iterator StashFilesIterator;
 
-#ifdef Q_OS_WIN
-	struct ITaskbarList3;
-#endif
-
 class OAuth2 : public QObject
 {
 	Q_OBJECT
@@ -59,7 +55,6 @@ public:
 
 	static QString getSupportedImageFormatsFilter();
 	static QString getUserAgent();
-	static void setMainWindowId(WId id);
 
 	bool get(const QString &url, const QString &referer = "");
 	bool post(const QString &url, const QByteArray &data, const QString &referer = "");
@@ -111,12 +106,7 @@ private:
 	StashFiles m_filesToUpload;
 
 	static QString s_userAgent;
-	static WId s_mainWindowId;
 	static OAuth2 *s_instance;
-
-#ifdef Q_OS_WIN
-	ITaskbarList3* m_taskbarList;
-#endif
 };
 
 #endif

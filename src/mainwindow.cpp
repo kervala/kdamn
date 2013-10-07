@@ -43,7 +43,7 @@ MainWindow::MainWindow():QMainWindow()
 {
 	setupUi(this);
 
-	OAuth2::setMainWindowId(winId());
+	SetMainWindowId(winId());
 
 	// Server menu
 	connect(actionConnect, SIGNAL(triggered()), this, SLOT(onConnect()));
