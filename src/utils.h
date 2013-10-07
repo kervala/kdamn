@@ -17,48 +17,15 @@
  *
  */
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef UTILS_H
+#define UTILS_H
 
-#include "ui_mainwindow.h"
+class QAbstractItemModel;
 
-class MainWindow : public QMainWindow, public Ui::MainWindow
-{
-	Q_OBJECT
-
-public:
-	MainWindow();
-	virtual ~MainWindow();
-
-	void autoConnect();
-
-public slots:
-	// server menu
-	void onConnect();
-	void onDisconnect();
-	void onSettings();
-
-	// room menu
-	void onJoin();
-	void onPart();
-	void onRooms();
-
-	// stash menu
-	void onUploadFiles();
-	void onUploadScreenshot();
-
-	// help menu
-	void onAbout();
-	void onAboutQt();
-
-	// other
-	void trayActivated(QSystemTrayIcon::ActivationReason reseaon);
-
-protected:
-	void closeEvent(QCloseEvent *e);
-	void resizeEvent(QResizeEvent *e);
-	void moveEvent(QMoveEvent *e);
-	bool event(QEvent *e);
-};
+void CreateWindowsList(QAbstractItemModel *model);
+bool RestoreMinimizedWindow(WId &id);
+void MinimizeWindow(WId id);
+void PutForegroundWindow(WId id);
+bool IsUsingComposition();
 
 #endif

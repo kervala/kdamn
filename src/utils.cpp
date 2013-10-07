@@ -17,48 +17,5 @@
  *
  */
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
-
-#include "ui_mainwindow.h"
-
-class MainWindow : public QMainWindow, public Ui::MainWindow
-{
-	Q_OBJECT
-
-public:
-	MainWindow();
-	virtual ~MainWindow();
-
-	void autoConnect();
-
-public slots:
-	// server menu
-	void onConnect();
-	void onDisconnect();
-	void onSettings();
-
-	// room menu
-	void onJoin();
-	void onPart();
-	void onRooms();
-
-	// stash menu
-	void onUploadFiles();
-	void onUploadScreenshot();
-
-	// help menu
-	void onAbout();
-	void onAboutQt();
-
-	// other
-	void trayActivated(QSystemTrayIcon::ActivationReason reseaon);
-
-protected:
-	void closeEvent(QCloseEvent *e);
-	void resizeEvent(QResizeEvent *e);
-	void moveEvent(QMoveEvent *e);
-	bool event(QEvent *e);
-};
-
-#endif
+#include "common.h"
+#include "utils.h"

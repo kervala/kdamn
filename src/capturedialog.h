@@ -17,48 +17,28 @@
  *
  */
 
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#ifndef CAPTUREDIALOG_H
+#define CAPTUREDIALOG_H
 
-#include "ui_mainwindow.h"
+#include "ui_capturedialog.h"
 
-class MainWindow : public QMainWindow, public Ui::MainWindow
+class CaptureDialog : public QDialog, public Ui::CaptureDialog
 {
 	Q_OBJECT
 
 public:
-	MainWindow();
-	virtual ~MainWindow();
+	CaptureDialog(QWidget *parent);
 
-	void autoConnect();
+	WId getWindowId() const { return m_handle; }
+	const QString& getWindowName() const { return m_name; }
 
 public slots:
-	// server menu
-	void onConnect();
-	void onDisconnect();
-	void onSettings();
+	void enableButton(const QModelIndex &index);
+	void validateButton(const QModelIndex &index);
 
-	// room menu
-	void onJoin();
-	void onPart();
-	void onRooms();
-
-	// stash menu
-	void onUploadFiles();
-	void onUploadScreenshot();
-
-	// help menu
-	void onAbout();
-	void onAboutQt();
-
-	// other
-	void trayActivated(QSystemTrayIcon::ActivationReason reseaon);
-
-protected:
-	void closeEvent(QCloseEvent *e);
-	void resizeEvent(QResizeEvent *e);
-	void moveEvent(QMoveEvent *e);
-	bool event(QEvent *e);
+private:
+	WId m_handle;
+	QString m_name;
 };
 
 #endif

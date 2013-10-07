@@ -28,6 +28,8 @@
 #include "roomframe.h"
 #include "systrayicon.h"
 #include "oauth2.h"
+#include "capturedialog.h"
+#include "utils.h"
 
 #ifdef HAVE_CONFIG_H
 	#include "config.h"
@@ -53,6 +55,10 @@ MainWindow::MainWindow():QMainWindow()
 	connect(actionJoin, SIGNAL(triggered()), this, SLOT(onJoin()));
 	connect(actionPart, SIGNAL(triggered()), this, SLOT(onPart()));
 	connect(actionKnownRooms, SIGNAL(triggered()), this, SLOT(onRooms()));
+
+	// Stash menu
+	connect(actionUploadFiles, SIGNAL(triggered()), this, SLOT(onUploadFiles()));
+	connect(actionUploadScreenshot, SIGNAL(triggered()), this, SLOT(onUploadScreenshot()));
 
 	// Help menu
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
@@ -164,6 +170,76 @@ void MainWindow::onRooms()
 	if (dialog.exec())
 	{
 	}
+}
+
+void MainWindow::onUploadFiles()
+{
+	QStringList filenames = QFileDialog::getOpenFileNames(this, tr("Upload filess"));
+
+	QString room;
+	
+	if (roomsWidget->getCurrentRoomFrame()) room = roomsWidget->getCurrentRoomFrame()->getRoom();
+
+	foreach(const QString &filename, filenames)
+	{
+		OAuth2::getInstance()->uploadToStash(filename, room);
+	}
+}
+
+void MainWindow::onUploadScreenshot()
+{
+	WId id = 0;
+	QString name;
+
+	{
+		CaptureDialog dlg(this);
+
+		if (!dlg.exec()) return;
+
+		id = dlg.getWindowId();
+		name = dlg.getWindowName();
+	}
+
+	bool minimized = false;
+
+	minimized = RestoreMinimizedWindow(id);
+
+	if (!minimized && !IsUsingComposition())
+		PutForegroundWindow(id);
+
+	QPixmap pixmap = QGuiApplication::primaryScreen()->grabWindow(id);
+
+	if (minimized)
+	{
+		MinimizeWindow(id);
+	}
+	else
+	{
+		if (!IsUsingComposition())
+		{
+			activateWindow();
+		}
+	}
+
+	QString cachePath;
+
+#ifdef USE_QT5
+	cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+#else
+	cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
+#endif
+
+	name.replace(QRegExp("[\\/:? *;<>&-]+"), "-");
+
+	QString filename = QString("%1/%2-%3.png").arg(QDir::fromNativeSeparators(cachePath)).arg(name).arg(QDateTime::currentMSecsSinceEpoch());
+
+	pixmap.save(filename);
+
+	QString room;
+	
+	if (roomsWidget->getCurrentRoomFrame()) room = roomsWidget->getCurrentRoomFrame()->getRoom();
+
+	OAuth2::getInstance()->uploadToStash(filename, room);
 }
 
 void MainWindow::trayActivated(QSystemTrayIcon::ActivationReason reseaon)

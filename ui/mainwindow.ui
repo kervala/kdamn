@@ -65,14 +65,22 @@
    </widget>
    <widget class="QMenu" name="menuRoom">
     <property name="title">
-     <string>Room</string>
+     <string>&amp;Room</string>
     </property>
     <addaction name="actionJoin"/>
     <addaction name="actionPart"/>
     <addaction name="actionKnownRooms"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>S&amp;tash</string>
+    </property>
+    <addaction name="actionUploadFiles"/>
+    <addaction name="actionUploadScreenshot"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuRoom"/>
+   <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
   <action name="actionSettings">
@@ -120,30 +128,40 @@
   </action>
   <action name="actionConnect">
    <property name="text">
-    <string>Connect</string>
+    <string>&amp;Connect</string>
    </property>
   </action>
   <action name="actionDisconnect">
    <property name="text">
-    <string>Disconnect</string>
+    <string>&amp;Disconnect</string>
    </property>
   </action>
   <action name="actionJoin">
    <property name="text">
-    <string>Join</string>
+    <string>&amp;Join</string>
    </property>
   </action>
   <action name="actionPart">
    <property name="text">
-    <string>Part</string>
+    <string>&amp;Part</string>
    </property>
   </action>
   <action name="actionKnownRooms">
    <property name="text">
-    <string>Known rooms</string>
+    <string>&amp;Known rooms</string>
    </property>
    <property name="toolTip">
     <string>Known rooms</string>
+   </property>
+  </action>
+  <action name="actionUploadFiles">
+   <property name="text">
+    <string>Upload &amp;files...</string>
+   </property>
+  </action>
+  <action name="actionUploadScreenshot">
+   <property name="text">
+    <string>Upload &amp;screenshot...</string>
    </property>
   </action>
  </widget>
