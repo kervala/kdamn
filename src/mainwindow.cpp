@@ -207,7 +207,11 @@ void MainWindow::onUploadScreenshot()
 	if (!minimized && !IsUsingComposition())
 		PutForegroundWindow(id);
 
+#ifdef USE_QT5
 	QPixmap pixmap = QGuiApplication::primaryScreen()->grabWindow(id);
+#else
+	QPixmap pixmap = QPixmap::grabWindow(id);
+#endif
 
 	if (minimized)
 	{
