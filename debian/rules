@@ -3,7 +3,7 @@
 	dh $@ --buildsystem=cmake
 
 override_dh_strip:
-	dh_strip -pkdamn --dbg-package=kdman-dbg
+	dh_strip -pkdamn --dbg-package=kdamn-dbg
 
 override_dh_auto_configure:
 	dh_auto_configure -- -DETC_PREFIX=/etc/kdamn -DWITH_WARNINGS=ON
