@@ -20,7 +20,7 @@
 #include "common.h"
 #include "utils.h"
 
-#ifdef Q_OS_UNIX
+#if defined(Q_OS_UNIX) && !defined(Q_OS_MAC)
 
 #include <stdio.h>
 #include <stdlib.h>
