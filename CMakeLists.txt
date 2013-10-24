@@ -61,7 +61,7 @@ ENDIF()
 FILE(GLOB HEADER src/*.h)
 FILE(GLOB SRC src/*.cpp)
 FILE(GLOB UI ui/*.ui)
-FILE(GLOB RES res/*.qrc res/*.icns res/*.ico)
+FILE(GLOB RES res/*.qrc res/*.icns res/*.ico res/*.icns)
 FILE(GLOB TS translations/*.ts)
 
 SET_TARGET_GUI_EXECUTABLE(${TARGET} ${SRC} ${RES} ${UI} ${HEADER} ${TS})
