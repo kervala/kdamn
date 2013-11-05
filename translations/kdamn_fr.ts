@@ -175,47 +175,47 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
         <translation>Impossible de parser la privclass : %1</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="88"/>
+        <location filename="../src/damn.cpp" line="87"/>
         <source>Remote host closed, trying to reconnect</source>
         <translation>L&apos;hôte distant a fermé la connexion, reconnexion en cours</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="95"/>
+        <location filename="../src/damn.cpp" line="94"/>
         <source>Operation error</source>
         <translation>Erreur d&apos;opération</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="100"/>
+        <location filename="../src/damn.cpp" line="99"/>
         <source>Unable to connect</source>
         <translation>Impossible de se connecter</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="104"/>
+        <location filename="../src/damn.cpp" line="103"/>
         <source>Socket error: %1</source>
         <translation>Erreur de socket : %1</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="111"/>
+        <location filename="../src/damn.cpp" line="110"/>
         <source>Connected</source>
         <translation>Connecté</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="118"/>
+        <location filename="../src/damn.cpp" line="117"/>
         <source>Disconnected</source>
         <translation>Déconnecté</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="123"/>
+        <location filename="../src/damn.cpp" line="122"/>
         <source>Stage changed %1</source>
         <translation>Changement d&apos;étape %1</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="128"/>
+        <location filename="../src/damn.cpp" line="127"/>
         <source>About to close</source>
         <translation>Fermeture programmée</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="133"/>
+        <location filename="../src/damn.cpp" line="132"/>
         <source>Read channel finished</source>
         <translation>Fin de la lecture du canal</translation>
     </message>
@@ -412,12 +412,12 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
 <context>
     <name>OAuth2</name>
     <message>
-        <location filename="../src/oauth2.cpp" line="524"/>
+        <location filename="../src/oauth2.cpp" line="531"/>
         <source>No login received</source>
         <translation>Aucun identifiant reçu</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="566"/>
+        <location filename="../src/oauth2.cpp" line="573"/>
         <source>No dAmn token received</source>
         <translation>Aucun jeton dAmn reçu</translation>
     </message>
@@ -426,74 +426,74 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
         <translation type="obsolete">Aucun status JSON reçu</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="169"/>
+        <location filename="../src/oauth2.cpp" line="176"/>
         <source>No access token, please use the OAuth2 login method</source>
         <translation>Aucun jeton d&apos;accès, veuillez utiliser la méthode d&apos;identification OAuth2</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="254"/>
+        <location filename="../src/oauth2.cpp" line="261"/>
         <source>Unable to read file %1</source>
         <translation>Impossible d&apos;accéder au fichier %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="664"/>
+        <location filename="../src/oauth2.cpp" line="671"/>
         <source>API error: %1</source>
         <translation>Erreur API : %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="669"/>
+        <location filename="../src/oauth2.cpp" line="676"/>
         <source>Bad form</source>
         <translation>Mauvais formulaire</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="682"/>
-        <location filename="../src/oauth2.cpp" line="715"/>
+        <location filename="../src/oauth2.cpp" line="689"/>
+        <location filename="../src/oauth2.cpp" line="722"/>
         <source>Login &apos;%1&apos; doesn&apos;t exist</source>
         <translation>Identifiant &apos;%1&apos; n&apos;existe pas</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="708"/>
+        <location filename="../src/oauth2.cpp" line="715"/>
         <source>Unknown error while redirected to %1</source>
         <translation>Error inconnue lors de la redirection vers %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="719"/>
-        <location filename="../src/oauth2.cpp" line="783"/>
+        <location filename="../src/oauth2.cpp" line="726"/>
+        <location filename="../src/oauth2.cpp" line="791"/>
         <source>Wrong password for user %1</source>
         <translation>Mauvais mot de passe pour l&apos;utilisateur %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="741"/>
+        <location filename="../src/oauth2.cpp" line="748"/>
         <source>Unable to find dAmn_Login</source>
         <translation>Impossible de trouver dAmn_Login</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="777"/>
+        <location filename="../src/oauth2.cpp" line="785"/>
         <source>Unable to find validate token or key</source>
         <translation>Impossible de valider le jeton ou la clé</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="810"/>
+        <location filename="../src/oauth2.cpp" line="818"/>
         <source>Authentication required while accessing %1</source>
         <translation>Authentification requise pour accéder à %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="815"/>
+        <location filename="../src/oauth2.cpp" line="823"/>
         <source>Network error: %1</source>
         <translation>Erreur réseau : %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="826"/>
+        <location filename="../src/oauth2.cpp" line="834"/>
         <source>SSL errors: %1</source>
         <translation>Erreur SSL : %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="834"/>
+        <location filename="../src/oauth2.cpp" line="842"/>
         <source>Authentication required for %1</source>
         <translation>Authentification requise pour %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="841"/>
+        <location filename="../src/oauth2.cpp" line="849"/>
         <source>Proxy authentication required</source>
         <translation>Authentification requise pour le proxy</translation>
     </message>
