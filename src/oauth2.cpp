@@ -130,8 +130,13 @@ bool OAuth2::authorizeApplication(bool authorize)
 #endif
 
 	params.addQueryItem("client_id", QString::number(m_clientId));
-	params.addQueryItem("terms_agree", "true");
-	params.addQueryItem("authorize", authorize ? "true":"false");
+	params.addQueryItem("response_type", "code");
+	params.addQueryItem("redirect_uri", "kdamn://oauth2/login");
+	params.addQueryItem("scope", "basic");
+	params.addQueryItem("state", "");
+	params.addQueryItem("authorized", authorize ? "1":"");
+	params.addQueryItem("terms_agree[]", "1");
+	params.addQueryItem("terms_agree[]", "0");
 
 	QByteArray data;
 
@@ -141,7 +146,7 @@ bool OAuth2::authorizeApplication(bool authorize)
 	data = params.encodedQuery();
 #endif
 
-	return post("https://www.deviantart.com/settings/update-applications", data);
+	return post("https://www.deviantart.com/settings/authorize_app", data);
 }
 
 bool OAuth2::login(bool oauth2)
@@ -539,7 +544,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 					requestDAmnToken();
 				}
 			}
-			else if (error == "expired_token")
+			else if (error == "expired_token" || error == "invalid_token")
 			{
 				// we are fixing the error ourself
 				status.clear();
@@ -606,7 +611,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 					requestStash(file.filename, file.room);
 				}
 			}
-			else if (error == "invalid_grant")
+			else if (error == "invalid_grant" || error == "invalid_request")
 			{
 				// we are fixing the error ourself
 				status.clear();
@@ -741,7 +746,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 			emit errorReceived(tr("Unable to find dAmn_Login"));
 		}
 	}
-	else if (url.indexOf(QString("/applications?client_id=%1").arg(m_clientId)) > -1)
+	else if (url.indexOf("/applications") > -1 && url.indexOf(QString("client_id=%1").arg(m_clientId)) > -1)
 	{
 		// TODO: ask authorization to user
 		authorizeApplication(true);
