@@ -212,7 +212,7 @@ bool OAuth2::loginOAuth2()
 
 bool OAuth2::requestAuthorization()
 {
-	return get(QString("https://www.deviantart.com/oauth2/draft15/authorize?response_type=code&client_id=%1&redirect_uri=kdamn://oauth2/login").arg(m_clientId));
+	return get(QString("https://www.deviantart.com/oauth2/authorize?response_type=code&client_id=%1&redirect_uri=kdamn://oauth2/login").arg(m_clientId));
 }
 
 bool OAuth2::requestToken(const QString &code)
@@ -229,17 +229,17 @@ bool OAuth2::requestToken(const QString &code)
 		query = QString("refresh_token&refresh_token=%1").arg(m_refreshToken);
 	}
 
-	return get(QString("https://www.deviantart.com/oauth2/draft15/token?client_id=%1&client_secret=%2&grant_type=%3").arg(m_clientId).arg(m_clientSecret).arg(query));
+	return get(QString("https://www.deviantart.com/oauth2/token?client_id=%1&client_secret=%2&grant_type=%3").arg(m_clientId).arg(m_clientSecret).arg(query));
 }
 
 bool OAuth2::requestPlacebo()
 {
-	return get(QString("https://www.deviantart.com/api/draft15/placebo?access_token=%1").arg(m_accessToken));
+	return get(QString("https://www.deviantart.com/api/oauth2/placebo?access_token=%1").arg(m_accessToken));
 }
 
 bool OAuth2::requestUserInfo()
 {
-	return get(QString("https://www.deviantart.com/api/draft15/user/whoami?access_token=%1").arg(m_accessToken));
+	return get(QString("https://www.deviantart.com/api/oauth2/user/whoami?access_token=%1").arg(m_accessToken));
 }
 
 bool OAuth2::requestDAmnToken()
@@ -247,7 +247,7 @@ bool OAuth2::requestDAmnToken()
 	// don't request dAmn token if already got
 	if (!m_damnToken.isEmpty()) return true;
 
-	return get(QString("https://www.deviantart.com/api/draft15/user/damntoken?access_token=%1").arg(m_accessToken));
+	return get(QString("https://www.deviantart.com/api/oauth2/user/damntoken?access_token=%1").arg(m_accessToken));
 }
 
 bool OAuth2::requestStash(const QString &filename, const QString &room)
@@ -272,7 +272,7 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 	else mime = "application/binary";
 
 	QNetworkRequest req;
-	req.setUrl(QUrl(QString("https://www.deviantart.com/api/draft15/stash/submit?access_token=%1").arg(m_accessToken)));
+	req.setUrl(QUrl(QString("https://www.deviantart.com/api/oauth2/stash/submit?access_token=%1").arg(m_accessToken)));
 	addUserAgent(req);
 
 	QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType, this);
@@ -834,9 +834,8 @@ void OAuth2::onSslErrors(const QList<QSslError> &errors)
 
 void OAuth2::onAuthentication(QNetworkReply *reply, QAuthenticator *auth)
 {
-	qDebug() << "auth";
-
-	emit errorReceived(tr("Authentication required for %1").arg(reply->url().toString()));
+	auth->setUser(QString::number(m_clientId));
+	auth->setPassword(m_clientSecret);
 }
 
 void OAuth2::onProxyAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth)
