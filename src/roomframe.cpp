@@ -1,6 +1,6 @@
 /*
  *  kdAmn is a deviantART Messaging Network client
- *  Copyright (C) 2013  Cedric OCHS
+ *  Copyright (C) 2013-2014  Cedric OCHS
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
