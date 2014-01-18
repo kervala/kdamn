@@ -32,12 +32,13 @@ RoomFrame::RoomFrame(QWidget *parent, const QString &room):TabFrame(parent), m_r
 {
 	setupUi(this);
 
-	connect(inputEdit, SIGNAL(returnPressed()), this, SLOT(onSend()));
-
 	m_usersModel = new QStringListModel(this);
 	usersView->setModel(m_usersModel);
 
 	outputBrowser->setRoom(room);
+
+	connect(inputEdit, SIGNAL(returnPressed()), SLOT(onSend()));
+	connect(usersView, SIGNAL(doubleClicked(QModelIndex)), SLOT(onUserDoubleClicked(QModelIndex)));
 }
 
 RoomFrame::~RoomFrame()
@@ -135,6 +136,15 @@ void RoomFrame::onSend()
 	{
 		inputEdit->validate();
 	}
+}
+
+void RoomFrame::onUserDoubleClicked(const QModelIndex &index)
+{
+	QString user = m_usersModel->data(index, Qt::DisplayRole).toString();
+
+	if (user.isEmpty()) return;
+
+	QDesktopServices::openUrl(QString("http://%1.deviantart.com").arg(user.toLower()));
 }
 
 bool RoomFrame::setFocus(bool focus)

@@ -54,6 +54,9 @@ public slots:
 	// when user press enter
 	void onSend();
 
+	// when user double-click on a user
+	void onUserDoubleClicked(const QModelIndex &index);
+
 protected:
 	void updateSplitter();
 
