@@ -27,8 +27,6 @@
 	#define new DEBUG_NEW
 #endif
 
-#define DELAY_ANIMATION 100
-
 QString ChatWidget::s_css = \
 	".timestamp { color: #999; }\n" \
 	".username { font-weight: bold; }\n" \
@@ -136,7 +134,8 @@ void ChatWidget::dragLeaveEvent(QDragLeaveEvent *event)
 
 QString ChatWidget::getTimestamp(bool html) const
 {
-	// TODO: check if user doesn't want to display timestamp
+	// check if user doesn't want to display timestamp
+	if (!ConfigFile::getInstance()->getDisplayTimestamp()) return QString();
 
 	QString timestamp = QTime::currentTime().toString();
 
@@ -364,7 +363,9 @@ void ChatWidget::animate(int frame)
 
 AnimationStart::AnimationStart(const QString &url, const QString &file, ChatWidget *widget):QObject(widget), m_url(url), m_file(file), m_widget(widget)
 {
-	QTimer::singleShot(DELAY_ANIMATION, this, SLOT(timeout()));
+	int delayAnimation = ConfigFile::getInstance()->getAnimationFrameDelay();
+
+	QTimer::singleShot(delayAnimation, this, SLOT(timeout()));
 }
 
 void AnimationStart::timeout()

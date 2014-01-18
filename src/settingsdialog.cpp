@@ -20,6 +20,7 @@
 #include "common.h"
 #include "settingsdialog.h"
 #include "moc_settingsdialog.cpp"
+#include "configfile.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -28,8 +29,19 @@
 SettingsDialog::SettingsDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt::WindowCloseButtonHint)
 {
 	setupUi(this);
+
+	animationRefreshSpinBox->setValue(ConfigFile::getInstance()->getAnimationFrameDelay());
+	displayTimestampsCheckBox->setChecked(ConfigFile::getInstance()->getDisplayTimestamp());
 }
 
 SettingsDialog::~SettingsDialog()
 {
+}
+
+void SettingsDialog::accept()
+{
+	ConfigFile::getInstance()->setAnimationFrameDelay(animationRefreshSpinBox->value());
+	ConfigFile::getInstance()->setDisplayTimestamp(displayTimestampsCheckBox->isChecked());
+
+	QDialog::accept();
 }

@@ -108,8 +108,8 @@ public:
 	int getAnimationFrameDelay() const;
 	void setAnimationFrameDelay(int delay);
 
-	int getAutosaveDelay() const;
-	void setAutosaveDelay(int delay);
+	int getAutoSaveDelay() const;
+	void setAutoSaveDelay(int delay);
 
 	ConfigRooms getRooms() const;
 	ConfigRoomsIterator getRoom(const QString &name, bool insert = false);
@@ -122,12 +122,15 @@ public:
 	QList<QNetworkCookie> getCookies() const;
 	void setCookies(const QList<QNetworkCookie> &cookies);
 
+	bool getDisplayTimestamp() const;
+	void setDisplayTimestamp(bool display);
+
 public slots:
 	bool load();
 	bool save();
 
 private:
-	void autosave();
+	void autoSave();
 	void modified(bool modified);
 
 	static ConfigFile* s_instance;
@@ -146,7 +149,8 @@ private:
 	QString m_accessToken;
 	QString m_refreshToken;
 	int m_animationFrameDelay;
-	int m_autosaveDelay;
+	bool m_displayTimetamps;
+	int m_autoSaveDelay;
 	bool m_modified;
 
 	QSize m_size;

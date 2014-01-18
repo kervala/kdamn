@@ -31,7 +31,7 @@
 ConfigFile* ConfigFile::s_instance = NULL;
 
 ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT),
-	m_rememberPassword(true), m_method(MethodOAuth2), m_animationFrameDelay(100), m_autosaveDelay(30), m_modified(false),
+	m_rememberPassword(true), m_method(MethodOAuth2), m_animationFrameDelay(100), m_displayTimetamps(true), m_autoSaveDelay(30), m_modified(false),
 	m_size(0, 0), m_position(0, 0), m_splitter(0)
 {
 	if (!s_instance) s_instance = this;
@@ -53,7 +53,7 @@ bool ConfigFile::load()
 	if (version == 2) loadVersion2();
 	else loadVersion1();
 
-	autosave();
+	autoSave();
 
 	return true;
 }
@@ -86,7 +86,7 @@ bool ConfigFile::loadVersion1()
 
 bool ConfigFile::loadVersion2()
 {
-	m_autosaveDelay = m_settings.value("autosave").toInt();
+	m_autoSaveDelay = m_settings.value("autosave").toInt();
 
 	// server parameters
 	m_settings.beginGroup("server");
@@ -153,7 +153,7 @@ bool ConfigFile::save()
 	// no need to save because no change has been made
 	if (!m_modified)
 	{
-		autosave();
+		autoSave();
 		return true;
 	}
 
@@ -219,7 +219,7 @@ bool ConfigFile::save()
 
 	modified(false);
 
-	autosave();
+	autoSave();
 
 	return true;
 }
@@ -354,16 +354,16 @@ void ConfigFile::setAnimationFrameDelay(int delay)
 	modified(true);
 }
 
-int ConfigFile::getAutosaveDelay() const
+int ConfigFile::getAutoSaveDelay() const
 {
-	return m_autosaveDelay;
+	return m_autoSaveDelay;
 }
 
-void ConfigFile::setAutosaveDelay(int delay)
+void ConfigFile::setAutoSaveDelay(int delay)
 {
-	if (m_autosaveDelay == delay) return;
+	if (m_autoSaveDelay == delay) return;
 
-	m_autosaveDelay = delay;
+	m_autoSaveDelay = delay;
 	modified(true);
 }
 
@@ -456,9 +456,9 @@ void ConfigFile::setRoomValue(const QString &name, int value)
 	modified(true);
 }
 
-void ConfigFile::autosave()
+void ConfigFile::autoSave()
 {
-	if (m_autosaveDelay > 0) QTimer::singleShot(m_autosaveDelay * 60 * 1000, this, SLOT(save()));
+	if (m_autoSaveDelay > 0) QTimer::singleShot(m_autoSaveDelay * 60 * 1000, this, SLOT(save()));
 }
 
 void ConfigFile::modified(bool modified)
@@ -479,3 +479,18 @@ void ConfigFile::setCookies(const QList<QNetworkCookie> &cookies)
 
 	modified(true);
 }
+
+bool ConfigFile::getDisplayTimestamp() const
+{
+	return m_displayTimetamps;
+}
+
+void ConfigFile::setDisplayTimestamp(bool display)
+{
+	if (m_displayTimetamps == display) return;
+
+	m_displayTimetamps = display;
+
+	modified(true);
+}
+
