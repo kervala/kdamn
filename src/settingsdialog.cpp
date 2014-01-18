@@ -31,7 +31,8 @@ SettingsDialog::SettingsDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt:
 	setupUi(this);
 
 	animationRefreshSpinBox->setValue(ConfigFile::getInstance()->getAnimationFrameDelay());
-	displayTimestampsCheckBox->setChecked(ConfigFile::getInstance()->getDisplayTimestamp());
+	displayTimestampsCheckBox->setChecked(ConfigFile::getInstance()->getDisplayTimestamps());
+	enableAnimationsGroupBox->setChecked(ConfigFile::getInstance()->getEnableAnimations());
 }
 
 SettingsDialog::~SettingsDialog()
@@ -41,7 +42,8 @@ SettingsDialog::~SettingsDialog()
 void SettingsDialog::accept()
 {
 	ConfigFile::getInstance()->setAnimationFrameDelay(animationRefreshSpinBox->value());
-	ConfigFile::getInstance()->setDisplayTimestamp(displayTimestampsCheckBox->isChecked());
+	ConfigFile::getInstance()->setDisplayTimestamps(displayTimestampsCheckBox->isChecked());
+	ConfigFile::getInstance()->setEnableAnimations(enableAnimationsGroupBox->isChecked());
 
 	QDialog::accept();
 }

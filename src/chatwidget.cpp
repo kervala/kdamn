@@ -135,7 +135,7 @@ void ChatWidget::dragLeaveEvent(QDragLeaveEvent *event)
 QString ChatWidget::getTimestamp(bool html) const
 {
 	// check if user doesn't want to display timestamp
-	if (!ConfigFile::getInstance()->getDisplayTimestamp()) return QString();
+	if (!ConfigFile::getInstance()->getDisplayTimestamps()) return QString();
 
 	QString timestamp = QTime::currentTime().toString();
 
@@ -221,18 +221,6 @@ bool ChatWidget::addAnimation(const QString& url, const QString &file)
 
 		return false;
 	}
-
-	QString test = movie->format();
-
-/*
-	if (movie->frameCount() < 2)
-	{
-		return false;
-	}
-	else
-	{
-	}
-*/
 
 	m_urls.insert(movie, remoteUrl);
 
@@ -339,6 +327,9 @@ void ChatWidget::closeLogs()
 
 void ChatWidget::animate(int frame)
 {
+	// only enable animations if chosen
+	if (!ConfigFile::getInstance()->getEnableAnimations() && frame > 0) return;
+
 	if (QMovie* movie = qobject_cast<QMovie*>(sender()))
 	{
 		document()->addResource(QTextDocument::ImageResource, m_urls.value(movie), movie->currentPixmap());

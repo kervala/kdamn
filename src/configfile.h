@@ -122,8 +122,11 @@ public:
 	QList<QNetworkCookie> getCookies() const;
 	void setCookies(const QList<QNetworkCookie> &cookies);
 
-	bool getDisplayTimestamp() const;
-	void setDisplayTimestamp(bool display);
+	bool getDisplayTimestamps() const;
+	void setDisplayTimestamps(bool display);
+
+	bool getEnableAnimations() const;
+	void setEnableAnimations(bool enable);
 
 public slots:
 	bool load();
@@ -149,7 +152,8 @@ private:
 	QString m_accessToken;
 	QString m_refreshToken;
 	int m_animationFrameDelay;
-	bool m_displayTimetamps;
+	bool m_displayTimestamps;
+	bool m_enableAnimations;
 	int m_autoSaveDelay;
 	bool m_modified;
 

@@ -31,8 +31,8 @@
 ConfigFile* ConfigFile::s_instance = NULL;
 
 ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT),
-	m_rememberPassword(true), m_method(MethodOAuth2), m_animationFrameDelay(100), m_displayTimetamps(true), m_autoSaveDelay(30), m_modified(false),
-	m_size(0, 0), m_position(0, 0), m_splitter(0)
+	m_rememberPassword(true), m_method(MethodOAuth2), m_animationFrameDelay(100), m_displayTimestamps(true), m_enableAnimations(true),
+	m_autoSaveDelay(30), m_modified(false), m_size(0, 0), m_position(0, 0), m_splitter(0)
 {
 	if (!s_instance) s_instance = this;
 
@@ -113,7 +113,9 @@ bool ConfigFile::loadVersion2()
 	// chat parameters
 	m_settings.beginGroup("chat");
 
+	m_enableAnimations = m_settings.value("enable_animations", true).toBool();
 	m_animationFrameDelay = m_settings.value("animation_frame_delay", 100).toInt();
+	m_displayTimestamps = m_settings.value("display_timestamps", true).toBool();
 
 	m_settings.endGroup();
 
@@ -189,7 +191,9 @@ bool ConfigFile::save()
 	// chat parameters
 	m_settings.beginGroup("chat");
 
+	m_settings.setValue("enable_animations", m_enableAnimations);
 	m_settings.setValue("animation_frame_delay", m_animationFrameDelay);
+	m_settings.setValue("display_timestamps", m_displayTimestamps);
 
 	m_settings.endGroup();
 
@@ -480,17 +484,30 @@ void ConfigFile::setCookies(const QList<QNetworkCookie> &cookies)
 	modified(true);
 }
 
-bool ConfigFile::getDisplayTimestamp() const
+bool ConfigFile::getDisplayTimestamps() const
 {
-	return m_displayTimetamps;
+	return m_displayTimestamps;
 }
 
-void ConfigFile::setDisplayTimestamp(bool display)
+void ConfigFile::setDisplayTimestamps(bool display)
 {
-	if (m_displayTimetamps == display) return;
+	if (m_displayTimestamps == display) return;
 
-	m_displayTimetamps = display;
+	m_displayTimestamps = display;
 
 	modified(true);
 }
 
+bool ConfigFile::getEnableAnimations() const
+{
+	return m_enableAnimations;
+}
+
+void ConfigFile::setEnableAnimations(bool enable)
+{
+	if (m_enableAnimations == enable) return;
+
+	m_enableAnimations = enable;
+
+	modified(true);
+}
