@@ -283,7 +283,14 @@ void ChatWidget::openLogs()
 	cachePath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
 #endif
 
-	QString dir(QDir::fromNativeSeparators(cachePath));
+	QString dir = QString("%1/kdAmn/logs").arg(QDir::fromNativeSeparators(cachePath));
+
+	if (!QDir().mkpath(dir))
+	{
+		qDebug() << "Unable to create directory" << dir;
+
+		return;
+	}
 
 	QString filename = QString("%1/%2-%3").arg(dir).arg(m_room).arg(QDate::currentDate().toString(Qt::ISODate));
 
