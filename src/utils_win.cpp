@@ -64,8 +64,7 @@ static QPixmap fancyPants( ICONINFO const &icon_info )
 
 	result = GetObjectW( h_bitmap, sizeof(BITMAP), &bitmap );
 
-	if (!result)
-		return QPixmap();
+	if (!result) return QPixmap();
 
 	int const w = bitmap.bmWidth;
 	int const h = bitmap.bmHeight;
@@ -91,7 +90,8 @@ static QPixmap fancyPants( ICONINFO const &icon_info )
 	result = GetDIBits( qt_win_display_dc(), h_bitmap, 0, h, data, &info, DIB_RGB_COLORS );
 
 	QPixmap p;
-	if (result) {
+	if (result)
+	{
 		// test for a completely invisible image
 		// we need to do this because there is apparently no way to determine
 
@@ -109,8 +109,11 @@ static QPixmap fancyPants( ICONINFO const &icon_info )
 				break;
 
 		if (x < N)
+		{
 			p = QPixmap::fromImage( QImage( data, w, h, QImage::Format_ARGB32 ) );
-		else {
+		}
+		else
+		{
 			QImage image( data, w, h, QImage::Format_RGB32 );
 
 			QImage mask = image.createHeuristicMask();
@@ -118,7 +121,6 @@ static QPixmap fancyPants( ICONINFO const &icon_info )
 
 			image.setAlphaChannel( mask );
 			p = QPixmap::fromImage( image );
-
 		}
 
 		// force the pixmap to make a deep copy of the image data
@@ -136,12 +138,12 @@ static QPixmap fancyPants( ICONINFO const &icon_info )
 
 static QPixmap pixmap( const HICON &icon, bool alpha = true )
 {
-	try {
+	try
+	{
 		ICONINFO info;
 		::GetIconInfo(icon, &info);
 
-		QPixmap pixmap = alpha
-				? fancyPants( info )
+		QPixmap pixmap = alpha ? fancyPants( info )
 #ifdef USE_QT5
 				: qt_pixmapFromWinHBITMAP(info.hbmColor, HBitmapNoAlpha);
 #else
@@ -200,6 +202,8 @@ static BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM inst)
 				window.hWnd = hWnd;
 				window.name = QString::fromWCharArray(WindowName);
 
+				qDebug() << "Found window" << window.name;
+
 				windows->push_back(window);
 			}
 		}
@@ -208,8 +212,28 @@ static BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM inst)
 	return TRUE;
 }
 
+//Windows 2000 = GetModuleFileName()
+//Windows XP x32 = GetProcessImageFileName()
+//Windows XP x64 = GetProcessImageFileName()
+
+typedef BOOL (WINAPI *QueryFullProcessImageNamePtr)(HANDLE hProcess, DWORD dwFlags, LPTSTR lpExeName, PDWORD lpdwSize);
+typedef DWORD (WINAPI *GetProcessImageFileNamePtr)(HANDLE hProcess, LPTSTR lpImageFileName, DWORD nSize);
+
+static QueryFullProcessImageNamePtr pQueryFullProcessImageName = NULL;
+static GetProcessImageFileNamePtr pGetProcessImageFileName = NULL;
+
 void CreateWindowsList(QAbstractItemModel *model)
 {
+	if (pQueryFullProcessImageName == NULL)
+	{
+		pQueryFullProcessImageName = (QueryFullProcessImageNamePtr) QLibrary::resolve("kernel32", "QueryFullProcessImageNameA");
+	}
+
+	if (pGetProcessImageFileName == NULL)
+	{
+		pGetProcessImageFileName = (GetProcessImageFileNamePtr) QLibrary::resolve("psapi", "GetProcessImageFileNameA");
+	}
+
 	HMODULE module = GetModuleHandle(NULL);
 	QFileIconProvider icon;
 
@@ -239,37 +263,62 @@ void CreateWindowsList(QAbstractItemModel *model)
 
 			if (!currentWindows.empty() && te32.th32OwnerProcessID)
 			{
-				HANDLE hModuleSnap = INVALID_HANDLE_VALUE;
-				MODULEENTRY32 me32;
-
-				// Set the size of the structure before using it.
-				me32.dwSize = sizeof( MODULEENTRY32 );
-
-				// Take a snapshot of all modules in the specified process.
-				hModuleSnap = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, te32.th32OwnerProcessID);
-
-				// Retrieve information about the first module,
-				if ((hModuleSnap != INVALID_HANDLE_VALUE) && Module32First(hModuleSnap, &me32))
+				for(int i = 0; i < currentWindows.size(); ++i)
 				{
-//					QPixmap pixmap = associatedIcon(QString::fromWCharArray(me32.szExePath));
-					QPixmap pixmap = ::pixmap(ExtractIcon(module, me32.szExePath, 0));
+					HWND hWnd = currentWindows[i].hWnd;
+
+					// get process handle
+					DWORD pidwin;
+					GetWindowThreadProcessId(hWnd, &pidwin);
+					HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, pidwin);
+
+					// get process path
+					char szProcessPath[MAX_PATH];
+					DWORD bufSize = MAX_PATH;
+
+					QString processPath;
+
+					if (pQueryFullProcessImageName != NULL)
+					{
+						if (pQueryFullProcessImageName(hProcess, 0, (LPTSTR)&szProcessPath, &bufSize) == 0)
+						{
+							DWORD error = GetLastError();
+
+							qDebug() << "Error" << error;
+						}
+					}
+					else if (pGetProcessImageFileName != NULL)
+					{
+						bufSize = pGetProcessImageFileName(hProcess, (LPTSTR)&szProcessPath, bufSize);
+					}
+
+					qDebug() << "bufsize" << bufSize;
+
+					processPath = QString::fromLatin1(szProcessPath, bufSize);
+
+					HICON hIcon = NULL;
+
+					UINT count = ExtractIconEx(processPath.toLatin1().data(), -1, NULL, NULL, 1);
+
+					if (count < 1) continue;
+
+					UINT res = ExtractIconEx(processPath.toLatin1().data(), 0, &hIcon, NULL, 1);
+
+					QPixmap pixmap = ::pixmap(hIcon);
+
+					DestroyIcon(hIcon);
 
 					if (pixmap.isNull()) pixmap = icon.icon(QFileIconProvider::File).pixmap(32, 32);
 
-					for(int i = 0; i < currentWindows.size(); ++i)
+					if (model->insertRow(0))
 					{
-						if (model->insertRow(0))
-						{
-							QModelIndex index = model->index(0, 0);
+						QModelIndex index = model->index(0, 0);
 
-							model->setData(index, currentWindows[i].name);
-							model->setData(index, pixmap, Qt::DecorationRole);
-							model->setData(index, qVariantFromValue((void*)currentWindows[i].hWnd), Qt::UserRole);
-						}
+						model->setData(index, currentWindows[i].name);
+						model->setData(index, pixmap, Qt::DecorationRole);
+						model->setData(index, qVariantFromValue((void*)currentWindows[i].hWnd), Qt::UserRole);
 					}
 				}
-
-				CloseHandle(hModuleSnap);
 			}
 		}
 		while(Thread32Next(hThreadSnap, &te32));
