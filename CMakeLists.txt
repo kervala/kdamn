@@ -18,10 +18,10 @@ SET(VERSION_MINOR 9)
 SET(VERSION_PATCH "REVISION")
 SET(AUTHOR "Kervala")
 SET(PRODUCT "kdAmn")
-SET(DESCRIPTION "deviantART Messaging Network (dAmn) chat client written in C++ with Qt")
+SET(DESCRIPTION "deviantART Messaging Network (dAmn) chat client")
 SET(TARGET_ICON "kdamn.ico")
 SET(TARGET "kdamn")
-SET(YEAR "2013")
+SET(YEAR "2013-2014")
 
 INIT_PROJECT()
 
