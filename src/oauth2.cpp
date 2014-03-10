@@ -161,9 +161,9 @@ bool OAuth2::login(bool oauth2)
 		// try to reuse previous cookies
 		if (!m_manager->cookieJar()->cookiesForUrl(QUrl("https://www.deviantart.com/")).isEmpty()) return requestAuthorization();
 
-		return loginOAuth2();
+		return requestAuthorization();
 	}
-		
+
 	return getValidateToken();
 }
 
@@ -194,7 +194,9 @@ bool OAuth2::loginOAuth2()
 	QUrl params;
 #endif
 
+	params.addQueryItem("client_id", QString::number(m_clientId));
 	params.addQueryItem("subdomain", "www");
+	params.addQueryItem("referrer", getAuthorizationUrl());
 	params.addQueryItem("oauth2", "1");
 	params.addQueryItem("username", m_login);
 	params.addQueryItem("password", m_password);
@@ -210,9 +212,14 @@ bool OAuth2::loginOAuth2()
 	return post("https://www.deviantart.com/join/oauth2", data);
 }
 
+QString OAuth2::getAuthorizationUrl() const
+{
+	return QString("https://www.deviantart.com/oauth2/authorize?response_type=code&client_id=%1&redirect_uri=kdamn://oauth2/login").arg(m_clientId);
+}
+
 bool OAuth2::requestAuthorization()
 {
-	return get(QString("https://www.deviantart.com/oauth2/authorize?response_type=code&client_id=%1&redirect_uri=kdamn://oauth2/login").arg(m_clientId));
+	return get(getAuthorizationUrl());
 }
 
 bool OAuth2::requestToken(const QString &code)
@@ -439,6 +446,11 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
 	QString url = reply->url().toString();
+	QByteArray html = reply->readAll();
+
+	qDebug() << url;
+	qDebug() << redirection;
+//	qobject_cast<Cookies*>(m_manager->cookieJar())->dump();
 
 #ifdef USE_QT5
 	QUrlQuery query(reply->url().query());
@@ -477,13 +489,11 @@ void OAuth2::onReply(QNetworkReply *reply)
 	else if (isJson)
 	{
 		// we received JSON response
-		QByteArray json = reply->readAll();
-
 		QString status, error, errorDescription;
 
 #ifdef USE_QT5
 		QJsonParseError jsonError;
-		QJsonDocument doc = QJsonDocument::fromJson(json, &jsonError);
+		QJsonDocument doc = QJsonDocument::fromJson(html, &jsonError);
 
 		if (jsonError.error != QJsonParseError::NoError)
 		{
@@ -619,7 +629,10 @@ void OAuth2::onReply(QNetworkReply *reply)
 				// refresh token invalid
 				m_refreshToken.clear();
 
-				loginOAuth2();
+				// clear cookies
+				qobject_cast<Cookies*>(m_manager->cookieJar())->clear();
+
+				requestAuthorization();
 			}
 		}
 		else if (path.endsWith("/submit"))
@@ -661,7 +674,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 		}
 		else
 		{
-			qDebug() << "JSON data for " << url << "not processed" << json;
+			qDebug() << "JSON data for " << url << "not processed" << html;
 		}
 	
 		if (status == "error")
@@ -684,7 +697,8 @@ void OAuth2::onReply(QNetworkReply *reply)
 		else
 		{
 			// wrong login
-			emit errorReceived(tr("Login '%1' doesn't exist").arg(m_login));
+//			emit errorReceived(tr("Login '%1' doesn't exist").arg(m_login));
+			loginOAuth2(getAuthorizationUrl());
 		}
 	}
 	else if (redirection.startsWith("kdamn://"))
@@ -755,8 +769,6 @@ void OAuth2::onReply(QNetworkReply *reply)
 	{
 		QString validationToken, validationKey;
 
-		QString html = reply->readAll();
-
 		QRegExp reg;
 		
 		reg.setPattern("name=\"validate_token\" value=\"([0-9a-f]{20})\"");
@@ -782,11 +794,15 @@ void OAuth2::onReply(QNetworkReply *reply)
 			emit errorReceived(tr("Unable to find validate token or key"));
 		}
 	}
+/*
 	else if (redirection.endsWith("/join/oauth2"))
 	{
 		// when using oauth2 and wrong password
-		emit errorReceived(tr("Wrong password for user %1").arg(m_login));
+//		emit errorReceived(tr("Wrong password for user %1").arg(m_login));
+
+		loginOAuth2(getAuthorizationUrl());
 	}
+*/
 	else if (!redirection.isEmpty() && redirection != url)
 	{
 		qDebug() << "Redirected from" << url << "to" << redirection;
@@ -795,8 +811,6 @@ void OAuth2::onReply(QNetworkReply *reply)
 	}
 	else
 	{
-		QString html = reply->readAll();
-
 		qDebug() << html;
 	}
 }

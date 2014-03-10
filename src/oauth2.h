@@ -87,6 +87,7 @@ private:
 	bool authorizeApplication(bool authorize);
 
 	// site process
+	QString getAuthorizationUrl() const;
 	bool getValidateToken();
 	bool loginSite(const QString &validationToken, const QString &validationKey);
 	bool requestAuthToken();
