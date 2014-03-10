@@ -352,7 +352,7 @@ void ChatWidget::animate(int frame)
 	}
 }
 
-AnimationStart::AnimationStart(const QString &url, const QString &file, ChatWidget *widget):QObject(widget), m_url(url), m_file(file), m_widget(widget)
+AnimationStart::AnimationStart(const QString &url, const QString &file, ChatWidget *widget):QObject(widget), m_widget(widget), m_url(url), m_file(file)
 {
 	int delayAnimation = ConfigFile::getInstance()->getAnimationFrameDelay();
 
