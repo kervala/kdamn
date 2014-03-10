@@ -119,7 +119,7 @@ void DAmn::onDisconnected()
 
 void DAmn::onStageChanged(QAbstractSocket::SocketState state)
 {
-	emit errorReceived(tr("Stage changed %1").arg(state));
+//	emit errorReceived(tr("Stage changed %1").arg(state));
 }
 
 void DAmn::onAboutToClose()
