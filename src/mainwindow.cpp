@@ -233,7 +233,19 @@ void MainWindow::onUploadScreenshot()
 	cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
 #endif
 
-	name.replace(QRegExp("[\\/:? *;<>&-]+"), "-");
+	int pos = name.indexOf(QRegExp("[\\\\/:? *;<>&-]"));
+
+	if (pos > -1)
+	{
+		if (pos == 0)
+		{
+			name = "untitled";
+		}
+		else
+		{
+			name = name.mid(0, pos);
+		}
+	}
 
 	QString filename = QString("%1/%2-%3.png").arg(QDir::fromNativeSeparators(cachePath)).arg(name).arg(QDateTime::currentMSecsSinceEpoch());
 
