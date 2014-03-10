@@ -149,7 +149,7 @@ void RoomsTabWidget::onConnectServer()
 
 void RoomsTabWidget::onRequestDAmnToken()
 {
-	QString log = ConfigFile::getInstance()->getLogin();
+	QString user = ConfigFile::getInstance()->getLogin();
 	QString password = ConfigFile::getInstance()->getPassword();
 
 	// delete previous dAmn token because invalid
@@ -157,7 +157,7 @@ void RoomsTabWidget::onRequestDAmnToken()
 	OAuth2::getInstance()->setDAmnToken("");
 	DAmn::getInstance()->setToken("");
 
-	if (ConfigFile::getInstance()->isRememberPassword() && !log.isEmpty() && !password.isEmpty())
+	if (ConfigFile::getInstance()->isRememberPassword() && !user.isEmpty() && !password.isEmpty())
 	{
 		OAuth2::getInstance()->login(ConfigFile::getInstance()->getDAmnTokenMethod() == MethodOAuth2);
 	}
