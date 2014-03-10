@@ -203,7 +203,6 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 					{
 						tokens = url.split(':');
 
-
 						if (tokens.size() == 2)
 						{
 							pre = tokens[0];
