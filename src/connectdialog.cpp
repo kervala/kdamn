@@ -60,5 +60,9 @@ void ConnectDialog::accept()
 	ConfigFile::getInstance()->setDAmnToken(token);
 	ConfigFile::getInstance()->setDAmnTokenMethod(method);
 
+	// reset also access and refresh tokens
+	ConfigFile::getInstance()->setAccessToken("");
+	ConfigFile::getInstance()->setRefreshToken("");
+
 	QDialog::accept();
 }
