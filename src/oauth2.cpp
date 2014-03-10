@@ -26,21 +26,6 @@
 	#define new DEBUG_NEW
 #endif
 
-static QString base36enc(qint64 value)
-{
-	static const QString base36("0123456789abcdefghijklmnopqrstuvwxyz");
-
-	QString res;
-
-	do
-	{
-		res.prepend(base36[(int)(value % 36)]);
-	}
-	while (value /= 36);
-
-	return res;
-}
-
 QString OAuth2::s_userAgent;
 OAuth2* OAuth2::s_instance = NULL;
 
@@ -446,11 +431,10 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
 	QString url = reply->url().toString();
-	QByteArray html = reply->readAll();
+	QByteArray content = reply->readAll();
 
 	qDebug() << url;
 	qDebug() << redirection;
-//	qobject_cast<Cookies*>(m_manager->cookieJar())->dump();
 
 #ifdef USE_QT5
 	QUrlQuery query(reply->url().query());
@@ -462,11 +446,10 @@ void OAuth2::onReply(QNetworkReply *reply)
 	QString path = reply->url().path();
 
 	reply->deleteLater();
+	reply = NULL;
 
 	if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
 	{
-		QByteArray content = reply->readAll();
-		QString url = reply->url().toString();
 		QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
 
 		QString cachePath;
@@ -493,7 +476,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 #ifdef USE_QT5
 		QJsonParseError jsonError;
-		QJsonDocument doc = QJsonDocument::fromJson(html, &jsonError);
+		QJsonDocument doc = QJsonDocument::fromJson(content, &jsonError);
 
 		if (jsonError.error != QJsonParseError::NoError)
 		{
@@ -669,12 +652,12 @@ void OAuth2::onReply(QNetworkReply *reply)
 					requestStash(newFile.filename, newFile.room);
 				}
 
-				emit imageUploaded(file.room, QString("http://sta.sh/0%1").arg(base36enc(stashId)));
+				emit imageUploaded(file.room, QString::number(stashId));
 			}
 		}
 		else
 		{
-			qDebug() << "JSON data for " << url << "not processed" << html;
+			qDebug() << "JSON data for " << url << "not processed" << content;
 		}
 	
 		if (status == "error")
@@ -698,7 +681,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 		{
 			// wrong login
 //			emit errorReceived(tr("Login '%1' doesn't exist").arg(m_login));
-			loginOAuth2(getAuthorizationUrl());
+			loginOAuth2();
 		}
 	}
 	else if (redirection.startsWith("kdamn://"))
@@ -746,9 +729,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 	{
 		QRegExp reg("dAmn_Login\\( \"([A-Za-z0-9_-]+)\", \"([a-f0-9]{32})\"");
 
-		QString html = reply->readAll();
-
-		if (reg.indexIn(html) > -1)
+		if (reg.indexIn(content) > -1)
 		{
 			m_login = reg.cap(1);
 			m_damnToken = reg.cap(2);
@@ -773,14 +754,14 @@ void OAuth2::onReply(QNetworkReply *reply)
 		
 		reg.setPattern("name=\"validate_token\" value=\"([0-9a-f]{20})\"");
 
-		if (reg.indexIn(html) > -1)
+		if (reg.indexIn(content) > -1)
 		{
 			validationToken = reg.cap(1);
 		}
 
 		reg.setPattern("name=\"validate_key\" value=\"([0-9]{10})\"");
 
-		if (reg.indexIn(html) > -1)
+		if (reg.indexIn(content) > -1)
 		{
 			validationKey = reg.cap(1);
 		}
@@ -811,7 +792,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 	}
 	else
 	{
-		qDebug() << html;
+		qDebug() << content;
 	}
 }
 

@@ -29,13 +29,27 @@ struct DAmnPacket
 	DAmnProperties args;
 };
 
-enum MessageType
+enum EMessageType
 {
 	MessageText,
 	MessageAction,
 	MessageTopic,
 	MessageTitle,
 	MessageUnknown
+};
+
+enum EDAmnError
+{
+	OK,
+	BAD_NAMESPACE,
+	BAD_PARAMETER,
+	UNKNOWN_PROPERTY,
+	AUTHENTICATION_FAILED,
+	NOTHING_TO_SEND,
+	ALREADY_JOINED,
+	NO_LOGIN,
+	UNKNOWN,
+	LAST_ERROR
 };
 
 struct DAmnImage
@@ -62,7 +76,7 @@ struct WaitingMessage
 	QString from;
 	QString html;
 	DAmnImages images;
-	MessageType type;
+	EMessageType type;
 };
 
 struct Tablump
@@ -136,10 +150,11 @@ public slots:
 	bool onUpdateWaitingMessages(const QString &md5);
 
 signals:
-	void authenticationFailed();
+	void authenticationFailedWrongLogin();
+	void authenticationFailedWrongToken();
 	void serverConnected();
 
-	void textReceived(const QString &room, const QString &user, MessageType type, const QString &text, bool html);
+	void textReceived(const QString &room, const QString &user, EMessageType type, const QString &text, bool html);
 
 	void roomJoined(const QString &room);
 	void roomParted(const QString &room, const QString &reason);
@@ -168,7 +183,7 @@ private:
 
 	// parser helpers
 	bool parseAllMessages(const QStringList &lines);
-	bool parsePacket(const QString &cmd, const QStringList &lines, int &i, DAmnPacket &apcket);
+	bool parsePacket(const QString &cmd, const QStringList &lines, int &i, DAmnPacket &packet);
 	void parseProperties(const QStringList &lines, int &i, DAmnProperties &props);
 	bool parseUserInfo(const QStringList &lines, int &i, DAmnUser &user);
 	bool parseRoomProperty(const QString &room, const DAmnProperties &props, const QStringList &lines, int &i);
@@ -176,7 +191,7 @@ private:
 	bool parseRoomPrivClasses(const QString &room, const QStringList &lines, int &i);
 	bool parseUserProperties(const QString &user, const QStringList &lines, int &i);
 	bool parseConn(const QStringList &lines, int &i, DAmnConnection &conn);
-	bool parseText(const QString &room, const QString &from, MessageType type, const QStringList &lines, int &i, QString &html, QString &text);
+	bool parseText(const QString &room, const QString &from, EMessageType type, const QStringList &lines, int &i, QString &html, QString &text);
 	bool parseJoin(const QString &room, const QString &user, bool show, const QStringList &lines, int &i);
 	bool parsePart(const QString &room, const QString &user, bool show, const QString &reason, const QStringList &lines, int &i);
 	bool parsePriv(const QString &room, const QString &user, bool show, const QString &by, const QString &pc, const QStringList &lines, int &i);
@@ -214,6 +229,8 @@ private:
 	QMutex m_writeMutex;
 	QDateTime m_lastPing;
 	QDateTime m_lastMessage;
+
+	EDAmnError m_lastError;
 
 	static DAmn *s_instance;
 };

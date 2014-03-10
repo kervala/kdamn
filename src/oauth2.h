@@ -64,7 +64,7 @@ signals:
 	void accessTokenReceived(const QString &access, const QString &refresh);
 	void damnTokenReceived(const QString &login, const QString &damntoken);
 	void imageDownloaded(const QString &md5);
-	void imageUploaded(const QString &room, const QString &url);
+	void imageUploaded(const QString &room, const QString &stashId);
 
 public slots:
 	void onReply(QNetworkReply *reply);

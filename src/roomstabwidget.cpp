@@ -31,13 +31,28 @@
 	#define new DEBUG_NEW
 #endif
 
+static QString base36enc(qint64 value)
+{
+	static const QString base36("0123456789abcdefghijklmnopqrstuvwxyz");
+
+	QString res;
+
+	do
+	{
+		res.prepend(base36[(int)(value % 36)]);
+	}
+	while (value /= 36);
+
+	return res;
+}
+
 RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent)
 {
 	createServerFrame();
 
 	DAmn *damn = new DAmn(this);
 	connect(damn, SIGNAL(serverConnected()), this, SLOT(onConnectServer()));
-	connect(damn, SIGNAL(textReceived(QString, QString, MessageType, QString, bool)), this, SLOT(onText(QString, QString, MessageType, QString, bool)));
+	connect(damn, SIGNAL(textReceived(QString, QString, EMessageType, QString, bool)), this, SLOT(onText(QString, QString, EMessageType, QString, bool)));
 	connect(damn, SIGNAL(usersReceived(QString, QStringList)), this, SLOT(onUsers(QString, QStringList)));
 	connect(damn, SIGNAL(roomJoined(QString)), this, SLOT(onJoinRoom(QString)));
 	connect(damn, SIGNAL(roomParted(QString, QString)), this, SLOT(onPartRoom(QString, QString)));
@@ -45,7 +60,8 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent)
 	connect(damn, SIGNAL(userParted(QString, QString, QString, bool)), this, SLOT(onUserPart(QString, QString, QString, bool)));
 	connect(damn, SIGNAL(userPrivChanged(QString, QString, QString, QString)), this, SLOT(onUserPriv(QString, QString, QString, QString)));
 	connect(damn, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
-	connect(damn, SIGNAL(authenticationFailed()), this, SLOT(onRequestDAmnToken()));
+//	connect(damn, SIGNAL(authenticationFailedWrongLogin()), this, SLOT(onRequestDAmnToken()));
+	connect(damn, SIGNAL(authenticationFailedWrongToken()), this, SLOT(onRequestDAmnToken()));
 
 	OAuth2 *oauth = new OAuth2(this);
 	connect(oauth, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
@@ -184,12 +200,16 @@ void RoomsTabWidget::onReceiveAccessToken(const QString &access, const QString &
 	ConfigFile::getInstance()->setRefreshToken(refresh);
 }
 
-void RoomsTabWidget::onUploadImage(const QString &room, const QString &url)
+void RoomsTabWidget::onUploadImage(const QString &room, const QString &stashId)
 {
+	QString base36StashId = base36enc(stashId.toLongLong());
+
+	QString url = QString("http://sta.sh/0%1").arg(base36StashId);
+
 	DAmn::getInstance()->send(room, url);
 }
 
-void RoomsTabWidget::onText(const QString &room, const QString &user, MessageType type, const QString &text, bool html)
+void RoomsTabWidget::onText(const QString &room, const QString &user, EMessageType type, const QString &text, bool html)
 {
 	if (!room.isEmpty())
 	{

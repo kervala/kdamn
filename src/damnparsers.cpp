@@ -32,18 +32,6 @@ struct DAmnError
 	QString description;
 };
 
-enum EDAmnError
-{
-	BAD_NAMESPACE,
-	BAD_PARAMETER,
-	UNKNOWN_PROPERTY,
-	AUTHENTICATION_FAILED,
-	NOTHING_TO_SEND,
-	ALREADY_JOINED,
-	NO_LOGIN,
-	LAST_ERROR
-};
-
 bool DAmn::parseAllMessages(const QStringList &lines)
 {
 	if (parsePing(lines)) return true; // every 5 minutes 18
@@ -165,6 +153,7 @@ bool DAmn::parseError(const QString &error)
 
 	static DAmnError s_errors[] =
 	{
+		{ "ok", tr("OK") },
 		{ "bad namespace", tr("Bad namespace") },
 		{ "bad parameter", tr("Bad parameter") },
 		{ "unknown property", tr("Unknown property") },
@@ -172,13 +161,16 @@ bool DAmn::parseError(const QString &error)
 		{ "nothing to send", tr("Nothing to send") },
 		{ "already joined", tr("Already joined") },
 		{ "no login", tr("No login") },
+		{ "unknown", tr("Unknown") },
 		{ "", "" }
 	};
 
-	for(int i = 0; !s_errors[i].name.isEmpty(); ++i)
+	for(int i = 1; !s_errors[i].name.isEmpty(); ++i)
 	{
 		if (error == s_errors[i].name)
 		{
+			m_lastError = (EDAmnError)i;
+
 			emit errorReceived(s_errors[i].description);
 
 			return false;
@@ -213,7 +205,16 @@ bool DAmn::parseLogin(const QStringList &lines)
 
 	if (!parseError(p.args["e"]))
 	{
-		emit authenticationFailed();
+		switch(m_lastError)
+		{
+			case UNKNOWN:
+			emit authenticationFailedWrongLogin();
+			break;
+
+			default:
+//			emit authenticationFailedWrongToken();
+			qDebug() << "not processed";
+		}
 
 		return true;
 	}
@@ -241,7 +242,7 @@ bool DAmn::parsePing(const QStringList &lines)
 	return pong();
 }
 
-bool DAmn::parseText(const QString &room, const QString &from, MessageType type, const QStringList &lines, int &i, QString &html, QString &text)
+bool DAmn::parseText(const QString &room, const QString &from, EMessageType type, const QStringList &lines, int &i, QString &html, QString &text)
 {
 	DAmnImages images;
 
@@ -462,7 +463,7 @@ bool DAmn::parseRoomProperty(const QString &room, const DAmnProperties &props, c
 	prop.by = props["by"];
 	prop.ts = props["ts"];
 
-	MessageType type = MessageUnknown;
+	EMessageType type = MessageUnknown;
 
 	if (prop.name == "topic")
 	{

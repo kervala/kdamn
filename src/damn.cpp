@@ -29,7 +29,7 @@
 
 DAmn *DAmn::s_instance = NULL;
 
-DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL)
+DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_lastError(OK)
 {
 	if (s_instance == NULL) s_instance = this;
 
