@@ -32,6 +32,18 @@ struct DAmnError
 	QString description;
 };
 
+enum EDAmnError
+{
+	BAD_NAMESPACE,
+	BAD_PARAMETER,
+	UNKNOWN_PROPERTY,
+	AUTHENTICATION_FAILED,
+	NOTHING_TO_SEND,
+	ALREADY_JOINED,
+	NO_LOGIN,
+	LAST_ERROR
+};
+
 bool DAmn::parseAllMessages(const QStringList &lines)
 {
 	if (parsePing(lines)) return true; // every 5 minutes 18
@@ -151,7 +163,8 @@ bool DAmn::parseError(const QString &error)
 {
 	if (error == "ok") return true;
 
-	static DAmnError s_errors[] = {
+	static DAmnError s_errors[] =
+	{
 		{ "bad namespace", tr("Bad namespace") },
 		{ "bad parameter", tr("Bad parameter") },
 		{ "unknown property", tr("Unknown property") },
