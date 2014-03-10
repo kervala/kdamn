@@ -57,6 +57,23 @@ bool Cookies::saveToDisk()
 	return true;
 }
 
+void Cookies::clear()
+{
+	QList<QNetworkCookie> cookies;
+
+	ConfigFile::getInstance()->setCookies(cookies);
+}
+
+void Cookies::dump()
+{
+	QList<QNetworkCookie> cookies = allCookies();
+
+	foreach(const QNetworkCookie &cookie, cookies)
+	{
+		qDebug() << cookie.name() << "=" << cookie.value();
+	}
+}
+
 void Cookies::removeExpiredCookies(QList<QNetworkCookie> &cookies)
 {
     QDateTime now = QDateTime::currentDateTime();
