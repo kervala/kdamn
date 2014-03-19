@@ -52,6 +52,7 @@ public:
 
 	bool login(bool oauth2);
 	bool uploadToStash(const QString &filename, const QString &room);
+	bool requestImageInfo(const QString &url, const QString &room);
 
 	static QString getSupportedImageFormatsFilter();
 	static QString getUserAgent();

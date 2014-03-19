@@ -171,6 +171,11 @@ bool OAuth2::uploadToStash(const QString &filename, const QString &room)
 	return m_filesToUpload.size() == 1 ? requestPlacebo():true;
 }
 
+bool OAuth2::requestImageInfo(const QString &url, const QString &room)
+{
+	return get(QString("http://backend.deviantart.com/oembed?url=%1").arg(url));
+}
+
 bool OAuth2::loginOAuth2()
 {
 #ifdef USE_QT5
@@ -194,7 +199,7 @@ bool OAuth2::loginOAuth2()
 	data = params.encodedQuery();
 #endif
 
-	return post("https://www.deviantart.com/join/oauth2", data);
+	return post("https://www.deviantart.com/join/oauth2login", data);
 }
 
 QString OAuth2::getAuthorizationUrl() const
@@ -442,7 +447,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 	QUrl query = reply->url();
 #endif
 
-	bool isJson = query.hasQueryItem("access_token") || query.hasQueryItem("grant_type");
+	bool isJson = query.hasQueryItem("access_token") || query.hasQueryItem("grant_type") || query.hasQueryItem("url");
 	QString path = reply->url().path();
 
 	reply->deleteLater();
@@ -655,6 +660,49 @@ void OAuth2::onReply(QNetworkReply *reply)
 				emit imageUploaded(file.room, QString::number(stashId));
 			}
 		}
+		else if (path.endsWith("/oembed"))
+		{
+			QString title, thumbnail, url, author;
+			int width, height;
+
+#ifdef USE_QT5
+			it = object.constFind("title");
+			if (it != object.constEnd()) title = it.value().toString();
+
+			it = object.constFind("url");
+			if (it != object.constEnd()) url = it.value().toString();
+
+			it = object.constFind("author_name");
+			if (it != object.constEnd()) author = it.value().toString();
+
+			it = object.constFind("thumbnail_url_150");
+			if (it != object.constEnd()) thumbnail = it.value().toString();
+
+			it = object.constFind("width");
+			if (it != object.constEnd()) width = it.value().toInt();
+
+			it = object.constFind("height");
+			if (it != object.constEnd()) height = it.value().toInt();
+#else
+			stashId = (qint64)sc.property("stashid").toNumber();
+			folder = sc.property("folder").toString();
+			folderId = (qint64)sc.property("folderid").toNumber();
+#endif
+/*
+			StashFile file = m_filesToUpload.front();
+
+			m_filesToUpload.pop_front();
+
+			if (!m_filesToUpload.isEmpty())
+			{
+				StashFile newFile = m_filesToUpload.front();
+
+				requestStash(newFile.filename, newFile.room);
+			}
+
+			emit imageInfo(file.room, QString::number(stashId));
+*/
+		}
 		else
 		{
 			qDebug() << "JSON data for " << url << "not processed" << content;
@@ -669,7 +717,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 	{
 		emit errorReceived(tr("Bad form"));
 	}
-	else if (url.endsWith("/join/oauth2"))
+	else if (url.endsWith("/join/oauth2login"))
 	{
 		// when using oauth2
 		if (redirection.endsWith("/join/blank"))
@@ -680,9 +728,13 @@ void OAuth2::onReply(QNetworkReply *reply)
 		else
 		{
 			// wrong login
-//			emit errorReceived(tr("Login '%1' doesn't exist").arg(m_login));
-			loginOAuth2();
+			emit errorReceived(tr("Login '%1' doesn't exist").arg(m_login));
 		}
+	}
+	else if (url.endsWith("/join/oauth2"))
+	{
+		// fill OAuth2 login form
+		loginOAuth2();
 	}
 	else if (redirection.startsWith("kdamn://"))
 	{

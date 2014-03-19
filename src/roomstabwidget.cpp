@@ -207,6 +207,7 @@ void RoomsTabWidget::onUploadImage(const QString &room, const QString &stashId)
 	QString url = QString("http://sta.sh/0%1").arg(base36StashId);
 
 	DAmn::getInstance()->send(room, url);
+//	OAuth2::getInstance()->requestImageInfo(url, "");
 }
 
 void RoomsTabWidget::onText(const QString &room, const QString &user, EMessageType type, const QString &text, bool html)
