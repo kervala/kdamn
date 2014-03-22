@@ -215,7 +215,7 @@ bool OAuth2::requestAuthorization()
 bool OAuth2::requestToken(const QString &code)
 {
 	QString query;
-	
+
 	if (!code.isEmpty())
 	{
 		query = QString("authorization_code&code=%1").arg(code);
@@ -438,8 +438,10 @@ void OAuth2::onReply(QNetworkReply *reply)
 	QString url = reply->url().toString();
 	QByteArray content = reply->readAll();
 
+#ifdef _DEBUG
 	qDebug() << url;
 	qDebug() << redirection;
+#endif
 
 #ifdef USE_QT5
 	QUrlQuery query(reply->url().query());
@@ -502,7 +504,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 		if (it != object.constEnd()) errorDescription = it.value().toString();
 #else
 		QScriptEngine engine;
-		QScriptValue sc = engine.evaluate("(" + QString(json) + ")");
+		QScriptValue sc = engine.evaluate("(" + QString(content) + ")");
 
 		status = sc.property("status").toString();
 		error = sc.property("error").toString();
@@ -684,9 +686,12 @@ void OAuth2::onReply(QNetworkReply *reply)
 			it = object.constFind("height");
 			if (it != object.constEnd()) height = it.value().toInt();
 #else
-			stashId = (qint64)sc.property("stashid").toNumber();
-			folder = sc.property("folder").toString();
-			folderId = (qint64)sc.property("folderid").toNumber();
+			title = sc.property("title").toString();
+			url = sc.property("url").toString();
+			author = sc.property("author_name").toString();
+			thumbnail = sc.property("thumbnail_url_150").toString();
+			width = (int)sc.property("width").toNumber();
+			height = (int)sc.property("height").toNumber();
 #endif
 /*
 			StashFile file = m_filesToUpload.front();
@@ -707,7 +712,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 		{
 			qDebug() << "JSON data for " << url << "not processed" << content;
 		}
-	
+
 		if (status == "error")
 		{
 			emit errorReceived(tr("API error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
@@ -803,7 +808,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 		QString validationToken, validationKey;
 
 		QRegExp reg;
-		
+
 		reg.setPattern("name=\"validate_token\" value=\"([0-9a-f]{20})\"");
 
 		if (reg.indexIn(content) > -1)
