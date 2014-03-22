@@ -681,10 +681,10 @@ void OAuth2::onReply(QNetworkReply *reply)
 			if (it != object.constEnd()) thumbnail = it.value().toString();
 
 			it = object.constFind("width");
-			if (it != object.constEnd()) width = it.value().toInt();
+			if (it != object.constEnd()) width = (int)it.value().toDouble();
 
 			it = object.constFind("height");
-			if (it != object.constEnd()) height = it.value().toInt();
+			if (it != object.constEnd()) height = (int)it.value().toDouble();
 #else
 			title = sc.property("title").toString();
 			url = sc.property("url").toString();
