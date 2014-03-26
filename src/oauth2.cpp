@@ -154,13 +154,6 @@ bool OAuth2::login(bool oauth2)
 
 bool OAuth2::uploadToStash(const QString &filename, const QString &room)
 {
-	if (m_accessToken.isEmpty())
-	{
-		emit errorReceived(tr("No access token, please use the OAuth2 login method"));
-
-		return false;
-	}
-
 	StashFile file;
 	file.filename = filename;
 	file.room = room;
@@ -168,7 +161,14 @@ bool OAuth2::uploadToStash(const QString &filename, const QString &room)
 	if (m_filesToUpload.indexOf(file) < 0) m_filesToUpload.push_back(file);
 
 	// only check access token for the first file
-	return m_filesToUpload.size() == 1 ? requestPlacebo():true;
+	if (m_filesToUpload.size() == 1)
+	{
+		if (requestPlacebo()) return true;
+		
+		if (requestAuthorization()) return true;
+	}
+
+	return false;
 }
 
 bool OAuth2::requestImageInfo(const QString &url, const QString &room)
