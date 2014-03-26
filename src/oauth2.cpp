@@ -231,16 +231,22 @@ bool OAuth2::requestToken(const QString &code)
 
 bool OAuth2::requestPlacebo()
 {
+	if (m_accessToken.isEmpty()) return false;
+
 	return get(QString("https://www.deviantart.com/api/oauth2/placebo?access_token=%1").arg(m_accessToken));
 }
 
 bool OAuth2::requestUserInfo()
 {
+	if (m_accessToken.isEmpty()) return false;
+
 	return get(QString("https://www.deviantart.com/api/oauth2/user/whoami?access_token=%1").arg(m_accessToken));
 }
 
 bool OAuth2::requestDAmnToken()
 {
+	if (m_accessToken.isEmpty()) return false;
+
 	// don't request dAmn token if already got
 	if (!m_damnToken.isEmpty()) return true;
 
@@ -249,6 +255,8 @@ bool OAuth2::requestDAmnToken()
 
 bool OAuth2::requestStash(const QString &filename, const QString &room)
 {
+	if (m_accessToken.isEmpty()) return false;
+
 	QFile file(filename);
 
 	if (!file.open(QIODevice::ReadOnly))
