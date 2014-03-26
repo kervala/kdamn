@@ -60,6 +60,8 @@ bool DAmn::connectToServer()
 {
 	if (!m_login.isEmpty() && !m_token.isEmpty())
 	{
+		if (m_socket->isWritable()) m_socket->close();
+
 		m_socket->connectToHost("chat.deviantart.com", 3900);
 
 		return true;
