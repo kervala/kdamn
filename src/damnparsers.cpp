@@ -675,7 +675,5 @@ bool DAmn::parseDisconnect(const QStringList &lines)
 
 	if (!parseError(p.args["e"])) return true;
 
-	emit errorReceived(tr("Not implemented: %1").arg(lines[i]));
-
 	return true;
 }

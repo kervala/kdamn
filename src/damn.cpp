@@ -85,9 +85,8 @@ void DAmn::onError(QAbstractSocket::SocketError error)
 	switch(error)
 	{
 		case QAbstractSocket::RemoteHostClosedError:
-		// server disconnected us, try to reconnect
-		emit errorReceived(tr("Remote host closed, trying to reconnect"));
-		connectToServer();
+		// server disconnected us
+		emit errorReceived(tr("Remote host closed"));
 		break;
 
 #ifdef USE_QT5
