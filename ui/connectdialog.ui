@@ -7,13 +7,16 @@
     <x>0</x>
     <y>0</y>
     <width>406</width>
-    <height>188</height>
+    <height>116</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Connect to server</string>
   </property>
   <layout class="QFormLayout" name="formLayout">
+   <property name="fieldGrowthPolicy">
+    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+   </property>
    <item row="0" column="0">
     <widget class="QLabel" name="loginLabel">
      <property name="text">
@@ -51,57 +54,7 @@
      </property>
     </widget>
    </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="tokenLabel">
-     <property name="text">
-      <string>dAmn token</string>
-     </property>
-     <property name="buddy">
-      <cstring>tokenEdit</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="QLineEdit" name="tokenEdit"/>
-   </item>
-   <item row="4" column="0">
-    <widget class="QLabel" name="methodLabel">
-     <property name="text">
-      <string>Method</string>
-     </property>
-     <property name="buddy">
-      <cstring>oauth2MethodButton</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1">
-    <widget class="QRadioButton" name="oauth2MethodButton">
-     <property name="toolTip">
-      <string>kdAmn will be automatically authorized for
-your account and you'll be able to use all
- functionnalities such as Stash upload.</string>
-     </property>
-     <property name="text">
-      <string>OAuth2 deviantART API (preferred)</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1">
-    <widget class="QRadioButton" name="siteMethodButton">
-     <property name="toolTip">
-      <string>kdAmn will connect to deviantART website
-like a browser and get the dAmn token from HTML.
-Stash upload won't be available.</string>
-     </property>
-     <property name="text">
-      <string>deviantART website login</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="0" colspan="2">
+   <item row="3" column="0" colspan="2">
     <widget class="QDialogButtonBox" name="buttonBox">
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
