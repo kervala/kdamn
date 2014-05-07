@@ -36,9 +36,10 @@ MACRO(INIT_MAC)
   SET(MAC_ICNSS)
   SET(MAC_INFO_PLIST)
   SET(MAC_ITUNESARTWORK)
+  SET(MAC_ITUNESARTWORK2X)
   
   # Regex filter for Mac files
-  SET(MAC_FILES_FILTER "(\\.(xib|strings|icns|plist|framework)|iTunesArtwork\\.png)$")
+  SET(MAC_FILES_FILTER "(\\.(xib|strings|icns|plist|framework)|iTunesArtwork.*\\.png)$")
 ENDMACRO(INIT_MAC)
 
 MACRO(FILTER_MAC_FILES FILE)
@@ -55,6 +56,10 @@ MACRO(FILTER_MAC_FILES FILE)
         # Don't include iTunesArtwork because it'll be copied in IPA
         SET(_INCLUDE OFF)
         SET(MAC_ITUNESARTWORK ${FILE})
+    ELSEIF(${FILE} MATCHES "iTunesArtwork@2x\\.png$")
+        # Don't include iTunesArtwork@2x because it'll be copied in IPA
+        SET(_INCLUDE OFF)
+        SET(MAC_ITUNESARTWORK2X ${FILE})
     ELSEIF(${FILE} MATCHES "\\.icns$")
       LIST(APPEND MAC_ICNSS ${FILE})
     ELSEIF(${FILE} MATCHES "Info([a-z0-9_-]*)\\.plist$")
@@ -477,7 +482,13 @@ MACRO(CREATE_IOS_PACKAGE_TARGET _TARGET)
       SET(IPA_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_FIXED}_ipa)
       SET(IPA ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_FIXED}-${VERSION}.ipa)
 
-      ADD_CUSTOM_TARGET(package
+      SET(_COMMANDS)
+
+      IF(MAC_ITUNESARTWORK2X)
+        LIST(APPEND _COMMANDS COMMAND cp "${MAC_ITUNESARTWORK2X}" "${IPA_DIR}/iTunesArtwork@2x")
+      ENDIF()
+
+      ADD_CUSTOM_TARGET(packages
         COMMAND rm -rf "${OUTPUT_DIR}/Contents"
         COMMAND mkdir -p "${IPA_DIR}/Payload"
         COMMAND strip "${CONTENTS_DIR}/${PRODUCT_FIXED}"
@@ -485,13 +496,14 @@ MACRO(CREATE_IOS_PACKAGE_TARGET _TARGET)
         COMMAND CODESIGN_ALLOCATE=${CMAKE_IOS_DEVELOPER_ROOT}/usr/bin/codesign_allocate codesign -fs "${IOS_DISTRIBUTION}" "--resource-rules=${CONTENTS_DIR}/ResourceRules.plist" --entitlements "${CMAKE_BINARY_DIR}/application.xcent" "${CONTENTS_DIR}"
         COMMAND cp -R "${OUTPUT_DIR}" "${IPA_DIR}/Payload"
         COMMAND cp "${MAC_ITUNESARTWORK}" "${IPA_DIR}/iTunesArtwork"
+        ${_COMMANDS}
         COMMAND ditto -c -k "${IPA_DIR}" "${IPA}"
         COMMAND rm -rf "${IPA_DIR}"
         COMMENT "Creating IPA archive..."
         SOURCES ${MAC_ITUNESARTWORK}
         VERBATIM)
-      ADD_DEPENDENCIES(package ${_TARGET})
-      SET_TARGET_LABEL(package "PACKAGE")
+      ADD_DEPENDENCIES(packages ${_TARGET})
+      SET_TARGET_LABEL(packages "PACKAGE")
     ENDIF(MAC_ITUNESARTWORK)
   ENDIF(IOS)
 ENDMACRO(CREATE_IOS_PACKAGE_TARGET)
