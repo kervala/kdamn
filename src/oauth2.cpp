@@ -26,6 +26,11 @@
 	#define new DEBUG_NEW
 #endif
 
+// #define USE_NEW_METHOD
+
+#define HTTPS_BASE "https://www.deviantart.com"
+#define OAUTH2_BASE HTTPS_BASE"/api/v1/oauth2"
+
 QString OAuth2::s_userAgent;
 OAuth2* OAuth2::s_instance = NULL;
 
@@ -131,25 +136,24 @@ bool OAuth2::authorizeApplication(bool authorize)
 	data = params.encodedQuery();
 #endif
 
-	return post("https://www.deviantart.com/settings/authorize_app", data);
+	return post(QString("%1/settings/authorize_app").arg(HTTPS_BASE), data);
 }
 
-bool OAuth2::login(bool oauth2)
+bool OAuth2::login()
 {
 	init();
 
-	if (oauth2)
-	{
-		// try to reuse an access token
-		if (!m_accessToken.isEmpty()) return requestPlacebo();
+	// try to reuse an access token
+	if (!m_accessToken.isEmpty()) return requestPlacebo();
 
-		// try to reuse previous cookies
-		if (!m_manager->cookieJar()->cookiesForUrl(QUrl("https://www.deviantart.com/")).isEmpty()) return requestAuthorization();
+#ifdef USE_NEW_METHOD
+	return requestToken();
+#else
+	// try to reuse previous cookies
+//	if (!m_manager->cookieJar()->cookiesForUrl(QUrl(HTTPS_BASE)).isEmpty()) return requestAuthorization();
 
-		return requestAuthorization();
-	}
-
-	return getValidateToken();
+	return requestAuthorization();
+#endif
 }
 
 bool OAuth2::uploadToStash(const QString &filename, const QString &room)
@@ -199,18 +203,29 @@ bool OAuth2::loginOAuth2()
 	data = params.encodedQuery();
 #endif
 
-	return post("https://www.deviantart.com/join/oauth2login", data);
+	return post(QString("%1/join/oauth2login").arg(HTTPS_BASE), data);
 }
 
 QString OAuth2::getAuthorizationUrl() const
 {
-	return QString("https://www.deviantart.com/oauth2/authorize?response_type=code&client_id=%1&redirect_uri=kdamn://oauth2/login").arg(m_clientId);
+	return QString("%1/oauth2/authorize?response_type=code&client_id=%2&redirect_uri=kdamn://oauth2/login").arg(HTTPS_BASE).arg(m_clientId);
 }
 
 bool OAuth2::requestAuthorization()
 {
 	return get(getAuthorizationUrl());
 }
+
+#ifdef USE_NEW_METHOD
+
+bool OAuth2::requestToken(const QString &/* code */)
+{
+	m_accessToken.clear();
+
+	return get(QString("%1/oauth2/token?grant_type=client_credentials&client_id=%2&client_secret=%3").arg(HTTPS_BASE).arg(m_clientId).arg(m_clientSecret));
+}
+
+#else
 
 bool OAuth2::requestToken(const QString &code)
 {
@@ -226,21 +241,23 @@ bool OAuth2::requestToken(const QString &code)
 		query = QString("refresh_token&refresh_token=%1").arg(m_refreshToken);
 	}
 
-	return get(QString("https://www.deviantart.com/oauth2/token?client_id=%1&client_secret=%2&grant_type=%3").arg(m_clientId).arg(m_clientSecret).arg(query));
+	return get(QString("%1/oauth2/token?client_id=%2&client_secret=%3&grant_type=%4").arg(HTTPS_BASE).arg(m_clientId).arg(m_clientSecret).arg(query));
 }
+
+#endif
 
 bool OAuth2::requestPlacebo()
 {
 	if (m_accessToken.isEmpty()) return false;
 
-	return get(QString("https://www.deviantart.com/api/oauth2/placebo?access_token=%1").arg(m_accessToken));
+	return get(QString("%1/placebo?access_token=%2").arg(OAUTH2_BASE).arg(m_accessToken));
 }
 
 bool OAuth2::requestUserInfo()
 {
 	if (m_accessToken.isEmpty()) return false;
 
-	return get(QString("https://www.deviantart.com/api/oauth2/user/whoami?access_token=%1").arg(m_accessToken));
+	return get(QString("%1/user/whoami?access_token=%2").arg(OAUTH2_BASE).arg(m_accessToken));
 }
 
 bool OAuth2::requestDAmnToken()
@@ -250,7 +267,7 @@ bool OAuth2::requestDAmnToken()
 	// don't request dAmn token if already got
 	if (!m_damnToken.isEmpty()) return true;
 
-	return get(QString("https://www.deviantart.com/api/oauth2/user/damntoken?access_token=%1").arg(m_accessToken));
+	return get(QString("%1/user/damntoken?access_token=%2").arg(OAUTH2_BASE).arg(m_accessToken));
 }
 
 bool OAuth2::requestStash(const QString &filename, const QString &room)
@@ -277,7 +294,7 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 	else mime = "application/binary";
 
 	QNetworkRequest req;
-	req.setUrl(QUrl(QString("https://www.deviantart.com/api/oauth2/stash/submit?access_token=%1").arg(m_accessToken)));
+	req.setUrl(QUrl(QString("%1/stash/submit?access_token=%2").arg(OAUTH2_BASE).arg(m_accessToken)));
 	addUserAgent(req);
 
 	QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType, this);
@@ -399,7 +416,7 @@ QString OAuth2::getUserAgent()
 
 bool OAuth2::getValidateToken()
 {
-	return get("https://www.deviantart.com/users/rockedout");
+	return get(QString("%1/users/rockedout").arg(HTTPS_BASE));
 }
 
 bool OAuth2::loginSite(const QString &validationToken, const QString &validationKey)
@@ -426,7 +443,7 @@ bool OAuth2::loginSite(const QString &validationToken, const QString &validation
 	data = params.encodedQuery();
 #endif
 
-	return post("https://www.deviantart.com/users/login", data, "https://www.deviantart.com/users/rockedout");
+	return post(QString("%1/users/login").arg(HTTPS_BASE), data, QString("%1/users/rockedout").arg(HTTPS_BASE));
 }
 
 bool OAuth2::requestAuthToken()

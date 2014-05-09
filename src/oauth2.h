@@ -50,7 +50,7 @@ public:
 	void setDAmnToken(const QString &token) { m_damnToken = token; }
 	void setAccessToken(const QString &access, const QString &refresh) { m_accessToken = access; m_refreshToken = refresh; }
 
-	bool login(bool oauth2);
+	bool login();
 	bool uploadToStash(const QString &filename, const QString &room);
 	bool requestImageInfo(const QString &url, const QString &room);
 

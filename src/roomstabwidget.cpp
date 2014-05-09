@@ -175,7 +175,7 @@ void RoomsTabWidget::onRequestDAmnToken()
 
 	if (ConfigFile::getInstance()->isRememberPassword() && !user.isEmpty() && !password.isEmpty())
 	{
-		OAuth2::getInstance()->login(ConfigFile::getInstance()->getDAmnTokenMethod() == MethodOAuth2);
+		OAuth2::getInstance()->login();
 	}
 	else
 	{
@@ -407,6 +407,6 @@ void RoomsTabWidget::login()
 
 	if (!DAmn::getInstance()->connectToServer())
 	{
-		OAuth2::getInstance()->login(ConfigFile::getInstance()->getDAmnTokenMethod() == MethodOAuth2);
+		OAuth2::getInstance()->login();
 	}
 }
