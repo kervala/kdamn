@@ -52,6 +52,11 @@ MACRO(ADD_QT5_DEPENDENCIES)
   FOREACH(_MODULE ${QT_MODULES_WANTED})
     IF(_MODULE STREQUAL WebKit)
       LIST(APPEND QT_MODULES_WANTED Quick Multimedia Qml Sql Sensors Network Gui)
+
+      # Depends on Positioning since Qt 5.3.0
+      IF("${Qt5Core_VERSION_STRING}" VERSION_GREATER "5.2.9")
+        LIST(APPEND QT_MODULES_WANTED Positioning)
+      ENDIF()
     ELSEIF(_MODULE STREQUAL WebKitWidgets)
       LIST(APPEND QT_MODULES_WANTED MultimediaWidgets OpenGL PrintSupport)
     ELSEIF(_MODULE STREQUAL Multimedia)
@@ -88,12 +93,17 @@ MACRO(USE_QT_MODULES)
   SET(QT4_MODULES ${QT_SHARED_MODULES} Main Declarative)
 
   # Qt 5 modules
-  SET(QT5_MODULES ${QT_SHARED_MODULES} Concurrent LinguistTools MultimediaQuick MultimediaWidgets PrintSupport Quick QuickParticles QuickTest Sensors SerialPort V8 Widgets WebKitWidgets)
-  
+  SET(QT5_MODULES ${QT_SHARED_MODULES} Concurrent LinguistTools MultimediaQuick MultimediaWidgets PrintSupport Quick QuickParticles QuickTest Sensors SerialPort V8 Widgets WebKitWidgets Positioning)
+
   IF(WITH_QT5)
     # Look for Qt 5 in some environment variables
     SET(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${QTDIR} $ENV{QTDIR})
     FIND_PACKAGE(Qt5Core QUIET)
+
+    IF("${Qt5Core_VERSION_STRING}" VERSION_GREATER "5.2.9")
+      # Depends on Positioning since Qt 5.3.0
+      LIST(APPEND QT5_MODULES Positioning)
+    ENDIF()
 
     IF(Qt5Core_FOUND)
       ADD_QT5_DEPENDENCIES()
@@ -501,6 +511,9 @@ MACRO(INSTALL_QT_LIBRARIES)
             INSTALL_LIBRARY(icuin51)
             INSTALL_LIBRARY(icuuc51)
             INSTALL_LIBRARY(icudt51)
+            INSTALL_LIBRARY(icuin52)
+            INSTALL_LIBRARY(icuuc52)
+            INSTALL_LIBRARY(icudt52)
             INSTALL_QT_PLUGIN(platforms qwindows)
           ENDIF(_MODULE STREQUAL Core)
           IF(_MODULE STREQUAL Gui)

@@ -477,7 +477,11 @@ MACRO(CREATE_IOS_PACKAGE_TARGET _TARGET)
   IF(IOS)
     # Creating .ipa package
     IF(MAC_ITUNESARTWORK)
-      CONFIGURE_FILE(${MAC_RESOURCES_DIR}/application.xcent ${CMAKE_BINARY_DIR}/application.xcent)
+      IF(APPSTORE)
+        CONFIGURE_FILE(${MAC_RESOURCES_DIR}/application_store.xcent ${CMAKE_BINARY_DIR}/application.xcent)
+      ELSE()
+        CONFIGURE_FILE(${MAC_RESOURCES_DIR}/application.xcent ${CMAKE_BINARY_DIR}/application.xcent)
+      ENDIF()
 
       SET(IPA_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_FIXED}_ipa)
       SET(IPA ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_FIXED}-${VERSION}.ipa)

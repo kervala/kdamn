@@ -1,5 +1,5 @@
 SET(COMMON_MODULE_FOUND TRUE)
-SET(ALL_TARGETS)
+SET(ALL_TARGETS CACHE INTERNAL "All targets" FORCE)
 SET(VERSION_UPDATED OFF)
 
 # Force Release configuration for compiler checks
@@ -299,7 +299,7 @@ MACRO(CREATE_SOURCE_GROUPS DIR FILES)
 ENDMACRO(CREATE_SOURCE_GROUPS)
 
 MACRO(GET_PDB_FULLPATH name output)
-  IF(CMAKE_VERSION VERSION_LESS "2.8.12")
+  IF(CMAKE_VERSION VERSION_LESS "2.8.12" OR CMAKE_VERSION VERSION_GREATER "3.0")
     # determine output directory based on target type
     GET_TARGET_PROPERTY(_targetType ${name} TYPE)
     IF(${_targetType} STREQUAL EXECUTABLE)
@@ -696,33 +696,38 @@ MACRO(SET_TARGET_LIB name)
             SET(_name "${name}")
           ENDIF()
 
-          # get final location for Debug configuration
-          GET_TARGET_PROPERTY(OUTPUT_FULLPATH ${_name} LOCATION_Debug)
+          # Destination PDB filename
+          SET(OUTPUT_FILENAME ${_name}d.pdb)
 
+          # static libraries are always in CMAKE_LIBRARY_OUTPUT_DIRECTORY
+          IF(NMAKE)
+            SET(OUTPUT_FULLPATH ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${OUTPUT_FILENAME})
+          ELSE()
+            SET(OUTPUT_FULLPATH ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug/${OUTPUT_FILENAME})
+          ENDIF()
+          
           IF(CMAKE_VERSION VERSION_LESS "2.8.12")
-            # replace extension by .pdb
-            STRING(REGEX REPLACE "\\.([a-zA-Z0-9_]+)$" ".pdb" OUTPUT_FULLPATH ${OUTPUT_FULLPATH})
             # copy PDB file together with LIB
             INSTALL(FILES ${OUTPUT_FULLPATH} DESTINATION ${LIB_PREFIX} CONFIGURATIONS Debug)
           ELSE()
             # Since CMake 2.8.12, PDB files are not generated in output directory for static libraries
             GET_TARGET_PROPERTY(PDB_FULLPATH ${_name} PDB_FULLPATH)
 
-            # Library filename
-            GET_FILENAME_COMPONENT(OUTPUT_FILENAME ${OUTPUT_FULLPATH} NAME)
-
-            # Destination PDB filename
-            STRING(REGEX REPLACE "\\.([a-zA-Z0-9_]+)$" ".pdb" OUTPUT_FILENAME ${OUTPUT_FILENAME})
-            
             # copy PDB file together with LIB
             INSTALL(FILES ${PDB_FULLPATH} DESTINATION ${LIB_PREFIX} CONFIGURATIONS Debug RENAME ${OUTPUT_FILENAME})
           ENDIF()
         ENDIF(IS_STATIC)
         IF(IS_SHARED)
-          # get final location for Debug configuration
-          GET_TARGET_PROPERTY(OUTPUT_FULLPATH ${name} LOCATION_Debug)
-          # replace extension by .pdb
-          STRING(REGEX REPLACE "\\.([a-zA-Z0-9_]+)$" ".pdb" OUTPUT_FULLPATH ${OUTPUT_FULLPATH})
+          # Destination PDB filename
+          SET(OUTPUT_FILENAME ${name}d.pdb)
+
+          # static libraries are always in CMAKE_LIBRARY_OUTPUT_DIRECTORY
+          IF(NMAKE)
+            SET(OUTPUT_FULLPATH ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${OUTPUT_FILENAME})
+          ELSE()
+            SET(OUTPUT_FULLPATH ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug/${OUTPUT_FILENAME})
+          ENDIF()
+
           # copy PDB file together with DLL
           INSTALL(FILES ${OUTPUT_FULLPATH} DESTINATION ${BIN_PREFIX} CONFIGURATIONS Debug)
         ENDIF(IS_SHARED)
@@ -939,13 +944,15 @@ MACRO(SET_TARGET_FLAGS name)
   IF(MSVC)
     IF(${type} STREQUAL STATIC_LIBRARY)
       SET_TARGET_PROPERTIES(${name} PROPERTIES PDB_OUTPUT_DIRECTORY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
+#    COMPILE_PDB_NAME_Debug
+#    COMPILE_PDB_OUTPUT_DIRECTORY_Debug
     ELSEIF(${type} STREQUAL EXECUTABLE)
       SET_TARGET_PROPERTIES(${name} PROPERTIES COMPILE_FLAGS "/GA")
     ELSEIF(${type} STREQUAL SHARED_LIBRARY)
       SET_TARGET_PROPERTIES(${name} PROPERTIES PDB_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
     ENDIF(${type} STREQUAL STATIC_LIBRARY)
 
-    IF(CMAKE_VERSION VERSION_GREATER "2.8.11.9")
+    IF(CMAKE_VERSION VERSION_GREATER "2.8.11.9" AND CMAKE_VERSION VERSION_LESS "3.1")
       # Since CMake 2.8.12, PDB files are not generated in output directory
       GET_PDB_FULLPATH(${name} PDB_FULLPATH)
 
@@ -995,8 +1002,8 @@ MACRO(SET_TARGET_FLAGS name)
     SET(_RELEASE_POSTFIX ${${name}_RELEASE_POSTFIX})
   ENDIF(DEFINED ${name}_RELEASE_POSTFIX)
 
-  SET(ALL_TARGETS ${ALL_TARGETS} ${name})
-  
+  SET(ALL_TARGETS ${ALL_TARGETS} ${name} CACHE INTERNAL "All targets")
+
   SET_TARGET_PROPERTIES(${name} PROPERTIES DEBUG_POSTFIX "${_DEBUG_POSTFIX}" RELEASE_POSTFIX "${_RELEASE_POSTFIX}")
 ENDMACRO(SET_TARGET_FLAGS)
 
