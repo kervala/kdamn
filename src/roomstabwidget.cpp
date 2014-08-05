@@ -58,6 +58,7 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent)
 	connect(damn, SIGNAL(roomParted(QString, QString)), this, SLOT(onPartRoom(QString, QString)));
 	connect(damn, SIGNAL(userJoined(QString, QString, bool)), this, SLOT(onUserJoin(QString, QString, bool)));
 	connect(damn, SIGNAL(userParted(QString, QString, QString, bool)), this, SLOT(onUserPart(QString, QString, QString, bool)));
+	connect(damn, SIGNAL(userKicked(QString, QString, QString)), this, SLOT(onUserKick(QString, QString, QString)));
 	connect(damn, SIGNAL(userPrivChanged(QString, QString, QString, QString)), this, SLOT(onUserPriv(QString, QString, QString, QString)));
 	connect(damn, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
 //	connect(damn, SIGNAL(authenticationFailedWrongLogin()), this, SLOT(onRequestDAmnToken()));
@@ -254,6 +255,15 @@ void RoomsTabWidget::onUserPart(const QString &room, const QString &user, const 
 	RoomFrame *frame = getRoomFrame(room);
 
 	if (frame) frame->userPart(user, reason);
+
+	updateSystrayIcon(room, user, "");
+}
+
+void RoomsTabWidget::onUserKick(const QString &room, const QString &user, const QString &by)
+{
+	RoomFrame *frame = getRoomFrame(room);
+
+	if (frame) frame->userPart(user, tr("%1 has been kicked by %2").arg(user).arg(by));
 
 	updateSystrayIcon(room, user, "");
 }

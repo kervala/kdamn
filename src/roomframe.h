@@ -57,6 +57,13 @@ public slots:
 	// when user double-click on a user
 	void onUserDoubleClicked(const QModelIndex &index);
 
+	void onHomepageUser();
+	void onPromoteUser();
+	void onDemoteUser();
+	void onBanUser();
+	void onUnbanUser();
+	void onKickUser();
+
 protected:
 	void updateSplitter();
 

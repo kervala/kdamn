@@ -35,6 +35,31 @@ RoomFrame::RoomFrame(QWidget *parent, const QString &room):TabFrame(parent), m_r
 	m_usersModel = new QStringListModel(this);
 	usersView->setModel(m_usersModel);
 
+	QAction *homepageAction = new QAction(tr("Homepage"), this);
+	connect(homepageAction, SIGNAL(triggered()), this, SLOT(onHomepageUser()));
+
+	QAction *promoteAction = new QAction(tr("Promote"), this);
+	connect(promoteAction, SIGNAL(triggered()), this, SLOT(onPromoteUser()));
+
+	QAction *demoteAction = new QAction(tr("Demote"), this);
+	connect(demoteAction, SIGNAL(triggered()), this, SLOT(onDemoteUser()));
+
+	QAction *banAction = new QAction(tr("Ban"), this);
+	connect(banAction, SIGNAL(triggered()), this, SLOT(onBanUser()));
+
+	QAction *unbanAction = new QAction(tr("Unban"), this);
+	connect(unbanAction, SIGNAL(triggered()), this, SLOT(onUnbanUser()));
+
+	QAction *kickAction = new QAction(tr("Kick"), this);
+	connect(kickAction, SIGNAL(triggered()), this, SLOT(onKickUser()));
+
+	usersView->addAction(homepageAction);
+	usersView->addAction(promoteAction);
+	usersView->addAction(demoteAction);
+	usersView->addAction(banAction);
+	usersView->addAction(unbanAction);
+	usersView->addAction(kickAction);
+
 	outputBrowser->setRoom(room);
 
 	connect(inputEdit, SIGNAL(returnPressed()), SLOT(onSend()));
@@ -145,6 +170,73 @@ void RoomFrame::onUserDoubleClicked(const QModelIndex &index)
 	if (user.isEmpty()) return;
 
 	QDesktopServices::openUrl(QString("http://%1.deviantart.com").arg(user.toLower()));
+}
+
+void RoomFrame::onHomepageUser()
+{
+	QModelIndex index = usersView->currentIndex();
+
+	QString user = m_usersModel->data(index, Qt::DisplayRole).toString();
+
+	if (user.isEmpty()) return;
+
+	QDesktopServices::openUrl(QString("http://%1.deviantart.com").arg(user.toLower()));
+}
+
+void RoomFrame::onPromoteUser()
+{
+	QModelIndex index = usersView->currentIndex();
+
+	QString user = m_usersModel->data(index, Qt::DisplayRole).toString();
+
+	if (user.isEmpty()) return;
+
+	DAmn::getInstance()->promote(m_room, user.toLower());
+}
+
+void RoomFrame::onDemoteUser()
+{
+
+	QModelIndex index = usersView->currentIndex();
+
+	QString user = m_usersModel->data(index, Qt::DisplayRole).toString();
+
+	if (user.isEmpty()) return;
+
+	DAmn::getInstance()->demote(m_room, user.toLower());
+}
+
+void RoomFrame::onBanUser()
+{
+	QModelIndex index = usersView->currentIndex();
+
+	QString user = m_usersModel->data(index, Qt::DisplayRole).toString();
+
+	if (user.isEmpty()) return;
+
+	DAmn::getInstance()->ban(m_room, user.toLower());
+}
+
+void RoomFrame::onUnbanUser()
+{
+	QModelIndex index = usersView->currentIndex();
+
+	QString user = m_usersModel->data(index, Qt::DisplayRole).toString();
+
+	if (user.isEmpty()) return;
+
+	DAmn::getInstance()->unban(m_room, user.toLower());
+}
+
+void RoomFrame::onKickUser()
+{
+	QModelIndex index = usersView->currentIndex();
+
+	QString user = m_usersModel->data(index, Qt::DisplayRole).toString();
+
+	if (user.isEmpty()) return;
+
+	DAmn::getInstance()->kick(m_room, user.toLower());
 }
 
 bool RoomFrame::setFocus(bool focus)

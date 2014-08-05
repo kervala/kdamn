@@ -58,6 +58,7 @@ public slots:
 	void onPartRoom(const QString &room, const QString &reason);
 	void onUserJoin(const QString &room, const QString &user, bool show);
 	void onUserPart(const QString &room, const QString &user, const QString &reason, bool show);
+	void onUserKick(const QString &room, const QString &user, const QString &by);
 	void onUserPriv(const QString &room, const QString &user, const QString &by, const QString &pc);
 	void onError(const QString &error);
 

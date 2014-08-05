@@ -161,6 +161,7 @@ bool DAmn::parseError(const QString &error)
 		{ "nothing to send", tr("Nothing to send") },
 		{ "already joined", tr("Already joined") },
 		{ "no login", tr("No login") },
+		{ "not privileged", tr("Not privileged") },
 		{ "unknown", tr("Unknown") },
 		{ "", "" }
 	};
@@ -310,16 +311,16 @@ bool DAmn::parsePriv(const QString &room, const QString &user, bool show, const 
 {
 	if (show) emit userPrivChanged(room, user, by, pc);
 
-	DAmnRoom *c = getRoom(room);
+	DAmnRoom *r = getRoom(room);
 
-	if (!c) return false;
+	if (!r) return false;
 
 	DAmnRoomUser member;
 	member.name = user;
 	member.pc = pc;
 	member.by = by;
 
-	c->setUser(member);
+	r->setUser(member);
 
 	return true;
 }
@@ -332,7 +333,7 @@ bool DAmn::parseKicked(const QString &room, const QString &user, bool show, cons
 
 	if (!r) return false;
 
-	qDebug() << "Not implemented";
+	r->removeUser(user);
 
 	return true;
 }
