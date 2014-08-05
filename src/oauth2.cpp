@@ -303,9 +303,11 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 	folderPart.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"folder\"");
 	folderPart.setBody(QString("kdamn_%1").arg(room).toUtf8());
 
+	QString title = info.baseName().left(50);
+
 	QHttpPart titlePart;
 	titlePart.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"title\"");
-	titlePart.setBody(info.baseName().toUtf8());
+	titlePart.setBody(title.toUtf8());
 
 	QHttpPart imagePart;
 	imagePart.setHeader(QNetworkRequest::ContentTypeHeader, mime);
