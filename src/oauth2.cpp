@@ -30,6 +30,7 @@
 
 #define HTTPS_BASE "https://www.deviantart.com"
 #define OAUTH2_BASE HTTPS_BASE"/api/v1/oauth2"
+#define REDIRECT_APP "kdamn://oauth2/login"
 
 QString OAuth2::s_userAgent;
 OAuth2* OAuth2::s_instance = NULL;
@@ -121,7 +122,7 @@ bool OAuth2::authorizeApplication(bool authorize)
 
 	params.addQueryItem("client_id", QString::number(m_clientId));
 	params.addQueryItem("response_type", "code");
-	params.addQueryItem("redirect_uri", "kdamn://oauth2/login");
+	params.addQueryItem("redirect_uri", REDIRECT_APP);
 	params.addQueryItem("scope", "basic");
 	params.addQueryItem("state", "");
 	params.addQueryItem("authorized", authorize ? "1":"");
@@ -208,7 +209,7 @@ bool OAuth2::loginOAuth2()
 
 QString OAuth2::getAuthorizationUrl() const
 {
-	return QString("%1/oauth2/authorize?response_type=code&client_id=%2&redirect_uri=kdamn://oauth2/login").arg(HTTPS_BASE).arg(m_clientId);
+	return QString("%1/oauth2/authorize?response_type=code&client_id=%2&redirect_uri=%3").arg(HTTPS_BASE).arg(m_clientId).arg(REDIRECT_APP);
 }
 
 bool OAuth2::requestAuthorization()
@@ -233,7 +234,7 @@ bool OAuth2::requestToken(const QString &code)
 
 	if (!code.isEmpty())
 	{
-		query = QString("authorization_code&code=%1").arg(code);
+		query = QString("authorization_code&code=%1&redirect_uri=%2").arg(code).arg(REDIRECT_APP);
 	}
 	else
 	{
@@ -768,7 +769,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 		// fill OAuth2 login form
 		loginOAuth2();
 	}
-	else if (redirection.startsWith("kdamn://"))
+	else if (redirection.startsWith(REDIRECT_APP))
 	{
 #ifdef USE_QT5
 		QUrlQuery query(QUrl(redirection).query());
@@ -782,7 +783,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 			emit errorReceived(query.queryItemValue("error_description"));
 		}
 #else
-		QRegExp reg("^kdamn://oauth2/login\\?code=([0-9]+)$");
+		QRegExp reg(QString("^%1\\?code=([0-9]+)$").arg(REDIRECT_APP));
 
 		if (reg.indexIn(redirection) > -1)
 		{
