@@ -85,7 +85,7 @@ private:
 	bool requestUserInfo();
 	bool requestDAmnToken();
 	bool requestStash(const QString &filename, const QString &room);
-	bool authorizeApplication(bool authorize);
+	bool authorizeApplication(const QString &validateKey, const QString &validateToken, bool authorize);
 
 	// site process
 	QString getAuthorizationUrl() const;

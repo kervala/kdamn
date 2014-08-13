@@ -112,7 +112,7 @@ bool OAuth2::post(const QString &url, const QByteArray &data, const QString &ref
 	return true;
 }
 
-bool OAuth2::authorizeApplication(bool authorize)
+bool OAuth2::authorizeApplication(const QString &validateKey, const QString &validateToken, bool authorize)
 {
 #ifdef USE_QT5
 	QUrlQuery params;
@@ -128,6 +128,12 @@ bool OAuth2::authorizeApplication(bool authorize)
 	params.addQueryItem("authorized", authorize ? "1":"");
 	params.addQueryItem("terms_agree[]", "1");
 	params.addQueryItem("terms_agree[]", "0");
+	params.addQueryItem("validate_key", validateKey);
+
+	if (!validateToken.isEmpty())
+	{
+		params.addQueryItem("validate_token", validateToken);
+	}
 
 	QByteArray data;
 
@@ -760,8 +766,16 @@ void OAuth2::onReply(QNetworkReply *reply)
 		}
 		else
 		{
-			// wrong login
-			emit errorReceived(tr("Login '%1' doesn't exist").arg(m_login));
+			if (content.indexOf("The username or password you entered was incorrect.") > -1)
+			{
+				// wrong login or password
+				emit errorReceived(tr("Login '%1' or password is incorrect").arg(m_login));
+			}
+			else
+			{
+				// <span class="field_error" rel="password">
+				emit errorReceived(tr("Unknown error for login '%1'").arg(m_login));
+			}
 		}
 	}
 	else if (url.endsWith("/join/oauth2"))
@@ -828,8 +842,46 @@ void OAuth2::onReply(QNetworkReply *reply)
 	}
 	else if (url.indexOf("/applications") > -1 && url.indexOf(QString("client_id=%1").arg(m_clientId)) > -1)
 	{
-		// TODO: ask authorization to user
-		authorizeApplication(true);
+		QRegExp reg("name=\"validate_key\" value=\"([0-9]+)\"");
+
+		if (reg.indexIn(content) > -1)
+		{
+			QString validateKey = reg.cap(1);
+
+			// TODO: ask authorization to user
+			authorizeApplication(validateKey, "", true);
+		}
+		else
+		{
+			emit errorReceived(tr("Unable to find validate_key"));
+		}
+	}
+	else if (url.indexOf("/authorize_app") > -1)
+	{
+		QRegExp reg("name=\"validate_key\" value=\"([0-9]+)\"");
+
+		if (reg.indexIn(content) > -1)
+		{
+			QString validateKey = reg.cap(1);
+
+			reg.setPattern("name=\"validate_token\" value=\"([0-9a-f]+)\"");
+
+			if (reg.indexIn(content) > -1)
+			{
+				QString validateToken = reg.cap(1);
+
+				// TODO: ask authorization to user
+				authorizeApplication(validateKey, validateToken, true);
+			}
+			else
+			{
+				emit errorReceived(tr("Unable to find validate_token"));
+			}
+		}
+		else
+		{
+			emit errorReceived(tr("Unable to find validate_key"));
+		}
 	}
 	else if (url.endsWith("/rockedout"))
 	{
@@ -877,6 +929,8 @@ void OAuth2::onReply(QNetworkReply *reply)
 	}
 	else
 	{
+		emit errorReceived(tr("Something goes wrong... URL: %1 Redirection:%2").arg(url).arg(redirection));
+
 		qDebug() << content;
 	}
 }
