@@ -45,6 +45,11 @@ public:
 	SystrayStatus getStatus(const QString &room) const;
 	void setStatus(const QString &room, SystrayStatus status);
 
+	void displayMessage(const QString &message, const QString &url);
+
+public slots:
+	void onMessageClicked();
+
 private:
 	bool create();
 	void updateStatus();
@@ -54,6 +59,7 @@ private:
 	SystrayStatuses m_rooms;
 	SystrayStatus m_status;
 	QSystemTrayIcon *m_icon;
+	QString m_url;
 };
 
 #endif

@@ -149,3 +149,14 @@ void SystrayIcon::setStatus(const QString &room, SystrayStatus status)
 
 	updateStatus();
 }
+
+void SystrayIcon::displayMessage(const QString &message, const QString &url)
+{
+	m_url = url;
+	m_icon->showMessage("", message, QSystemTrayIcon::NoIcon);
+}
+
+void SystrayIcon::onMessageClicked()
+{
+	if (!m_url.isEmpty()) QDesktopServices::openUrl(m_url);
+}

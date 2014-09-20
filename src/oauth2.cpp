@@ -26,16 +26,23 @@
 	#define new DEBUG_NEW
 #endif
 
-// #define USE_NEW_METHOD
+//#define USE_NEW_METHOD
 
-#define HTTPS_BASE "https://www.deviantart.com"
+// DiFi : http://botdom.com/documentation/DiFi
+
+#define BASE "www.deviantart.com"
+#define HTTPS_BASE "https://"BASE
+#define HTTP_BASE "http://"BASE
+#define LOGOUT_URL HTTPS_BASE"/users/rockedout"
+#define LOGIN_URL HTTPS_BASE"/users/login"
+#define DIFI_URL HTTPS_BASE"/global/difi.php"
 #define OAUTH2_BASE HTTPS_BASE"/api/v1/oauth2"
 #define REDIRECT_APP "kdamn://oauth2/login"
 
 QString OAuth2::s_userAgent;
 OAuth2* OAuth2::s_instance = NULL;
 
-OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0), m_expiresIn(0)
+OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0), m_expiresIn(0), m_inboxId(0), m_logged(false)
 {
 	if (s_instance == NULL) s_instance = this;
 
@@ -102,6 +109,7 @@ bool OAuth2::post(const QString &url, const QByteArray &data, const QString &ref
 	req.setUrl(QUrl(url));
 	addUserAgent(req);
 	req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
+	req.setRawHeader("Origin", HTTPS_BASE);
 	if (!referer.isEmpty()) req.setRawHeader("Referer", referer.toLatin1());
 
 	QNetworkReply *reply = m_manager->post(req, data);
@@ -156,11 +164,13 @@ bool OAuth2::login()
 #ifdef USE_NEW_METHOD
 	return requestToken();
 #else
-	// try to reuse previous cookies
-//	if (!m_manager->cookieJar()->cookiesForUrl(QUrl(HTTPS_BASE)).isEmpty()) return requestAuthorization();
-
 	return requestAuthorization();
 #endif
+}
+
+bool OAuth2::loginWeb()
+{
+	return get(LOGOUT_URL);
 }
 
 bool OAuth2::uploadToStash(const QString &filename, const QString &room)
@@ -337,6 +347,20 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 	return true;
 }
 
+bool OAuth2::requestMessageFolders()
+{
+	if (!m_logged) return loginWeb();
+
+	return get(QString("%1?c[]=MessageCenter;get_folders;&t=json").arg(DIFI_URL));
+}
+
+bool OAuth2::requestMessageViews()
+{
+	if (!m_inboxId) return requestMessageFolders();
+
+	return get(QString("%1?c[]=MessageCenter;get_views;%2,oq:notes_unread:0:0:f&t=json").arg(DIFI_URL).arg(m_inboxId));
+}
+
 void OAuth2::onUploadProgress(qint64 readBytes, qint64 totalBytes)
 {
 	UpdateSystemProgress(readBytes, totalBytes);
@@ -423,11 +447,6 @@ QString OAuth2::getUserAgent()
 	return s_userAgent;
 }
 
-bool OAuth2::getValidateToken()
-{
-	return get(QString("%1/users/rockedout").arg(HTTPS_BASE));
-}
-
 bool OAuth2::loginSite(const QString &validationToken, const QString &validationKey)
 {
 #ifdef USE_QT5
@@ -436,11 +455,9 @@ bool OAuth2::loginSite(const QString &validationToken, const QString &validation
 	QUrl params;
 #endif
 
-	params.addQueryItem("ref", "");
 	params.addQueryItem("username", m_login);
 	params.addQueryItem("password", m_password);
 	params.addQueryItem("remember_me", "1");
-	params.addQueryItem("action", "Login");
 	params.addQueryItem("validate_token", validationToken);
 	params.addQueryItem("validate_key", validationKey);
 
@@ -452,7 +469,30 @@ bool OAuth2::loginSite(const QString &validationToken, const QString &validation
 	data = params.encodedQuery();
 #endif
 
-	return post(QString("%1/users/login").arg(HTTPS_BASE), data, QString("%1/users/rockedout").arg(HTTPS_BASE));
+	return post(LOGIN_URL, data, LOGOUT_URL);
+}
+
+bool OAuth2::requestNotes()
+{
+#ifdef USE_QT5
+	QUrlQuery params;
+#else
+	QUrl params;
+#endif
+
+	params.addQueryItem("c[]", "\"Notes\",\"display_folder\",[\"unread\",0,false]");
+	params.addQueryItem("t", "json");
+	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
+
+	QByteArray data;
+
+#ifdef USE_QT5
+	data = params.query().toUtf8();
+#else
+	data = params.encodedQuery();
+#endif
+
+	return post(DIFI_URL, data, HTTPS_BASE);
 }
 
 bool OAuth2::requestAuthToken()
@@ -484,6 +524,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 #endif
 
 	bool isJson = query.hasQueryItem("access_token") || query.hasQueryItem("grant_type") || query.hasQueryItem("url");
+	bool isDiFi = query.hasQueryItem("c[]") && query.hasQueryItem("t");
 	QString path = reply->url().path();
 
 	reply->deleteLater();
@@ -681,19 +722,25 @@ void OAuth2::onReply(QNetworkReply *reply)
 				folder = sc.property("folder").toString();
 				folderId = (qint64)sc.property("folderid").toNumber();
 #endif
-
-				StashFile file = m_filesToUpload.front();
-
-				m_filesToUpload.pop_front();
-
 				if (!m_filesToUpload.isEmpty())
 				{
-					StashFile newFile = m_filesToUpload.front();
+					StashFile file = m_filesToUpload.front();
 
-					requestStash(newFile.filename, newFile.room);
+					m_filesToUpload.pop_front();
+
+					if (!m_filesToUpload.isEmpty())
+					{
+						StashFile newFile = m_filesToUpload.front();
+
+						requestStash(newFile.filename, newFile.room);
+					}
+
+					emit imageUploaded(file.room, QString::number(stashId));
 				}
-
-				emit imageUploaded(file.room, QString::number(stashId));
+			}
+			else
+			{
+				m_filesToUpload.clear();
 			}
 		}
 		else if (path.endsWith("/oembed"))
@@ -752,6 +799,127 @@ void OAuth2::onReply(QNetworkReply *reply)
 			emit errorReceived(tr("API error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
 		}
 	}
+	else if (isDiFi)
+	{
+		// we received JSON response
+		QString status, error, errorDescription;
+
+#ifdef USE_QT5
+		QJsonParseError jsonError;
+		QJsonDocument doc = QJsonDocument::fromJson(content, &jsonError);
+
+		if (jsonError.error != QJsonParseError::NoError)
+		{
+			emit errorReceived(jsonError.errorString());
+			return;
+		}
+
+		QJsonObject object = doc.object();
+		QJsonObject::const_iterator it;
+
+		// root element
+		it = object.constFind("DiFi");
+
+		if (it != object.constEnd())
+		{
+			QJsonObject difi = it.value().toObject();
+
+			// difi element
+			it = difi.constFind("response");
+
+			if (it != difi.constEnd())
+			{
+				QJsonObject response = it.value().toObject();
+
+				it = response.constFind("calls");
+
+				if (it != response.constEnd())
+				{
+					QJsonArray calls = it.value().toArray();
+
+					foreach (const QJsonValue &itemValue, calls)
+					{
+						QJsonObject item = itemValue.toObject();
+
+						QJsonObject request = item["request"].toObject();
+						QString method = request["method"].toString();
+
+						QJsonObject response = item["response"].toObject();
+
+						status = response["status"].toString();
+
+						if (status == "SUCCESS")
+						{
+							if (method == "get_folders")
+							{
+								QJsonArray content = response["content"].toArray();
+
+								foreach(const QJsonValue &folderValue, content)
+								{
+									QJsonObject folder = folderValue.toObject();
+
+									QString folderId = folder["folderid"].toString();
+									QString title = folder["title"].toString();
+									bool isInbox = folder["is_inbox"].toBool();
+
+									qDebug() << folderId << title << isInbox;
+
+									if (isInbox)
+									{
+										m_inboxId = folderId.toInt();
+
+										requestMessageViews();
+									}
+								}
+							}
+							else if (method == "get_views")
+							{
+								QJsonArray views = response["content"].toArray();
+
+								foreach(const QJsonValue &viewValue, views)
+								{
+									QJsonObject view = viewValue.toObject();
+
+									QString offset = view["offset"].toString();
+									QString length = view["length"].toString();
+									int status = view["status"].toInt();
+
+									QJsonObject result = view["result"].toObject();
+
+									QString matches = result["matches"].toString();
+									int count = result["count"].toInt();
+
+									QJsonArray hits = result["hits"].toArray();
+
+									emit notesReceived(matches.toInt());
+								}
+							}
+						}
+						else
+						{
+							QJsonObject content = response["content"].toObject();
+							QJsonObject err = content["error"].toObject();
+
+							QString errorCode = err["code"].toString();
+							QString errorHuman = err["human"].toString();
+
+							qDebug() << "error" << status << errorCode << errorHuman;
+						}
+					}
+				}
+			}
+		}
+#endif
+		else
+		{
+			qDebug() << "JSON data for " << url << "not processed (not valid DiFi)" << content;
+		}
+
+		if (status == "error")
+		{
+			emit errorReceived(tr("DiFi error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
+		}
+	}
 	else if (redirection.endsWith("/login?bad_form=1"))
 	{
 		emit errorReceived(tr("Bad form"));
@@ -761,6 +929,8 @@ void OAuth2::onReply(QNetworkReply *reply)
 		// when using oauth2
 		if (redirection.endsWith("/join/blank"))
 		{
+			m_logged = true;
+
 			// login successful, authorize the application now
 			requestAuthorization();
 		}
@@ -809,7 +979,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 			emit errorReceived(tr("Unknown error while redirected to %1").arg(redirection));
 		}
 	}
-	else if (url.endsWith("/users/login"))
+	else if (url == LOGIN_URL)
 	{
 		if (redirection.endsWith(QString("/wrong-password")))
 		{
@@ -818,6 +988,13 @@ void OAuth2::onReply(QNetworkReply *reply)
 		else if (redirection.endsWith(QString("/wrong-password?username=%1").arg(m_login)))
 		{
 			emit errorReceived(tr("Wrong password for user %1").arg(m_login));
+		}
+		else if (redirection.endsWith(".com"))
+		{
+			// redirection to user home page
+			m_logged = true;
+
+			requestMessageViews();
 		}
 		else
 		{
@@ -883,7 +1060,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 			emit errorReceived(tr("Unable to find validate_key"));
 		}
 	}
-	else if (url.endsWith("/rockedout"))
+	else if (((url == LOGOUT_URL) || (url == HTTPS_BASE) || (url == HTTP_BASE)) && !m_logged && redirection.isEmpty() && !content.isEmpty())
 	{
 		QString validationToken, validationKey;
 
@@ -929,7 +1106,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 	}
 	else
 	{
-		emit errorReceived(tr("Something goes wrong... URL: %1 Redirection:%2").arg(url).arg(redirection));
+		emit errorReceived(tr("Something goes wrong... URL: %1").arg(url));
 
 		qDebug() << content;
 	}

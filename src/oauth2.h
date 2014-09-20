@@ -51,8 +51,15 @@ public:
 	void setAccessToken(const QString &access, const QString &refresh) { m_accessToken = access; m_refreshToken = refresh; }
 
 	bool login();
+	bool loginWeb();
 	bool uploadToStash(const QString &filename, const QString &room);
 	bool requestImageInfo(const QString &url, const QString &room);
+
+	// DiFi
+	bool requestMessageFolders();
+	bool requestMessageViews();
+	bool requestNotes();
+
 
 	static QString getSupportedImageFormatsFilter();
 	static QString getUserAgent();
@@ -66,6 +73,7 @@ signals:
 	void damnTokenReceived(const QString &login, const QString &damntoken);
 	void imageDownloaded(const QString &md5);
 	void imageUploaded(const QString &room, const QString &stashId);
+	void notesReceived(int count);
 
 public slots:
 	void onReply(QNetworkReply *reply);
@@ -89,7 +97,6 @@ private:
 
 	// site process
 	QString getAuthorizationUrl() const;
-	bool getValidateToken();
 	bool loginSite(const QString &validationToken, const QString &validationKey);
 	bool requestAuthToken();
 
@@ -106,6 +113,8 @@ private:
 	int m_expiresIn;
 	QDateTime m_lastAccessTokenTime;
 	StashFiles m_filesToUpload;
+	int m_inboxId;
+	bool m_logged;
 
 	static QString s_userAgent;
 	static OAuth2 *s_instance;

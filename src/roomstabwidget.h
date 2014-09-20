@@ -52,6 +52,7 @@ public slots:
 	void onReceiveDAmnToken(const QString &login, const QString &authtoken);
 	void onReceiveAccessToken(const QString &access, const QString &refresh);
 	void onUploadImage(const QString &room, const QString &url);
+	void onReceiveNotes(int count);
 	void onConnectServer();
 	void onUsers(const QString &room, const QStringList &users);
 	void onJoinRoom(const QString &room);
@@ -65,8 +66,13 @@ public slots:
 	// slots activated from widgets
 	void onRoomFocus(int index);
 
+	void checkMessages();
+
 protected:
 	void updateSystrayIcon(const QString &room, const QString &user, const QString &html);
+
+private:
+	QTimer *m_messagesTimer;
 };
 
 #endif

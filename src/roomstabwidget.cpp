@@ -46,7 +46,7 @@ static QString base36enc(qint64 value)
 	return res;
 }
 
-RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent)
+RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTimer(NULL)
 {
 	createServerFrame();
 
@@ -69,6 +69,11 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent)
 	connect(oauth, SIGNAL(damnTokenReceived(QString, QString)), this, SLOT(onReceiveDAmnToken(QString, QString)));
 	connect(oauth, SIGNAL(accessTokenReceived(QString, QString)), this, SLOT(onReceiveAccessToken(QString, QString)));
 	connect(oauth, SIGNAL(imageUploaded(QString, QString)), this, SLOT(onUploadImage(QString, QString)));
+	connect(oauth, SIGNAL(notesReceived(int)), this, SLOT(onReceiveNotes(int)));
+
+	m_messagesTimer = new QTimer(this);
+	m_messagesTimer->setSingleShot(true);
+	connect(m_messagesTimer, SIGNAL(timeout()), this, SLOT(checkMessages()));
 
 	connect(this, SIGNAL(currentChanged(int)), this, SLOT(onRoomFocus(int)));
 }
@@ -162,6 +167,8 @@ void RoomsTabWidget::onConnectServer()
 
 		++it;
 	}
+
+	m_messagesTimer->start(10000);
 }
 
 void RoomsTabWidget::onRequestDAmnToken()
@@ -209,6 +216,33 @@ void RoomsTabWidget::onUploadImage(const QString &room, const QString &stashId)
 
 	DAmn::getInstance()->send(room, url);
 //	OAuth2::getInstance()->requestImageInfo(url, "");
+}
+
+void RoomsTabWidget::onReceiveNotes(int count)
+{
+	static int lastCount = 0;
+
+	if (count != lastCount)
+	{
+		if (count > 0)
+		{
+			setSystem(tr("You received %n note(s), click <a href=\"https://www.deviantart.com/messages/notes/\">here</a> to read them.", "", count));
+
+			// display message in system tab
+			updateSystrayIcon("", "", ConfigFile::getInstance()->getLogin().toLower());
+
+			SystrayIcon::getInstance()->displayMessage(tr("You received %n note(s), click to read them", "", count), "https://www.deviantart.com/messages/notes/");
+		}
+
+		lastCount = count;
+	}
+
+	m_messagesTimer->start(10000);
+}
+
+void RoomsTabWidget::checkMessages()
+{
+	OAuth2::getInstance()->requestMessageViews();
 }
 
 void RoomsTabWidget::onText(const QString &room, const QString &user, EMessageType type, const QString &text, bool html)

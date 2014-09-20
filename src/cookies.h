@@ -34,6 +34,8 @@ public:
 	void clear();
 	void dump();
 
+	QString get(const QString &name) const;
+
 protected:
 	void removeExpiredCookies(QList<QNetworkCookie> &cookies);
 };

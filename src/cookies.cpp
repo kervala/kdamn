@@ -25,14 +25,20 @@
 	#define new DEBUG_NEW
 #endif
 
+#define SAVE_COOKIES
+
 Cookies::Cookies(QObject *parent):QNetworkCookieJar(parent)
 {
+#ifdef SAVE_COOKIES
 	if (!loadFromDisk()) qDebug() << "Error while loading cookies";
+#endif
 }
 
 Cookies::~Cookies()
 {
+#ifdef SAVE_COOKIES
 	if (!saveToDisk()) qDebug() << "Error while saving cookies";
+#endif
 }
 
 bool Cookies::loadFromDisk()
@@ -74,6 +80,18 @@ void Cookies::dump()
 	}
 }
 
+QString Cookies::get(const QString &name) const
+{
+	QList<QNetworkCookie> cookies = allCookies();
+
+	foreach(const QNetworkCookie &cookie, cookies)
+	{
+		if (cookie.name() == name) return cookie.value();
+	}
+
+	return QString();
+}
+
 void Cookies::removeExpiredCookies(QList<QNetworkCookie> &cookies)
 {
     QDateTime now = QDateTime::currentDateTime();
@@ -83,4 +101,3 @@ void Cookies::removeExpiredCookies(QList<QNetworkCookie> &cookies)
 		if (cookies.at(i).expirationDate() < now) cookies.removeAt(i);
 	}
 }
-
