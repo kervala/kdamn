@@ -95,6 +95,8 @@ bool SystrayIcon::create()
 
 	m_icon = new QSystemTrayIcon(QIcon(":/icons/kdamn.svg"), this);
 
+	connect(m_icon, SIGNAL(messageClicked()), this, SLOT(onMessageClicked()));
+
 //	QMenu *trayMenu = new QMenu(m_trayIcon);
 //	QAction *restoreAction = trayMenu->addAction(tr("Restore"));
 //	connect(restoreAction, SIGNAL(triggered()), this, SLOT(trayActivated()));
