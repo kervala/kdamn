@@ -57,41 +57,16 @@ bool SystrayIcon::create()
 {
 	if (!QSystemTrayIcon::isSystemTrayAvailable()) return false;
 
-#ifdef USE_QT5
-	QString desktop = getenv("XDG_CURRENT_DESKTOP");
-	bool is_unity = (desktop.toLower() == "unity");
+/*
+	Unity hack:
 
-	if (is_unity)
-	{
-#ifdef UNITY_HACK
-		AppIndicator *indicator;
-//		GtkWidget *menu, *item;
+	gsettings get com.canonical.Unity.Panel systray-whitelist // will print allowed applications in JSON list
+	gsettings set com.canonical.Unity.Panel systray-whitelist <whitelist> // set whitelist
 
-//		menu = gtk_menu_new();
+	Example if current list ["Dropbox", "Foo"] – and we want to add "Bar" application:
 
-//		item = gtk_menu_item_new_with_label("Quit");
-//		gtk_menu_shell_append(GTK_MENU_SHELL(menu), item);
-//		g_signal_connect(item, "activate", G_CALLBACK(quitIndicator), qApp);
-		// We cannot connect
-		// gtk signal and qt slot so we need to create proxy
-		// function later on, we pass qApp pointer as an argument.
-		// This is useful when we need to call signals on "this"
-		//object so external function can access current object
-//		gtk_widget_show(item);
-
-		indicator = app_indicator_new("kdamn", "kdamn", APP_INDICATOR_CATEGORY_APPLICATION_STATUS);
-
-		app_indicator_set_status(indicator, APP_INDICATOR_STATUS_ACTIVE);
-//		app_indicator_set_menu(indicator, GTK_MENU(menu));
-
-		return true;
-#else
-		qDebug() << "Unity hack not enabled";
-
-		return false;
-#endif
-	}
-#endif
+	gsettings set com.canonical.Unity.Panel systray-whitelist "['Dropbox', 'Foo', 'Bar']"
+*/
 
 	m_icon = new QSystemTrayIcon(QIcon(":/icons/kdamn.svg"), this);
 
