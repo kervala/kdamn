@@ -74,6 +74,8 @@ MainWindow::MainWindow():QMainWindow()
 	QPoint pos = ConfigFile::getInstance()->getWindowPosition();
 	if (!pos.isNull()) move(pos);
 
+	connect(OAuth2::getInstance(), SIGNAL(loggedOut()), this, SLOT(onLoggedOut()));
+
 	autoConnect();
 }
 
@@ -85,7 +87,16 @@ void MainWindow::closeEvent(QCloseEvent *e)
 {
 	hide();
 
-	e->accept();
+	if (OAuth2::getInstance()->isLogged())
+	{
+		e->ignore();
+
+		OAuth2::getInstance()->logout();
+	}
+	else
+	{
+		e->accept();
+	}
 }
 
 void MainWindow::resizeEvent(QResizeEvent *e)
@@ -300,4 +311,9 @@ bool MainWindow::event(QEvent *e)
 	}
 
 	return QMainWindow::event(e);
+}
+
+void MainWindow::onLoggedOut()
+{
+	close();
 }

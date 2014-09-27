@@ -42,6 +42,20 @@ public:
 	OAuth2(QObject *parent);
 	virtual ~OAuth2();
 
+	enum eOAuth2Action
+	{
+		ActionLoginOAuth2,
+		ActionLoginWeb,
+		ActionLogout,
+		ActionCheckFolders,
+		ActionCheckNotes,
+		ActionRequestAccessToken,
+		ActionRequestDAmnToken,
+		ActionRequestAuthorization,
+		ActionUploadStash,
+		ActionRequestPlacebo
+	};
+
 	static OAuth2* getInstance() { return s_instance; }
 
 	void init();
@@ -51,23 +65,27 @@ public:
 	void setAccessToken(const QString &access, const QString &refresh) { m_accessToken = access; m_refreshToken = refresh; }
 
 	bool login();
-	bool loginWeb();
+	bool logout();
 	bool uploadToStash(const QString &filename, const QString &room);
 	bool requestImageInfo(const QString &url, const QString &room);
+	bool requestDAmnToken();
 
 	// DiFi
 	bool requestMessageFolders();
 	bool requestMessageViews();
 	bool requestNotes();
-
-
+	
 	static QString getSupportedImageFormatsFilter();
 	static QString getUserAgent();
 
 	bool get(const QString &url, const QString &referer = "");
-	bool post(const QString &url, const QByteArray &data, const QString &referer = "");
+	bool post(const QString &url, const QByteArray &data = QByteArray(), const QString &referer = "");
+
+	bool isLogged() const { return m_logged; }
 
 signals:
+	void loggedIn();
+	void loggedOut();
 	void errorReceived(const QString &error);
 	void accessTokenReceived(const QString &access, const QString &refresh);
 	void damnTokenReceived(const QString &login, const QString &damntoken);
@@ -86,12 +104,10 @@ public slots:
 
 private:
 	// OAuth2 steps
-	bool loginOAuth2();
 	bool requestAuthorization();
-	bool requestToken(const QString &code = "");
+	bool requestAccessToken(const QString &code = "");
 	bool requestPlacebo();
 	bool requestUserInfo();
-	bool requestDAmnToken();
 	bool requestStash(const QString &filename, const QString &room);
 	bool authorizeApplication(const QString &validateKey, const QString &validateToken, bool authorize);
 
@@ -101,6 +117,12 @@ private:
 	bool requestAuthToken();
 
 	void addUserAgent(QNetworkRequest &req) const;
+
+	void redirect(const QString &url, const QString &referer);
+	void processDiFi(const QByteArray &content);
+	void processJson(const QByteArray &content, const QString &path);
+	void processNextAction();
+	void parseSessionVariables(const QByteArray &content);
 
 	QNetworkAccessManager *m_manager;
 	QString m_login;
@@ -115,6 +137,13 @@ private:
 	StashFiles m_filesToUpload;
 	int m_inboxId;
 	bool m_logged;
+
+	// session variables
+	QString m_sessionId;
+	QString m_validateToken;
+	QString m_validateKey;
+
+	QList<eOAuth2Action> m_actions;
 
 	static QString s_userAgent;
 	static OAuth2 *s_instance;

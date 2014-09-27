@@ -212,8 +212,11 @@ bool DAmn::parseLogin(const QStringList &lines)
 			emit authenticationFailedWrongLogin();
 			break;
 
+			case AUTHENTICATION_FAILED:
+			emit authenticationFailedWrongToken();
+			break;
+
 			default:
-//			emit authenticationFailedWrongToken();
 			qDebug() << "not processed";
 		}
 

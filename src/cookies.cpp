@@ -25,7 +25,7 @@
 	#define new DEBUG_NEW
 #endif
 
-#define SAVE_COOKIES
+//#define SAVE_COOKIES
 
 Cookies::Cookies(QObject *parent):QNetworkCookieJar(parent)
 {

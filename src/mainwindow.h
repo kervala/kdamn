@@ -54,6 +54,9 @@ public slots:
 	// other
 	void trayActivated(QSystemTrayIcon::ActivationReason reseaon);
 
+	// signals from OAuth2
+	void onLoggedOut();
+
 protected:
 	void closeEvent(QCloseEvent *e);
 	void resizeEvent(QResizeEvent *e);

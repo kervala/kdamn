@@ -26,17 +26,24 @@
 	#define new DEBUG_NEW
 #endif
 
-//#define USE_NEW_METHOD
+#ifdef USE_QT5
+#define GET_JSON(x) object[x]
+#else
+#define GET_JSON(x) object.property(x)
+#endif
 
 // DiFi : http://botdom.com/documentation/DiFi
 
-#define BASE "www.deviantart.com"
-#define HTTPS_BASE "https://"BASE
-#define HTTP_BASE "http://"BASE
-#define LOGOUT_URL HTTPS_BASE"/users/rockedout"
-#define LOGIN_URL HTTPS_BASE"/users/login"
-#define DIFI_URL HTTPS_BASE"/global/difi.php"
-#define OAUTH2_BASE HTTPS_BASE"/api/v1/oauth2"
+// deviantART URLs
+#define BASE_URL "www.deviantart.com"
+#define HTTPS_URL "https://"BASE_URL
+#define HTTP_URL "http://"BASE_URL
+#define LOGIN_URL HTTPS_URL"/users/login"
+#define LOGOUT_URL HTTPS_URL"/settings/force-logout"
+#define ROCKEDOUT_URL HTTPS_URL"/users/rockedout"
+#define DIFI_URL HTTPS_URL"/global/difi.php"
+#define OAUTH2_URL HTTPS_URL"/api/v1/oauth2"
+#define CHAT_URL "http://chat.deviantart.com/chat/Botdom"
 #define REDIRECT_APP "kdamn://oauth2/login"
 
 QString OAuth2::s_userAgent;
@@ -109,7 +116,6 @@ bool OAuth2::post(const QString &url, const QByteArray &data, const QString &ref
 	req.setUrl(QUrl(url));
 	addUserAgent(req);
 	req.setHeader(QNetworkRequest::ContentTypeHeader, "application/x-www-form-urlencoded");
-	req.setRawHeader("Origin", HTTPS_BASE);
 	if (!referer.isEmpty()) req.setRawHeader("Referer", referer.toLatin1());
 
 	QNetworkReply *reply = m_manager->post(req, data);
@@ -151,53 +157,10 @@ bool OAuth2::authorizeApplication(const QString &validateKey, const QString &val
 	data = params.encodedQuery();
 #endif
 
-	return post(QString("%1/settings/authorize_app").arg(HTTPS_BASE), data);
+	return post(QString("%1/settings/authorize_app").arg(HTTPS_URL), data);
 }
 
 bool OAuth2::login()
-{
-	init();
-
-	// try to reuse an access token
-	if (!m_accessToken.isEmpty()) return requestPlacebo();
-
-#ifdef USE_NEW_METHOD
-	return requestToken();
-#else
-	return requestAuthorization();
-#endif
-}
-
-bool OAuth2::loginWeb()
-{
-	return get(LOGOUT_URL);
-}
-
-bool OAuth2::uploadToStash(const QString &filename, const QString &room)
-{
-	StashFile file;
-	file.filename = filename;
-	file.room = room;
-
-	if (m_filesToUpload.indexOf(file) < 0) m_filesToUpload.push_back(file);
-
-	// only check access token for the first file
-	if (m_filesToUpload.size() == 1)
-	{
-		if (requestPlacebo()) return true;
-		
-		if (requestAuthorization()) return true;
-	}
-
-	return false;
-}
-
-bool OAuth2::requestImageInfo(const QString &url, const QString &room)
-{
-	return get(QString("http://backend.deviantart.com/oembed?url=%1").arg(url));
-}
-
-bool OAuth2::loginOAuth2()
 {
 #ifdef USE_QT5
 	QUrlQuery params;
@@ -220,31 +183,76 @@ bool OAuth2::loginOAuth2()
 	data = params.encodedQuery();
 #endif
 
-	return post(QString("%1/join/oauth2login").arg(HTTPS_BASE), data);
+	return post(QString("%1/join/oauth2login").arg(HTTPS_URL), data);
+}
+
+bool OAuth2::logout()
+{
+	if (m_sessionId.isEmpty() || m_validateToken.isEmpty() || m_validateKey.isEmpty())
+	{
+		m_actions.push_front(ActionLogout);
+
+		return get("https://www.deviantart.com/settings/sessions");
+	}
+
+#ifdef USE_QT5
+	QUrlQuery params;
+#else
+	QUrl params;
+#endif
+
+	params.addQueryItem("sessionid", m_sessionId);
+	params.addQueryItem("validate_token", m_validateToken);
+	params.addQueryItem("validate_key", m_validateKey);
+
+	QByteArray data;
+
+#ifdef USE_QT5
+	data = params.query().toUtf8();
+#else
+	data = params.encodedQuery();
+#endif
+
+	return post(LOGOUT_URL, data, "https://www.deviantart.com/settings/sessions");
+}
+
+bool OAuth2::uploadToStash(const QString &filename, const QString &room)
+{
+	StashFile file;
+	file.filename = filename;
+	file.room = room;
+
+	if (m_filesToUpload.indexOf(file) < 0) m_filesToUpload.push_back(file);
+
+	m_actions.push_front(ActionUploadStash);
+
+	// only check access token for the first file
+	return m_filesToUpload.size() > 0 && requestPlacebo();
+}
+
+bool OAuth2::requestImageInfo(const QString &url, const QString &room)
+{
+	return get(QString("http://backend.deviantart.com/oembed?url=%1").arg(url));
 }
 
 QString OAuth2::getAuthorizationUrl() const
 {
-	return QString("%1/oauth2/authorize?response_type=code&client_id=%2&redirect_uri=%3").arg(HTTPS_BASE).arg(m_clientId).arg(REDIRECT_APP);
+	return QString("%1/oauth2/authorize?response_type=code&client_id=%2&redirect_uri=%3").arg(HTTPS_URL).arg(m_clientId).arg(REDIRECT_APP);
 }
 
 bool OAuth2::requestAuthorization()
 {
+	if (!m_logged)
+	{
+		m_actions.push_front(ActionRequestAuthorization);
+
+		return login();
+	}
+
 	return get(getAuthorizationUrl());
 }
 
-#ifdef USE_NEW_METHOD
-
-bool OAuth2::requestToken(const QString &/* code */)
-{
-	m_accessToken.clear();
-
-	return get(QString("%1/oauth2/token?grant_type=client_credentials&client_id=%2&client_secret=%3").arg(HTTPS_BASE).arg(m_clientId).arg(m_clientSecret));
-}
-
-#else
-
-bool OAuth2::requestToken(const QString &code)
+bool OAuth2::requestAccessToken(const QString &code)
 {
 	QString query;
 
@@ -254,37 +262,48 @@ bool OAuth2::requestToken(const QString &code)
 	}
 	else
 	{
+		if (m_refreshToken.isEmpty()) return requestAuthorization();
+
 		m_accessToken.clear();
+
 		query = QString("refresh_token&refresh_token=%1").arg(m_refreshToken);
 	}
 
-	return get(QString("%1/oauth2/token?client_id=%2&client_secret=%3&grant_type=%4").arg(HTTPS_BASE).arg(m_clientId).arg(m_clientSecret).arg(query));
+	return get(QString("%1/oauth2/token?client_id=%2&client_secret=%3&grant_type=%4").arg(HTTPS_URL).arg(m_clientId).arg(m_clientSecret).arg(query));
 }
-
-#endif
 
 bool OAuth2::requestPlacebo()
 {
-	if (m_accessToken.isEmpty()) return false;
+	if (m_accessToken.isEmpty())
+	{
+		m_actions.push_front(ActionRequestPlacebo);
 
-	return get(QString("%1/placebo?access_token=%2").arg(OAUTH2_BASE).arg(m_accessToken));
+		return requestAccessToken();
+	}
+
+	return get(QString("%1/placebo?access_token=%2").arg(OAUTH2_URL).arg(m_accessToken));
 }
 
 bool OAuth2::requestUserInfo()
 {
 	if (m_accessToken.isEmpty()) return false;
 
-	return get(QString("%1/user/whoami?access_token=%2").arg(OAUTH2_BASE).arg(m_accessToken));
+	return get(QString("%1/user/whoami?access_token=%2").arg(OAUTH2_URL).arg(m_accessToken));
 }
 
 bool OAuth2::requestDAmnToken()
 {
-	if (m_accessToken.isEmpty()) return false;
-
 	// don't request dAmn token if already got
 	if (!m_damnToken.isEmpty()) return true;
 
-	return get(QString("%1/user/damntoken?access_token=%2").arg(OAUTH2_BASE).arg(m_accessToken));
+	if (m_accessToken.isEmpty())
+	{
+		m_actions.push_front(ActionRequestDAmnToken);
+
+		return requestAccessToken();
+	}
+
+	return get(QString("%1/user/damntoken?access_token=%2").arg(OAUTH2_URL).arg(m_accessToken));
 }
 
 bool OAuth2::requestStash(const QString &filename, const QString &room)
@@ -311,7 +330,7 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 	else mime = "application/binary";
 
 	QNetworkRequest req;
-	req.setUrl(QUrl(QString("%1/stash/submit?access_token=%2").arg(OAUTH2_BASE).arg(m_accessToken)));
+	req.setUrl(QUrl(QString("%1/stash/submit?access_token=%2").arg(OAUTH2_URL).arg(m_accessToken)));
 	addUserAgent(req);
 
 	QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType, this);
@@ -349,14 +368,24 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 
 bool OAuth2::requestMessageFolders()
 {
-	if (!m_logged) return loginWeb();
+	if (!m_logged)
+	{
+		m_actions.push_front(ActionCheckFolders);
+
+		return login();
+	}
 
 	return get(QString("%1?c[]=MessageCenter;get_folders;&t=json").arg(DIFI_URL));
 }
 
 bool OAuth2::requestMessageViews()
 {
-	if (!m_inboxId) return requestMessageFolders();
+	if (!m_inboxId)
+	{
+		m_actions.push_front(ActionCheckNotes);
+
+		return requestMessageFolders();
+	}
 
 	return get(QString("%1?c[]=MessageCenter;get_views;%2,oq:notes_unread:0:0:f&t=json").arg(DIFI_URL).arg(m_inboxId));
 }
@@ -408,13 +437,14 @@ QString OAuth2::getUserAgent()
 			case QSysInfo::WV_Me: system += "Me"; break;
 			case QSysInfo::WV_DOS_based: system += "DOS"; break;
 
-			case QSysInfo::WV_4_0: system += "NT 4.0"; break;
-			case QSysInfo::WV_5_0: system += "NT 5.0"; break;
-			case QSysInfo::WV_5_1: system += "NT 5.1"; break;
-			case QSysInfo::WV_5_2: system += "NT 5.2"; break;
-			case QSysInfo::WV_6_0: system += "NT 6.0"; break;
-			case QSysInfo::WV_6_1: system += "NT 6.1"; break;
-			case QSysInfo::WV_6_2: system += "NT 6.2"; break;
+			case QSysInfo::WV_4_0: system += "NT 4.0"; break; // Windows NT 4
+			case QSysInfo::WV_5_0: system += "NT 5.0"; break; // Windows 2000
+			case QSysInfo::WV_5_1: system += "NT 5.1"; break; // Windows XP
+			case QSysInfo::WV_5_2: system += "NT 5.2"; break; // Windows Vista
+			case QSysInfo::WV_6_0: system += "NT 6.0"; break; // Windows 7
+			case QSysInfo::WV_6_1: system += "NT 6.1"; break; // Windows 8
+			case QSysInfo::WV_6_2: system += "NT 6.2"; break; // Windows 8.1
+			case QSysInfo::WV_6_3: system += "NT 6.3"; break;
 			case QSysInfo::WV_NT_based: system += "NT"; break;
 
 			case QSysInfo::WV_CE: system += "CE"; break;
@@ -441,7 +471,8 @@ QString OAuth2::getUserAgent()
 		system += QLocale::system().name().replace('_', '-');
 #else
 #endif
-		s_userAgent = QString("%1/%2 (%3)").arg(QApplication::applicationName()).arg(QApplication::applicationVersion()).arg(system);
+		//s_userAgent = QString("%1/%2 (%3)").arg(QApplication::applicationName()).arg(QApplication::applicationVersion()).arg(system);
+		s_userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:24.0) Gecko/20100101 Firefox/24.0";
 	}
 
 	return s_userAgent;
@@ -455,6 +486,7 @@ bool OAuth2::loginSite(const QString &validationToken, const QString &validation
 	QUrl params;
 #endif
 
+	params.addQueryItem("ref", "https://www.deviantart.com/users/loggedin");
 	params.addQueryItem("username", m_login);
 	params.addQueryItem("password", m_password);
 	params.addQueryItem("remember_me", "1");
@@ -469,7 +501,7 @@ bool OAuth2::loginSite(const QString &validationToken, const QString &validation
 	data = params.encodedQuery();
 #endif
 
-	return post(LOGIN_URL, data, LOGOUT_URL);
+	return post(LOGIN_URL, data, ROCKEDOUT_URL);
 }
 
 bool OAuth2::requestNotes()
@@ -492,12 +524,12 @@ bool OAuth2::requestNotes()
 	data = params.encodedQuery();
 #endif
 
-	return post(DIFI_URL, data, HTTPS_BASE);
+	return post(DIFI_URL, data, HTTPS_URL);
 }
 
 bool OAuth2::requestAuthToken()
 {
-	return get("http://chat.deviantart.com/chat/Botdom");
+	return get(CHAT_URL);
 }
 
 void OAuth2::onReply(QNetworkReply *reply)
@@ -513,8 +545,8 @@ void OAuth2::onReply(QNetworkReply *reply)
 	QByteArray content = reply->readAll();
 
 #ifdef _DEBUG
-	qDebug() << url;
-	qDebug() << redirection;
+	qDebug() << "URL:" << url;
+	qDebug() << "Redirection:" << redirection;
 #endif
 
 #ifdef USE_QT5
@@ -553,376 +585,11 @@ void OAuth2::onReply(QNetworkReply *reply)
 	}
 	else if (isJson)
 	{
-		// we received JSON response
-		QString status, error, errorDescription;
-
-#ifdef USE_QT5
-		QJsonParseError jsonError;
-		QJsonDocument doc = QJsonDocument::fromJson(content, &jsonError);
-
-		if (jsonError.error != QJsonParseError::NoError)
-		{
-			emit errorReceived(jsonError.errorString());
-			return;
-		}
-
-		QJsonObject object = doc.object();
-		QJsonObject::const_iterator it;
-
-		it = object.constFind("status");
-		if (it != object.constEnd()) status = it.value().toString();
-
-		it = object.constFind("error");
-		if (it != object.constEnd()) error = it.value().toString();
-
-		it = object.constFind("error_description");
-		if (it != object.constEnd()) errorDescription = it.value().toString();
-#else
-		QScriptEngine engine;
-		QScriptValue sc = engine.evaluate("(" + QString(content) + ")");
-
-		status = sc.property("status").toString();
-		error = sc.property("error").toString();
-#endif
-
-		if (path.endsWith("/whoami"))
-		{
-#ifdef USE_QT5
-			it = object.constFind("username");
-
-			if (it != object.constEnd()) m_login = it.value().toString();
-#else
-			m_login = sc.property("username").toString();
-#endif
-
-			if (!m_login.isEmpty())
-			{
-				requestDAmnToken();
-			}
-			else
-			{
-				emit errorReceived(tr("No login received"));
-			}
-		}
-		else if (path.endsWith("/placebo"))
-		{
-			if (status == "success")
-			{
-				if (!m_filesToUpload.isEmpty())
-				{
-					StashFile file = m_filesToUpload.front();
-
-					requestStash(file.filename, file.room);
-				}
-				else if (m_damnToken.isEmpty())
-				{
-					requestDAmnToken();
-				}
-			}
-			else if (error == "expired_token" || error == "invalid_token")
-			{
-				// we are fixing the error ourself
-				status.clear();
-
-				requestToken();
-			}
-		}
-		else if (path.endsWith("/user/damntoken"))
-		{
-#ifdef USE_QT5
-			it = object.constFind("damntoken");
-
-			if (it != object.constEnd()) m_damnToken = it.value().toString();
-#else
-			m_damnToken = sc.property("damntoken").toString();
-#endif
-
-			if (!m_damnToken.isEmpty())
-			{
-				emit damnTokenReceived(m_login, m_damnToken);
-			}
-			else
-			{
-				emit errorReceived(tr("No dAmn token received"));
-			}
-		}
-		else if (path.endsWith("/token"))
-		{
-			if (status == "success")
-			{
-#ifdef USE_QT5
-				// seconds number before a session expire
-				it = object.constFind("expires_in");
-				if (it != object.constEnd()) m_expiresIn = (int)it.value().toDouble();
-
-				it = object.constFind("access_token");
-				if (it != object.constEnd()) m_accessToken = it.value().toString();
-
-				it = object.constFind("refresh_token");
-				if (it != object.constEnd()) m_refreshToken = it.value().toString();
-#else
-				m_expiresIn = sc.property("expires_in").toInt32();
-				m_accessToken = sc.property("access_token").toString();
-				m_refreshToken = sc.property("access_token").toString();
-#endif
-				m_lastAccessTokenTime = QDateTime::currentDateTime();
-
-				emit accessTokenReceived(m_accessToken, m_refreshToken);
-
-				if (m_login.indexOf('@') > -1)
-				{
-					// we have an email, we need to request the login
-					requestUserInfo();
-				}
-				else if (m_damnToken.isEmpty())
-				{
-					// login is good, request DAmn token
-					requestDAmnToken();
-				}
-				else if (!m_filesToUpload.isEmpty())
-				{
-					StashFile file = m_filesToUpload.front();
-
-					requestStash(file.filename, file.room);
-				}
-			}
-			else if (error == "invalid_grant" || error == "invalid_request")
-			{
-				// we are fixing the error ourself
-				status.clear();
-
-				// refresh token invalid
-				m_refreshToken.clear();
-
-				// clear cookies
-				qobject_cast<Cookies*>(m_manager->cookieJar())->clear();
-
-				requestAuthorization();
-			}
-		}
-		else if (path.endsWith("/submit"))
-		{
-			if (status == "success")
-			{
-				QString folder;
-				qint64 stashId, folderId;
-
-#ifdef USE_QT5
-				// seconds number before a session expire
-				it = object.constFind("stashid");
-				if (it != object.constEnd()) stashId = (qint64)it.value().toDouble();
-
-				it = object.constFind("folder");
-				if (it != object.constEnd()) folder = it.value().toString();
-
-				it = object.constFind("folderid");
-				if (it != object.constEnd()) folderId = (qint64)it.value().toDouble();
-#else
-				stashId = (qint64)sc.property("stashid").toNumber();
-				folder = sc.property("folder").toString();
-				folderId = (qint64)sc.property("folderid").toNumber();
-#endif
-				if (!m_filesToUpload.isEmpty())
-				{
-					StashFile file = m_filesToUpload.front();
-
-					m_filesToUpload.pop_front();
-
-					if (!m_filesToUpload.isEmpty())
-					{
-						StashFile newFile = m_filesToUpload.front();
-
-						requestStash(newFile.filename, newFile.room);
-					}
-
-					emit imageUploaded(file.room, QString::number(stashId));
-				}
-			}
-			else
-			{
-				m_filesToUpload.clear();
-			}
-		}
-		else if (path.endsWith("/oembed"))
-		{
-			QString title, thumbnail, url, author;
-			int width, height;
-
-#ifdef USE_QT5
-			it = object.constFind("title");
-			if (it != object.constEnd()) title = it.value().toString();
-
-			it = object.constFind("url");
-			if (it != object.constEnd()) url = it.value().toString();
-
-			it = object.constFind("author_name");
-			if (it != object.constEnd()) author = it.value().toString();
-
-			it = object.constFind("thumbnail_url_150");
-			if (it != object.constEnd()) thumbnail = it.value().toString();
-
-			it = object.constFind("width");
-			if (it != object.constEnd()) width = (int)it.value().toDouble();
-
-			it = object.constFind("height");
-			if (it != object.constEnd()) height = (int)it.value().toDouble();
-#else
-			title = sc.property("title").toString();
-			url = sc.property("url").toString();
-			author = sc.property("author_name").toString();
-			thumbnail = sc.property("thumbnail_url_150").toString();
-			width = (int)sc.property("width").toNumber();
-			height = (int)sc.property("height").toNumber();
-#endif
-/*
-			StashFile file = m_filesToUpload.front();
-
-			m_filesToUpload.pop_front();
-
-			if (!m_filesToUpload.isEmpty())
-			{
-				StashFile newFile = m_filesToUpload.front();
-
-				requestStash(newFile.filename, newFile.room);
-			}
-
-			emit imageInfo(file.room, QString::number(stashId));
-*/
-		}
-		else
-		{
-			qDebug() << "JSON data for " << url << "not processed" << content;
-		}
-
-		if (status == "error")
-		{
-			emit errorReceived(tr("API error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
-		}
+		processJson(content, path);
 	}
 	else if (isDiFi)
 	{
-		// we received JSON response
-		QString status, error, errorDescription;
-
-#ifdef USE_QT5
-		QJsonParseError jsonError;
-		QJsonDocument doc = QJsonDocument::fromJson(content, &jsonError);
-
-		if (jsonError.error != QJsonParseError::NoError)
-		{
-			emit errorReceived(jsonError.errorString());
-			return;
-		}
-
-		QJsonObject object = doc.object();
-		QJsonObject::const_iterator it;
-
-		// root element
-		it = object.constFind("DiFi");
-
-		if (it != object.constEnd())
-		{
-			QJsonObject difi = it.value().toObject();
-
-			// difi element
-			it = difi.constFind("response");
-
-			if (it != difi.constEnd())
-			{
-				QJsonObject response = it.value().toObject();
-
-				it = response.constFind("calls");
-
-				if (it != response.constEnd())
-				{
-					QJsonArray calls = it.value().toArray();
-
-					foreach (const QJsonValue &itemValue, calls)
-					{
-						QJsonObject item = itemValue.toObject();
-
-						QJsonObject request = item["request"].toObject();
-						QString method = request["method"].toString();
-
-						QJsonObject response = item["response"].toObject();
-
-						status = response["status"].toString();
-
-						if (status == "SUCCESS")
-						{
-							if (method == "get_folders")
-							{
-								QJsonArray content = response["content"].toArray();
-
-								foreach(const QJsonValue &folderValue, content)
-								{
-									QJsonObject folder = folderValue.toObject();
-
-									QString folderId = folder["folderid"].toString();
-									QString title = folder["title"].toString();
-									bool isInbox = folder["is_inbox"].toBool();
-
-									qDebug() << folderId << title << isInbox;
-
-									if (isInbox)
-									{
-										m_inboxId = folderId.toInt();
-
-										requestMessageViews();
-									}
-								}
-							}
-							else if (method == "get_views")
-							{
-								QJsonArray views = response["content"].toArray();
-
-								foreach(const QJsonValue &viewValue, views)
-								{
-									QJsonObject view = viewValue.toObject();
-
-									QString offset = view["offset"].toString();
-									QString length = view["length"].toString();
-									int status = view["status"].toInt();
-
-									QJsonObject result = view["result"].toObject();
-
-									QString matches = result["matches"].toString();
-									int count = result["count"].toInt();
-
-									QJsonArray hits = result["hits"].toArray();
-
-									emit notesReceived(matches.toInt());
-								}
-							}
-						}
-						else
-						{
-							QJsonObject content = response["content"].toObject();
-							QJsonObject err = content["error"].toObject();
-
-							QString errorCode = err["code"].toString();
-							QString errorHuman = err["human"].toString();
-
-							qDebug() << "error" << status << errorCode << errorHuman;
-						}
-					}
-				}
-			}
-		}
-#endif
-		else
-		{
-			qDebug() << "JSON data for " << url << "not processed (not valid DiFi)" << content;
-		}
-
-		if (status == "error")
-		{
-			emit errorReceived(tr("DiFi error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
-		}
-	}
-	else if (redirection.endsWith("/login?bad_form=1"))
-	{
-		emit errorReceived(tr("Bad form"));
+		processDiFi(content);
 	}
 	else if (url.endsWith("/join/oauth2login"))
 	{
@@ -931,8 +598,9 @@ void OAuth2::onReply(QNetworkReply *reply)
 		{
 			m_logged = true;
 
-			// login successful, authorize the application now
-			requestAuthorization();
+			emit loggedIn();
+
+			processNextAction();
 		}
 		else
 		{
@@ -951,7 +619,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 	else if (url.endsWith("/join/oauth2"))
 	{
 		// fill OAuth2 login form
-		loginOAuth2();
+		login();
 	}
 	else if (redirection.startsWith(REDIRECT_APP))
 	{
@@ -960,7 +628,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 		if (query.hasQueryItem("code"))
 		{
-			requestToken(query.queryItemValue("code"));
+			requestAccessToken(query.queryItemValue("code"));
 		}
 		else if (query.hasQueryItem("error"))
 		{
@@ -979,9 +647,13 @@ void OAuth2::onReply(QNetworkReply *reply)
 			emit errorReceived(tr("Unknown error while redirected to %1").arg(redirection));
 		}
 	}
-	else if (url == LOGIN_URL)
+	else if (url.startsWith(LOGIN_URL))
 	{
-		if (redirection.endsWith(QString("/wrong-password")))
+		if (redirection.endsWith("?bad_form=1"))
+		{
+			emit errorReceived(tr("Bad form"));
+		}
+		else if (redirection.endsWith(QString("/wrong-password")))
 		{
 			emit errorReceived(tr("Login '%1' doesn't exist").arg(m_login));
 		}
@@ -995,6 +667,8 @@ void OAuth2::onReply(QNetworkReply *reply)
 			m_logged = true;
 
 			requestMessageViews();
+
+			emit loggedIn();
 		}
 		else
 		{
@@ -1060,49 +734,25 @@ void OAuth2::onReply(QNetworkReply *reply)
 			emit errorReceived(tr("Unable to find validate_key"));
 		}
 	}
-	else if (((url == LOGOUT_URL) || (url == HTTPS_BASE) || (url == HTTP_BASE)) && !m_logged && redirection.isEmpty() && !content.isEmpty())
+	else if (url == LOGOUT_URL/* && redirection.isEmpty() && !content.isEmpty() */)
 	{
-		QString validationToken, validationKey;
+		m_logged = false;
 
-		QRegExp reg;
+		m_sessionId.clear();
+		m_validateToken.clear();
+		m_validateKey.clear();
 
-		reg.setPattern("name=\"validate_token\" value=\"([0-9a-f]{20})\"");
-
-		if (reg.indexIn(content) > -1)
-		{
-			validationToken = reg.cap(1);
-		}
-
-		reg.setPattern("name=\"validate_key\" value=\"([0-9]{10})\"");
-
-		if (reg.indexIn(content) > -1)
-		{
-			validationKey = reg.cap(1);
-		}
-
-		if (!validationToken.isEmpty() && !validationKey.isEmpty())
-		{
-			loginSite(validationToken, validationKey);
-		}
-		else
-		{
-			emit errorReceived(tr("Unable to find validate token or key"));
-		}
+		emit loggedOut();
 	}
-/*
-	else if (redirection.endsWith("/join/oauth2"))
+	else if (m_logged && redirection.isEmpty() && !content.isEmpty())
 	{
-		// when using oauth2 and wrong password
-//		emit errorReceived(tr("Wrong password for user %1").arg(m_login));
+		parseSessionVariables(content);
 
-		loginOAuth2(getAuthorizationUrl());
+		processNextAction();
 	}
-*/
 	else if (!redirection.isEmpty() && redirection != url)
 	{
-		qDebug() << "Redirected from" << url << "to" << redirection;
-
-		get(redirection, url);
+		redirect(redirection, url);
 	}
 	else
 	{
@@ -1154,4 +804,373 @@ void OAuth2::onProxyAuthentication(const QNetworkProxy &proxy, QAuthenticator *a
 	qDebug() << "proxy auth";
 
 	emit errorReceived(tr("Proxy authentication required"));
+}
+
+void OAuth2::redirect(const QString &url, const QString &referer)
+{
+	qDebug() << "Redirected from" << referer << "to" << url;
+
+	get(url, referer);
+}
+
+void OAuth2::processDiFi(const QByteArray &content)
+{
+	// we received JSON response
+	QString status, error, errorDescription;
+
+#ifdef USE_QT5
+	QJsonParseError jsonError;
+	QJsonDocument doc = QJsonDocument::fromJson(content, &jsonError);
+
+	if (jsonError.error != QJsonParseError::NoError)
+	{
+		emit errorReceived(jsonError.errorString());
+		return;
+	}
+
+	QJsonObject object = doc.object();
+#endif
+
+	QJsonObject difi = object["DiFi"].toObject();
+
+	if (!difi.isEmpty())
+	{
+		QJsonObject response = difi["response"].toObject();
+
+		QJsonArray calls = response["calls"].toArray();
+
+		foreach (const QJsonValue &itemValue, calls)
+		{
+			QJsonObject item = itemValue.toObject();
+
+			QJsonObject request = item["request"].toObject();
+			QString method = request["method"].toString();
+
+			QJsonObject response = item["response"].toObject();
+
+			status = response["status"].toString();
+
+			if (status == "SUCCESS")
+			{
+				if (method == "get_folders")
+				{
+					QJsonArray content = response["content"].toArray();
+
+					foreach(const QJsonValue &folderValue, content)
+					{
+						QJsonObject folder = folderValue.toObject();
+
+						QString folderId = folder["folderid"].toString();
+						QString title = folder["title"].toString();
+						bool isInbox = folder["is_inbox"].toBool();
+
+						qDebug() << folderId << title << isInbox;
+
+						if (isInbox)
+						{
+							m_inboxId = folderId.toInt();
+						}
+					}
+				}
+				else if (method == "get_views")
+				{
+					QJsonArray views = response["content"].toArray();
+
+					foreach(const QJsonValue &viewValue, views)
+					{
+						QJsonObject view = viewValue.toObject();
+
+						QString offset = view["offset"].toString();
+						QString length = view["length"].toString();
+						int status = view["status"].toInt();
+
+						QJsonObject result = view["result"].toObject();
+
+						QString matches = result["matches"].toString();
+						int count = result["count"].toInt();
+
+						QJsonArray hits = result["hits"].toArray();
+
+						emit notesReceived(matches.toInt());
+
+						qDebug() << "notes" << matches;
+					}
+				}
+			}
+			else
+			{
+				QJsonObject content = response["content"].toObject();
+				QJsonObject err = content["error"].toObject();
+
+				QString errorCode = err["code"].toString();
+				QString errorHuman = err["human"].toString();
+
+				qDebug() << "error" << status << errorCode << errorHuman;
+			}
+		}
+	}
+	else
+	{
+		qDebug() << "JSON data not processed (not valid DiFi)" << content;
+	}
+
+	if (status == "error")
+	{
+		emit errorReceived(tr("DiFi error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
+	}
+	else
+	{
+		processNextAction();
+	}
+}
+
+void OAuth2::processJson(const QByteArray &content, const QString &path)
+{
+	// we received JSON response
+#ifdef USE_QT5
+	QJsonParseError jsonError;
+	QJsonDocument doc = QJsonDocument::fromJson(content, &jsonError);
+
+	if (jsonError.error != QJsonParseError::NoError)
+	{
+		emit errorReceived(jsonError.errorString());
+		return;
+	}
+
+	QJsonObject object = doc.object();
+#else
+	QScriptEngine engine;
+	QScriptValue object = engine.evaluate("(" + QString(content) + ")");
+#endif
+
+	QString status = GET_JSON("status").toString();
+	QString error = GET_JSON("error").toString();
+	QString errorDescription = GET_JSON("error_description").toString();
+
+	if (path.endsWith("/whoami"))
+	{
+		m_login = GET_JSON("username").toString();
+
+		if (!m_login.isEmpty())
+		{
+			requestDAmnToken();
+		}
+		else
+		{
+			emit errorReceived(tr("No login received"));
+		}
+	}
+	else if (path.endsWith("/placebo"))
+	{
+		if (status == "success")
+		{
+			processNextAction();
+		}
+		else if (error == "expired_token" || error == "invalid_token")
+		{
+			// we are fixing the error ourself
+			status.clear();
+
+			requestAccessToken();
+		}
+	}
+	else if (path.endsWith("/user/damntoken"))
+	{
+		if (error == "invalid_token")
+		{
+			// we are fixing the error ourself
+			status.clear();
+
+			// clear previous dAmn token
+			m_accessToken.clear();
+
+			// request a new dAmn token
+			requestDAmnToken();
+		}
+		else
+		{
+			m_damnToken = GET_JSON("damntoken").toString();
+
+			if (!m_damnToken.isEmpty())
+			{
+				emit damnTokenReceived(m_login, m_damnToken);
+			}
+			else
+			{
+				emit errorReceived(tr("No dAmn token received"));
+			}
+
+			processNextAction();
+		}
+	}
+	else if (path.endsWith("/token"))
+	{
+		if (status == "success")
+		{
+			// seconds number before a session expire
+			m_expiresIn = (int)GET_JSON("expires_in").toDouble();
+			m_accessToken = GET_JSON("access_token").toString();
+			m_refreshToken = GET_JSON("access_token").toString();
+
+			m_lastAccessTokenTime = QDateTime::currentDateTime();
+
+			emit accessTokenReceived(m_accessToken, m_refreshToken);
+
+			if (m_login.indexOf('@') > -1)
+			{
+				// we have an email, we need to request the login
+				requestUserInfo();
+			}
+			else
+			{
+				processNextAction();
+			}
+		}
+		else if (error == "invalid_grant" || error == "invalid_request")
+		{
+			// we are fixing the error ourself
+			status.clear();
+
+			// refresh token invalid
+			m_refreshToken.clear();
+
+			// clear cookies
+			qobject_cast<Cookies*>(m_manager->cookieJar())->clear();
+
+			requestAuthorization();
+		}
+	}
+	else if (path.endsWith("/submit"))
+	{
+		if (status == "success")
+		{
+			qint64 stashId = (qint64)GET_JSON("stashid").toDouble();
+			QString folder = GET_JSON("folder").toString();
+			qint64 folderId = (qint64)GET_JSON("folderid").toDouble();
+
+			if (!m_filesToUpload.isEmpty())
+			{
+				StashFile file = m_filesToUpload.front();
+
+				m_filesToUpload.pop_front();
+
+				emit imageUploaded(file.room, QString::number(stashId));
+			}
+
+			processNextAction();
+		}
+		else
+		{
+			qDebug() << "Error while uploading file";
+		}
+	}
+	else if (path.endsWith("/oembed"))
+	{
+		QString title = GET_JSON("title").toString();
+		QString url = GET_JSON("url").toString();
+		QString author = GET_JSON("author_name").toString();
+		QString thumbnail = GET_JSON("thumbnail_url_150").toString();
+		int width = (int)GET_JSON("width").toDouble();
+		int height = (int)GET_JSON("height").toDouble();
+/*
+		StashFile file = m_filesToUpload.front();
+
+		m_filesToUpload.pop_front();
+
+		processNextAction();
+
+		emit imageInfo(file.room, QString::number(stashId));
+*/
+	}
+	else
+	{
+		qDebug() << "JSON data for not processed" << content;
+	}
+
+	if (status == "error")
+	{
+		emit errorReceived(tr("API error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
+	}
+}
+
+void OAuth2::processNextAction()
+{
+	if (!m_actions.isEmpty())
+	{
+		qDebug() << m_actions;
+
+		eOAuth2Action action = m_actions.front();
+
+		m_actions.pop_front();
+
+		switch(action)
+		{
+			case ActionCheckFolders:
+			requestMessageFolders();
+			break;
+
+			case ActionCheckNotes:
+			requestMessageViews();
+			break;
+
+			case ActionRequestAuthorization:
+			// login successful, authorize the application now
+			requestAuthorization();
+			break;
+
+			case ActionLogout:
+			logout();
+			break;
+
+			case ActionRequestDAmnToken:
+			requestDAmnToken();
+			break;
+
+			case ActionUploadStash:
+
+			if (!m_filesToUpload.isEmpty())
+			{
+				StashFile file = m_filesToUpload.front();
+
+				requestStash(file.filename, file.room);
+			}
+
+			break;
+		}
+	}
+	else
+	{
+		qDebug() << "Don't know what to do";
+	}
+}
+
+void OAuth2::parseSessionVariables(const QByteArray &content)
+{
+	QRegExp reg;
+
+	reg.setPattern("data-sessionid=\"([0-9a-f]{32})\"");
+
+	if (reg.indexIn(content) > -1)
+	{
+		m_sessionId = reg.cap(1);
+	}
+
+	reg.setPattern("name=\"validate_token\" value=\"([0-9a-f]{20})\"");
+
+	if (reg.indexIn(content) > -1)
+	{
+		m_validateToken = reg.cap(1);
+	}
+
+	reg.setPattern("name=\"validate_key\" value=\"([0-9]{10})\"");
+
+	if (reg.indexIn(content) > -1)
+	{
+		m_validateKey = reg.cap(1);
+	}
+
+	if (m_sessionId.isEmpty())
+	{
+		emit errorReceived(tr("Unable to find validate token or key"));
+	}
 }

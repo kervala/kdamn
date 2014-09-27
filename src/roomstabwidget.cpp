@@ -183,7 +183,7 @@ void RoomsTabWidget::onRequestDAmnToken()
 
 	if (ConfigFile::getInstance()->isRememberPassword() && !user.isEmpty() && !password.isEmpty())
 	{
-		OAuth2::getInstance()->login();
+		OAuth2::getInstance()->requestDAmnToken();
 	}
 	else
 	{
@@ -451,6 +451,6 @@ void RoomsTabWidget::login()
 
 	if (!DAmn::getInstance()->connectToServer())
 	{
-		OAuth2::getInstance()->login();
+		OAuth2::getInstance()->requestDAmnToken();
 	}
 }
