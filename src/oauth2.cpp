@@ -639,7 +639,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 		if (reg.indexIn(redirection) > -1)
 		{
-			requestToken(reg.cap(1));
+			requestAccessToken(reg.cap(1));
 		}
 #endif
 		else
@@ -829,7 +829,6 @@ void OAuth2::processDiFi(const QByteArray &content)
 	}
 
 	QJsonObject object = doc.object();
-#endif
 
 	QJsonObject difi = object["DiFi"].toObject();
 
@@ -913,6 +912,12 @@ void OAuth2::processDiFi(const QByteArray &content)
 	{
 		qDebug() << "JSON data not processed (not valid DiFi)" << content;
 	}
+#else
+	QScriptEngine engine;
+	QScriptValue object = engine.evaluate("(" + QString(content) + ")");
+#endif
+
+	// TODO: equivalent for Qt 4
 
 	if (status == "error")
 	{
