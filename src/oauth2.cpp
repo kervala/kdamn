@@ -639,7 +639,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 			emit errorReceived(query.queryItemValue("error_description"));
 		}
 #else
-		QRegExp reg(QString("^%1\\?code=([0-9]+)$").arg(REDIRECT_APP));
+		QRegExp reg(QString("^%1\\?code=([0-9a-f]+)$").arg(REDIRECT_APP));
 
 		if (reg.indexIn(redirection) > -1)
 		{
