@@ -28,8 +28,12 @@
 
 #ifdef USE_QT5
 #define GET_JSON(x) object[x]
+#define GET_JSON_STRING(x) object[x].toString()
+#define GET_JSON_DOUBLE(x) object[x].toDouble()
 #else
 #define GET_JSON(x) object.property(x)
+#define GET_JSON_STRING(x) object.property(x).toString()
+#define GET_JSON_DOUBLE(x) object.property(x).toNumber()
 #endif
 
 // DiFi : http://botdom.com/documentation/DiFi
@@ -948,13 +952,13 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 	QScriptValue object = engine.evaluate("(" + QString(content) + ")");
 #endif
 
-	QString status = GET_JSON("status").toString();
-	QString error = GET_JSON("error").toString();
-	QString errorDescription = GET_JSON("error_description").toString();
+	QString status = GET_JSON_STRING("status");
+	QString error = GET_JSON_STRING("error");
+	QString errorDescription = GET_JSON_STRING("error_description");
 
 	if (path.endsWith("/whoami"))
 	{
-		m_login = GET_JSON("username").toString();
+		m_login = GET_JSON_STRING("username");
 
 		if (!m_login.isEmpty())
 		{
@@ -994,7 +998,7 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 		}
 		else
 		{
-			m_damnToken = GET_JSON("damntoken").toString();
+			m_damnToken = GET_JSON_STRING("damntoken");
 
 			if (!m_damnToken.isEmpty())
 			{
@@ -1013,9 +1017,9 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 		if (status == "success")
 		{
 			// seconds number before a session expire
-			m_expiresIn = (int)GET_JSON("expires_in").toDouble();
-			m_accessToken = GET_JSON("access_token").toString();
-			m_refreshToken = GET_JSON("access_token").toString();
+			m_expiresIn = (int)GET_JSON_DOUBLE("expires_in");
+			m_accessToken = GET_JSON_STRING("access_token");
+			m_refreshToken = GET_JSON_STRING("access_token");
 
 			m_lastAccessTokenTime = QDateTime::currentDateTime();
 
@@ -1049,9 +1053,9 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 	{
 		if (status == "success")
 		{
-			qint64 stashId = (qint64)GET_JSON("stashid").toDouble();
-			QString folder = GET_JSON("folder").toString();
-			qint64 folderId = (qint64)GET_JSON("folderid").toDouble();
+			qint64 stashId = (qint64)GET_JSON_DOUBLE("stashid");
+			QString folder = GET_JSON_STRING("folder");
+			qint64 folderId = (qint64)GET_JSON_DOUBLE("folderid");
 
 			if (!m_filesToUpload.isEmpty())
 			{
@@ -1071,12 +1075,12 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 	}
 	else if (path.endsWith("/oembed"))
 	{
-		QString title = GET_JSON("title").toString();
-		QString url = GET_JSON("url").toString();
-		QString author = GET_JSON("author_name").toString();
-		QString thumbnail = GET_JSON("thumbnail_url_150").toString();
-		int width = (int)GET_JSON("width").toDouble();
-		int height = (int)GET_JSON("height").toDouble();
+		QString title = GET_JSON_STRING("title");
+		QString url = GET_JSON_STRING("url");
+		QString author = GET_JSON_STRING("author_name");
+		QString thumbnail = GET_JSON_STRING("thumbnail_url_150");
+		int width = (int)GET_JSON_DOUBLE("width");
+		int height = (int)GET_JSON_DOUBLE("height");
 /*
 		StashFile file = m_filesToUpload.front();
 
