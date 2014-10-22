@@ -38,4 +38,7 @@ bool BeginSystemProgress();
 bool UpdateSystemProgress(qint64 value, qint64 total);
 bool EndSystemProgress();
 
+QString encodeEntities(const QString& src, const QString& force = QString());
+QString decodeEntities(const QString& src);
+
 #endif

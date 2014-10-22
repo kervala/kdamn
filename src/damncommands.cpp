@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "damn.h"
+#include "utils.h"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -231,6 +232,7 @@ void DAmn::sendChat(const QString &room)
 
 bool DAmn::send(const QString &room, const QString &text)
 {
+	// check if text is a command
 	if (!text.isEmpty() && text[0] == '/')
 	{
 		QRegExp reg("([a-zA-Z]+)( (.*))?");
@@ -310,7 +312,7 @@ void DAmn::begin()
 
 void DAmn::writeLine(const QString &line)
 {
-	m_writeBuffer.append(line.toLatin1() + "\n");
+	m_writeBuffer.append(encodeEntities(line).toLatin1() + "\n");
 }
 
 bool DAmn::end()
