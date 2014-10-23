@@ -312,7 +312,42 @@ void DAmn::begin()
 
 void DAmn::writeLine(const QString &line)
 {
-	m_writeBuffer.append(encodeEntities(line).toLatin1() + "\n");
+	QString text = encodeEntities(line);
+
+	// replace URLs with parenthesis
+	QRegExp reg("(https?://([^ ]+))");
+
+	int pos = 0;
+
+	// search all URLs
+	while((pos = reg.indexIn(text, pos)) > -1)
+	{
+		// length of original string
+		int len = reg.matchedLength();
+
+		QString label = reg.cap(1);
+
+		// search for parenthesis
+		if ((label.indexOf('(') > -1) || (label.indexOf(')') > -1))
+		{
+			// replace parenthesis by URL encoded characters
+			QString url = label;
+			url.replace("(", "%28").replace(")", "%29");
+
+			// new string with HTML link
+			QString str = QString("<a href=\"%1\">%2</a>").arg(url).arg(label);
+
+			// replace old string by new one
+			text.replace(pos, len, str);
+
+			// update length
+			len = str.length();
+		}
+
+		pos += len;
+	}
+
+	m_writeBuffer.append(text.toLatin1() + "\n");
 }
 
 bool DAmn::end()
