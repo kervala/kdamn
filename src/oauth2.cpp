@@ -908,7 +908,9 @@ void OAuth2::processDiFi(const QByteArray &content)
 				QString errorCode = err["code"].toString();
 				QString errorHuman = err["human"].toString();
 
-				qDebug() << "error" << status << errorCode << errorHuman;
+				status = "error";
+				error = errorCode;
+				errorDescription = tr("%1 (%2)").arg(errorDescription).arg(errorCode);
 			}
 		}
 	}
