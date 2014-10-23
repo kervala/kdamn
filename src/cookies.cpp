@@ -30,14 +30,14 @@
 Cookies::Cookies(QObject *parent):QNetworkCookieJar(parent)
 {
 #ifdef SAVE_COOKIES
-	if (!loadFromDisk()) qDebug() << "Error while loading cookies";
+	if (!loadFromDisk()) qCritical() << "Error while loading cookies";
 #endif
 }
 
 Cookies::~Cookies()
 {
 #ifdef SAVE_COOKIES
-	if (!saveToDisk()) qDebug() << "Error while saving cookies";
+	if (!saveToDisk()) qCritical() << "Error while saving cookies";
 #endif
 }
 

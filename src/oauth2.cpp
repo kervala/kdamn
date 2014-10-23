@@ -914,7 +914,7 @@ void OAuth2::processDiFi(const QByteArray &content)
 	}
 	else
 	{
-		qDebug() << "JSON data not processed (not valid DiFi)" << content;
+		qWarning() << "JSON data not processed (not valid DiFi)" << content;
 	}
 #else
 	QScriptEngine engine;
@@ -1070,7 +1070,7 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 		}
 		else
 		{
-			qDebug() << "Error while uploading file";
+			qCritical() << "Error while uploading file";
 		}
 	}
 	else if (path.endsWith("/oembed"))
@@ -1093,7 +1093,7 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 	}
 	else
 	{
-		qDebug() << "JSON data for not processed" << content;
+		qWarning() << "JSON data not processed" << content;
 	}
 
 	if (status == "error")

@@ -274,7 +274,7 @@ void ChatWidget::openLogs()
 
 	if (!QDir().mkpath(dir))
 	{
-		qDebug() << "Unable to create directory" << dir;
+		qCritical() << "Unable to create directory" << dir;
 
 		return;
 	}
@@ -300,7 +300,7 @@ void ChatWidget::openLogs()
 	}
 	else
 	{
-		qDebug() << "Unable to open file" << (filename + ".htm");
+		qCritical() << "Unable to open file" << (filename + ".htm");
 	}
 
 	m_textFile.setFileName(filename + ".txt");
@@ -310,7 +310,7 @@ void ChatWidget::openLogs()
 	}
 	else
 	{
-		qDebug() << "Unable to open file" << (filename + ".txt");
+		qCritical() << "Unable to open file" << (filename + ".txt");
 	}
 }
 

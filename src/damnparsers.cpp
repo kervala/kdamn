@@ -217,7 +217,7 @@ bool DAmn::parseLogin(const QStringList &lines)
 			break;
 
 			default:
-			qDebug() << "not processed";
+			qCritical() << "dAmn error not processed:" << m_lastError;
 		}
 
 		return true;
