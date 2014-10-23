@@ -28,6 +28,10 @@
 	#undef realloc
 #endif
 
+#ifndef _DEBUG
+#define QT_NO_DEBUG_OUTPUT
+#endif
+
 #include <QtCore/QtCore>
 #include <QtGui/QtGui>
 #include <QtNetwork/QtNetwork>

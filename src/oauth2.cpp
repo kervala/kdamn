@@ -548,10 +548,8 @@ void OAuth2::onReply(QNetworkReply *reply)
 	QString url = reply->url().toString();
 	QByteArray content = reply->readAll();
 
-#ifdef _DEBUG
 	qDebug() << "URL:" << url;
 	qDebug() << "Redirection:" << redirection;
-#endif
 
 #ifdef USE_QT5
 	QUrlQuery query(reply->url().query());
@@ -781,7 +779,6 @@ void OAuth2::onReplyError(QNetworkReply::NetworkError error)
 		break;
 
 		default:
-		qDebug() << "Error:" << error;
 		emit errorReceived(tr("Network error: %1").arg(error));
 		break;
 	}
@@ -789,8 +786,6 @@ void OAuth2::onReplyError(QNetworkReply::NetworkError error)
 
 void OAuth2::onSslErrors(const QList<QSslError> &errors)
 {
-	qDebug() << "SSL Errors:" << errors;
-
 	foreach(const QSslError &error, errors)
 	{
 		emit errorReceived(tr("SSL errors: %1").arg(error.errorString()));
@@ -805,8 +800,6 @@ void OAuth2::onAuthentication(QNetworkReply *reply, QAuthenticator *auth)
 
 void OAuth2::onProxyAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth)
 {
-	qDebug() << "proxy auth";
-
 	emit errorReceived(tr("Proxy authentication required"));
 }
 
@@ -867,8 +860,6 @@ void OAuth2::processDiFi(const QByteArray &content)
 						QString title = folder["title"].toString();
 						bool isInbox = folder["is_inbox"].toBool();
 
-						qDebug() << folderId << title << isInbox;
-
 						if (isInbox)
 						{
 							m_inboxId = folderId.toInt();
@@ -890,13 +881,11 @@ void OAuth2::processDiFi(const QByteArray &content)
 						QJsonObject result = view["result"].toObject();
 
 						QString matches = result["matches"].toString();
-						int count = result["count"].toInt();
+//						int count = result["count"].toInt();
 
-						QJsonArray hits = result["hits"].toArray();
+//						QJsonArray hits = result["hits"].toArray();
 
 						emit notesReceived(matches.toInt());
-
-						qDebug() << "notes" << matches;
 					}
 				}
 			}
@@ -1108,8 +1097,6 @@ void OAuth2::processNextAction()
 {
 	if (!m_actions.isEmpty())
 	{
-		qDebug() << m_actions;
-
 		eOAuth2Action action = m_actions.front();
 
 		m_actions.pop_front();
@@ -1147,11 +1134,10 @@ void OAuth2::processNextAction()
 			}
 
 			break;
+
+			default:
+			break;
 		}
-	}
-	else
-	{
-		qDebug() << "Don't know what to do";
 	}
 }
 

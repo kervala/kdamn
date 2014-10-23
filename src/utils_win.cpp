@@ -292,8 +292,6 @@ void CreateWindowsList(QAbstractItemModel *model)
 						bufSize = pGetProcessImageFileName(hProcess, (LPTSTR)&szProcessPath, bufSize);
 					}
 
-					qDebug() << "bufsize" << bufSize;
-
 					processPath = QString::fromLatin1(szProcessPath, bufSize);
 
 					HICON hIcon = NULL;
