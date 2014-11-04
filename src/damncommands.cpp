@@ -75,11 +75,13 @@ bool DAmn::pong()
 
 bool DAmn::sendMessage(const QString &room, const QString &text)
 {
+	QString line = encodeEntities(text, "()").replace(":&#40;", ":(").replace(":&#41;", ":)");
+
 	sendChat(room);
 
 	writeLine("msg main");
 	writeLine();
-	writeLine(text);
+	writeLine(line);
 	return end();
 }
 
@@ -312,9 +314,7 @@ void DAmn::begin()
 
 void DAmn::writeLine(const QString &line)
 {
-	QString text = encodeEntities(line, "()");
-
-	m_writeBuffer.append(text.toLatin1() + "\n");
+	m_writeBuffer.append(line.toLatin1() + "\n");
 }
 
 bool DAmn::end()
