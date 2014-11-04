@@ -187,7 +187,7 @@ static BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM inst)
 	{
 		LONG style = GetWindowLong(hWnd, GWL_STYLE);
 
-		if (style & WS_THICKFRAME)
+		if (style & (WS_THICKFRAME|WS_DLGFRAME))
 		{
 			wchar_t WindowName[80];
 
@@ -201,8 +201,6 @@ static BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM inst)
 
 				window.hWnd = hWnd;
 				window.name = QString::fromWCharArray(WindowName);
-
-				qDebug() << "Found window" << window.name;
 
 				windows->push_back(window);
 			}
