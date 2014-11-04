@@ -36,24 +36,10 @@
 #define GET_JSON_DOUBLE(x) object.property(x).toNumber()
 #endif
 
-// DiFi : http://botdom.com/documentation/DiFi
-
-// deviantART URLs
-#define BASE_URL "www.deviantart.com"
-#define HTTPS_URL "https://"BASE_URL
-#define HTTP_URL "http://"BASE_URL
-#define LOGIN_URL HTTPS_URL"/users/login"
-#define LOGOUT_URL HTTPS_URL"/settings/force-logout"
-#define ROCKEDOUT_URL HTTPS_URL"/users/rockedout"
-#define DIFI_URL HTTPS_URL"/global/difi.php"
-#define OAUTH2_URL HTTPS_URL"/api/v1/oauth2"
-#define CHAT_URL "http://chat.deviantart.com/chat/Botdom"
-#define REDIRECT_APP "kdamn://oauth2/login"
-
 QString OAuth2::s_userAgent;
 OAuth2* OAuth2::s_instance = NULL;
 
-OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0), m_expiresIn(0), m_inboxId(0), m_logged(false)
+OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0), m_expiresIn(0), m_inboxId(0), m_noteId(0), m_logged(false)
 {
 	if (s_instance == NULL) s_instance = this;
 
@@ -370,30 +356,6 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 	return true;
 }
 
-bool OAuth2::requestMessageFolders()
-{
-	if (!m_logged)
-	{
-		m_actions.push_front(ActionCheckFolders);
-
-		return login();
-	}
-
-	return get(QString("%1?c[]=MessageCenter;get_folders;&t=json").arg(DIFI_URL));
-}
-
-bool OAuth2::requestMessageViews()
-{
-	if (!m_inboxId)
-	{
-		m_actions.push_front(ActionCheckNotes);
-
-		return requestMessageFolders();
-	}
-
-	return get(QString("%1?c[]=MessageCenter;get_views;%2,oq:notes_unread:0:0:f&t=json").arg(DIFI_URL).arg(m_inboxId));
-}
-
 void OAuth2::onUploadProgress(qint64 readBytes, qint64 totalBytes)
 {
 	UpdateSystemProgress(readBytes, totalBytes);
@@ -506,29 +468,6 @@ bool OAuth2::loginSite(const QString &validationToken, const QString &validation
 #endif
 
 	return post(LOGIN_URL, data, ROCKEDOUT_URL);
-}
-
-bool OAuth2::requestNotes()
-{
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", "\"Notes\",\"display_folder\",[\"unread\",0,false]");
-	params.addQueryItem("t", "json");
-	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
 }
 
 bool OAuth2::requestAuthToken()
@@ -810,120 +749,6 @@ void OAuth2::redirect(const QString &url, const QString &referer)
 	get(url, referer);
 }
 
-void OAuth2::processDiFi(const QByteArray &content)
-{
-	// we received JSON response
-	QString status, error, errorDescription;
-
-#ifdef USE_QT5
-	QJsonParseError jsonError;
-	QJsonDocument doc = QJsonDocument::fromJson(content, &jsonError);
-
-	if (jsonError.error != QJsonParseError::NoError)
-	{
-		emit errorReceived(jsonError.errorString());
-		return;
-	}
-
-	QJsonObject object = doc.object();
-
-	QJsonObject difi = object["DiFi"].toObject();
-
-	if (!difi.isEmpty())
-	{
-		QJsonObject response = difi["response"].toObject();
-
-		QJsonArray calls = response["calls"].toArray();
-
-		foreach (const QJsonValue &itemValue, calls)
-		{
-			QJsonObject item = itemValue.toObject();
-
-			QJsonObject request = item["request"].toObject();
-			QString method = request["method"].toString();
-
-			QJsonObject response = item["response"].toObject();
-
-			status = response["status"].toString();
-
-			if (status == "SUCCESS")
-			{
-				if (method == "get_folders")
-				{
-					QJsonArray content = response["content"].toArray();
-
-					foreach(const QJsonValue &folderValue, content)
-					{
-						QJsonObject folder = folderValue.toObject();
-
-						QString folderId = folder["folderid"].toString();
-						QString title = folder["title"].toString();
-						bool isInbox = folder["is_inbox"].toBool();
-
-						if (isInbox)
-						{
-							m_inboxId = folderId.toInt();
-						}
-					}
-				}
-				else if (method == "get_views")
-				{
-					QJsonArray views = response["content"].toArray();
-
-					foreach(const QJsonValue &viewValue, views)
-					{
-						QJsonObject view = viewValue.toObject();
-
-						QString offset = view["offset"].toString();
-						QString length = view["length"].toString();
-						int status = view["status"].toInt();
-
-						QJsonObject result = view["result"].toObject();
-
-						QString matches = result["matches"].toString();
-//						int count = result["count"].toInt();
-
-//						QJsonArray hits = result["hits"].toArray();
-
-						emit notesReceived(matches.toInt());
-					}
-				}
-			}
-			else
-			{
-				QJsonObject content = response["content"].toObject();
-				QJsonObject err = content["error"].toObject();
-
-				QString errorCode = err["code"].toString();
-				QString errorHuman = err["human"].toString();
-
-				status = "error";
-				error = errorCode;
-				errorDescription = tr("%1 (%2)").arg(errorDescription).arg(errorCode);
-			}
-		}
-	}
-	else
-	{
-		qWarning() << "JSON data not processed (not valid DiFi)" << content;
-	}
-#else
-	QScriptEngine engine;
-	QScriptValue object = engine.evaluate("(" + QString(content) + ")");
-#endif
-
-	// TODO: equivalent for Qt 4
-
-	if (status == "error")
-	{
-		emit errorReceived(tr("DiFi error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
-	}
-	else
-	{
-		processNextAction();
-	}
-}
-
 void OAuth2::processJson(const QByteArray &content, const QString &path)
 {
 	// we received JSON response
@@ -1109,6 +934,10 @@ void OAuth2::processNextAction()
 
 			case ActionCheckNotes:
 			requestMessageViews();
+			break;
+
+			case ActionDisplayNote:
+			requestDisplayNote(m_noteId);
 			break;
 
 			case ActionRequestAuthorization:

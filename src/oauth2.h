@@ -20,6 +20,18 @@
 #ifndef OAUTH2_H
 #define OAUTH2_H
 
+// deviantART URLs
+#define BASE_URL "www.deviantart.com"
+#define HTTPS_URL "https://"BASE_URL
+#define HTTP_URL "http://"BASE_URL
+#define LOGIN_URL HTTPS_URL"/users/login"
+#define LOGOUT_URL HTTPS_URL"/settings/force-logout"
+#define ROCKEDOUT_URL HTTPS_URL"/users/rockedout"
+#define OAUTH2_URL HTTPS_URL"/api/v1/oauth2"
+#define CHAT_URL "http://chat.deviantart.com/chat/Botdom"
+#define DIFI_URL HTTPS_URL"/global/difi.php"
+#define REDIRECT_APP "kdamn://oauth2/login"
+
 struct StashFile
 {
 	QString filename;
@@ -49,6 +61,7 @@ public:
 		ActionLogout,
 		ActionCheckFolders,
 		ActionCheckNotes,
+		ActionDisplayNote,
 		ActionRequestAccessToken,
 		ActionRequestDAmnToken,
 		ActionRequestAuthorization,
@@ -74,6 +87,7 @@ public:
 	bool requestMessageFolders();
 	bool requestMessageViews();
 	bool requestNotes();
+	bool requestDisplayNote(int noteId);
 	
 	static QString getSupportedImageFormatsFilter();
 	static QString getUserAgent();
@@ -136,6 +150,7 @@ private:
 	QDateTime m_lastAccessTokenTime;
 	StashFiles m_filesToUpload;
 	int m_inboxId;
+	int m_noteId;
 	bool m_logged;
 
 	// session variables
