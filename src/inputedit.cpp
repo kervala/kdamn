@@ -211,7 +211,7 @@ void InputEdit::historyDown()
 
 void InputEdit::completeName()
 {
-	QRegExp reg("[ :_,;!?.\\-]");
+	QRegExp reg("[ :_,;!?.\\]");
 
 	// whole string
 	QString str = text();
