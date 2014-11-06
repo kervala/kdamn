@@ -268,6 +268,42 @@ void InputEdit::completeName()
 
 void InputEdit::completeCommand()
 {
+	static const QString sCommands[] =
+	{
+		"me",
+		"part",
+		"whois",
+		"topic",
+		"title",
+		"join",
+		"part",
+		"demote",
+		"promote",
+		"kick",
+		"ban",
+		"unban",
+		"admin",
+		"clear",
+		"stats",
+		"raw",
+		""
+	};
+
+	// whole string without "/"
+	QString str = text().mid(1);
+
+	for(int i = 0; !sCommands[i].isEmpty(); ++i)
+	{
+		if (str == sCommands[i].left(str.length()))
+		{
+			QString cmd = QString("/%1 ").arg(sCommands[i]);
+
+			setText(cmd);
+			setCursorPosition(cmd.length());
+
+			break;
+		}
+	}
 }
 
 void InputEdit::historyTriggered(QAction *action)
