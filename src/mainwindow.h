@@ -48,6 +48,7 @@ public slots:
 	void onUploadScreenshot();
 
 	// help menu
+	void onLogs();
 	void onAbout();
 	void onAboutQt();
 

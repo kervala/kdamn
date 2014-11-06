@@ -48,6 +48,22 @@ ConfigFile::~ConfigFile()
 
 bool ConfigFile::load()
 {
+	QString documentsPath;
+
+#ifdef USE_QT5
+	documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#else
+	documentsPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#endif
+
+	// define default logs directory
+	m_logsDirectory = QString("%1/kdAmn/logs").arg(QDir::fromNativeSeparators(documentsPath));
+
+	if (!QDir().mkpath(m_logsDirectory))
+	{
+		qCritical() << "Unable to create directory" << m_logsDirectory;
+	}
+
 	int version = m_settings.value("version", 1).toInt();
 
 	if (version == 2) loadVersion2();
@@ -510,4 +526,14 @@ void ConfigFile::setEnableAnimations(bool enable)
 	m_enableAnimations = enable;
 
 	modified(true);
+}
+
+QString ConfigFile::getLogsDirectory() const
+{
+	return m_logsDirectory;
+}
+
+void ConfigFile::setLogsDirectory(const QString &dir)
+{
+	m_logsDirectory = dir;
 }

@@ -128,6 +128,9 @@ public:
 	bool getEnableAnimations() const;
 	void setEnableAnimations(bool enable);
 
+	QString getLogsDirectory() const;
+	void setLogsDirectory(const QString &dir);
+
 public slots:
 	bool load();
 	bool save();
@@ -154,6 +157,8 @@ private:
 	int m_animationFrameDelay;
 	bool m_displayTimestamps;
 	bool m_enableAnimations;
+	QString m_logsDirectory;
+
 	int m_autoSaveDelay;
 	bool m_modified;
 

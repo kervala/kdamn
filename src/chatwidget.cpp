@@ -262,24 +262,7 @@ void ChatWidget::setRoom(const QString &room)
 
 void ChatWidget::openLogs()
 {
-	QString cachePath;
-
-#ifdef USE_QT5
-	cachePath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-#else
-	cachePath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
-#endif
-
-	QString dir = QString("%1/kdAmn/logs").arg(QDir::fromNativeSeparators(cachePath));
-
-	if (!QDir().mkpath(dir))
-	{
-		qCritical() << "Unable to create directory" << dir;
-
-		return;
-	}
-
-	QString filename = QString("%1/%2-%3").arg(dir).arg(m_room).arg(QDate::currentDate().toString(Qt::ISODate));
+	QString filename = QString("%1/%2-%3").arg(ConfigFile::getInstance()->getLogsDirectory()).arg(m_room).arg(QDate::currentDate().toString(Qt::ISODate));
 
 	m_htmlFile.setFileName(filename + ".htm");
 

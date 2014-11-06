@@ -30,6 +30,7 @@
 #include "oauth2.h"
 #include "capturedialog.h"
 #include "utils.h"
+#include "configfile.h"
 
 #ifdef HAVE_CONFIG_H
 	#include "config.h"
@@ -61,6 +62,7 @@ MainWindow::MainWindow():QMainWindow()
 	connect(actionUploadScreenshot, SIGNAL(triggered()), this, SLOT(onUploadScreenshot()));
 
 	// Help menu
+	connect(actionLogs, SIGNAL(triggered()), this, SLOT(onLogs()));
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
 	connect(actionAboutQt, SIGNAL(triggered()), this, SLOT(onAboutQt()));
 
@@ -111,6 +113,11 @@ void MainWindow::moveEvent(QMoveEvent *e)
 	ConfigFile::getInstance()->setWindowPosition(QPoint(x(), y()));
 
 	e->accept();
+}
+
+void MainWindow::onLogs()
+{
+	QDesktopServices::openUrl(QUrl::fromLocalFile(ConfigFile::getInstance()->getLogsDirectory()));
 }
 
 void MainWindow::onAbout()
