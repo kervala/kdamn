@@ -717,6 +717,10 @@ void OAuth2::onReplyError(QNetworkReply::NetworkError error)
 		emit errorReceived(tr("Authentication required while accessing %1").arg(url));
 		break;
 
+		case QNetworkReply::RemoteHostClosedError:
+		// silently ignore
+		break;
+
 		default:
 		emit errorReceived(tr("Network error: %1").arg(error));
 		break;
