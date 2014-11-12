@@ -437,8 +437,7 @@ QString OAuth2::getUserAgent()
 		system += QLocale::system().name().replace('_', '-');
 #else
 #endif
-		//s_userAgent = QString("%1/%2 (%3)").arg(QApplication::applicationName()).arg(QApplication::applicationVersion()).arg(system);
-		s_userAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:24.0) Gecko/20100101 Firefox/24.0";
+		s_userAgent = QString("%1/%2 (%3)").arg(QApplication::applicationName()).arg(QApplication::applicationVersion()).arg(system);
 	}
 
 	return s_userAgent;
