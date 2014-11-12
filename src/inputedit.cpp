@@ -82,7 +82,7 @@ void InputEdit::keyPressEvent(QKeyEvent *e)
 
 		if (!str.isEmpty())
 		{
-			QRegExp reg("^/([a-z]*)");
+			QRegExp reg("^/([a-z]+)");
 
 			int pos = reg.indexIn(str);
 
@@ -211,7 +211,7 @@ void InputEdit::historyDown()
 
 void InputEdit::completeName()
 {
-	QRegExp reg("[ :_,;!?.\\]");
+	const QRegExp reg("[^a-zA-Z0-9-]");
 
 	// whole string
 	QString str = text();
@@ -232,7 +232,6 @@ void InputEdit::completeName()
 	{
 		// no separator after username, take end of line
 		pos2 = str.length();
-		post.clear();
 	}
 	else
 	{
