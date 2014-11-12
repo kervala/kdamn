@@ -190,7 +190,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 					}
 
 					QString title2 = title;
-					title2.replace(QRegExp("[() ]+"), "-");
+					title2.replace(QRegExp("[^a-zA-Z0-9]+"), "-");
 
 					QString link = QString("http://www.deviantart.com/art/%1-%2").arg(title2).arg(number);
 
