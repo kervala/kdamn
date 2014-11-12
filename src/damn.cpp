@@ -108,8 +108,6 @@ void DAmn::onError(QAbstractSocket::SocketError error)
 
 void DAmn::onConnected()
 {
-	emit errorReceived(tr("Connected"));
-
 	client();
 }
 
