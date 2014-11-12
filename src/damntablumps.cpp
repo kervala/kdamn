@@ -137,7 +137,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 					QString name = tokens[2];
 
 					html += QString("%1<a href=\"http://%3.deviantart.com\">%2</a>").arg(symbol).arg(name).arg(name.toLower());
-					text += symbol+name;
+					text += QString(":dev%1:").arg(name);
 				}
 				else if (id == "avatar")
 				{
