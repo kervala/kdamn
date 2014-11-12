@@ -115,102 +115,105 @@ void OAuth2::processDiFi(const QByteArray &content)
 	// we received JSON response
 	QString status, error, errorDescription;
 
+	if (!content.isEmpty())
+	{
 #ifdef USE_QT5
-	QJsonParseError jsonError;
-	QJsonDocument doc = QJsonDocument::fromJson(content, &jsonError);
+		QJsonParseError jsonError;
+		QJsonDocument doc = QJsonDocument::fromJson(content, &jsonError);
 
-	if (jsonError.error != QJsonParseError::NoError)
-	{
-		emit errorReceived(jsonError.errorString());
-		return;
-	}
-
-	QJsonObject object = doc.object();
-
-	QJsonObject difi = object["DiFi"].toObject();
-
-	if (!difi.isEmpty())
-	{
-		QJsonObject response = difi["response"].toObject();
-
-		QJsonArray calls = response["calls"].toArray();
-
-		foreach (const QJsonValue &itemValue, calls)
+		if (jsonError.error != QJsonParseError::NoError)
 		{
-			QJsonObject item = itemValue.toObject();
+			emit errorReceived(jsonError.errorString());
+			return;
+		}
 
-			QJsonObject request = item["request"].toObject();
-			QString method = request["method"].toString();
+		QVariantMap map = doc.toVariant().toMap();
 
-			QJsonObject response = item["response"].toObject();
+		QVariantMap difi = map["DiFi"].toMap();
 
-			status = response["status"].toString();
+		if (!difi.isEmpty())
+		{
+			QVariantMap response = difi["response"].toMap();
 
-			if (status == "SUCCESS")
+			QVariantList calls = response["calls"].toList();
+
+			foreach (const QVariant &itemValue, calls)
 			{
-				if (method == "get_folders")
+				QVariantMap item = itemValue.toMap();
+
+				QVariantMap request = item["request"].toMap();
+				QString method = request["method"].toString();
+
+				QVariantMap response = item["response"].toMap();
+
+				status = response["status"].toString();
+
+				if (status == "SUCCESS")
 				{
-					QJsonArray content = response["content"].toArray();
-
-					foreach(const QJsonValue &folderValue, content)
+					if (method == "get_folders")
 					{
-						QJsonObject folder = folderValue.toObject();
+						QVariantList content = response["content"].toList();
 
-						QString folderId = folder["folderid"].toString();
-						QString title = folder["title"].toString();
-						bool isInbox = folder["is_inbox"].toBool();
-
-						if (isInbox)
+						foreach(const QVariant &folderValue, content)
 						{
-							m_inboxId = folderId.toInt();
+							QVariantMap folder = folderValue.toMap();
+
+							QString folderId = folder["folderid"].toString();
+							QString title = folder["title"].toString();
+							bool isInbox = folder["is_inbox"].toBool();
+
+							if (isInbox)
+							{
+								m_inboxId = folderId.toInt();
+							}
+						}
+					}
+					else if (method == "get_views")
+					{
+						QVariantList views = response["content"].toList();
+
+						foreach(const QVariant &viewValue, views)
+						{
+							QVariantMap view = viewValue.toMap();
+
+							QString offset = view["offset"].toString();
+							QString length = view["length"].toString();
+							int status = view["status"].toInt();
+
+							QVariantMap result = view["result"].toMap();
+
+							QString matches = result["matches"].toString();
+//							int count = result["count"].toInt();
+
+//							QJsonArray hits = result["hits"].toArray();
+
+							emit notesReceived(matches.toInt());
 						}
 					}
 				}
-				else if (method == "get_views")
+				else
 				{
-					QJsonArray views = response["content"].toArray();
+					QVariantMap content = response["content"].toMap();
+					QVariantMap err = content["error"].toMap();
 
-					foreach(const QJsonValue &viewValue, views)
-					{
-						QJsonObject view = viewValue.toObject();
+					QString errorCode = err["code"].toString();
+					QString errorHuman = err["human"].toString();
 
-						QString offset = view["offset"].toString();
-						QString length = view["length"].toString();
-						int status = view["status"].toInt();
-
-						QJsonObject result = view["result"].toObject();
-
-						QString matches = result["matches"].toString();
-//						int count = result["count"].toInt();
-
-//						QJsonArray hits = result["hits"].toArray();
-
-						emit notesReceived(matches.toInt());
-					}
+					status = "error";
+					error = errorCode;
+					errorDescription = tr("%1 (%2)").arg(errorDescription).arg(errorCode);
 				}
 			}
-			else
-			{
-				QJsonObject content = response["content"].toObject();
-				QJsonObject err = content["error"].toObject();
-
-				QString errorCode = err["code"].toString();
-				QString errorHuman = err["human"].toString();
-
-				status = "error";
-				error = errorCode;
-				errorDescription = tr("%1 (%2)").arg(errorDescription).arg(errorCode);
-			}
 		}
-	}
-	else
-	{
-		qWarning() << "JSON data not processed (not valid DiFi)" << content;
-	}
+		else
+		{
+			qWarning() << "JSON data not processed (not valid DiFi)" << content;
+		}
 #else
-	QScriptEngine engine;
-	QScriptValue object = engine.evaluate("(" + QString(content) + ")");
+		QScriptEngine engine;
+		QScriptValue object = engine.evaluate("(" + QString(content) + ")");
 #endif
+	}
 
 	// TODO: equivalent for Qt 4
 
@@ -218,8 +221,6 @@ void OAuth2::processDiFi(const QByteArray &content)
 	{
 		emit errorReceived(tr("DiFi error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
 	}
-	else
-	{
-		processNextAction();
-	}
+
+	processNextAction();
 }
