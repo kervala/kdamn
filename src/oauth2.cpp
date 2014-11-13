@@ -45,15 +45,11 @@ OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0),
 
 	m_clientId = 474;
 	m_clientSecret = "6a8b3dacb0d41c5d177d6f189df772d1";
-
-	InitSystemProgress();
 }
 
 OAuth2::~OAuth2()
 {
 	s_instance = NULL;
-
-	UninitSystemProgress();
 }
 
 void OAuth2::init()
@@ -348,22 +344,17 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 
 	connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onReplyError(QNetworkReply::NetworkError)));
 	connect(reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(onSslErrors(QList<QSslError>)));
-	connect(reply, SIGNAL(uploadProgress(qint64, qint64)), this, SLOT(onUploadProgress(qint64, qint64)));
+	connect(reply, SIGNAL(uploadProgress(qint64, qint64)), this, SIGNAL(uploadProgress(qint64, qint64)));
 	connect(reply, SIGNAL(finished()), this, SLOT(onUploadFinished()));
 
-	BeginSystemProgress();
+	emit uploadProgress(0, info.size());
 
 	return true;
 }
 
-void OAuth2::onUploadProgress(qint64 readBytes, qint64 totalBytes)
-{
-	UpdateSystemProgress(readBytes, totalBytes);
-}
-
 void OAuth2::onUploadFinished()
 {
-	EndSystemProgress();
+	emit uploadProgress(0, 0);
 }
 
 QString OAuth2::getSupportedImageFormatsFilter()

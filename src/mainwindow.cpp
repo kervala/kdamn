@@ -54,8 +54,6 @@ MainWindow::MainWindow():QMainWindow()
 	m_button = new QWinTaskbarButton(this);
 #endif
 
-	SetMainWindowId(winId());
-
 	// Server menu
 	connect(actionConnect, SIGNAL(triggered()), this, SLOT(onConnect()));
 	connect(actionDisconnect, SIGNAL(triggered()), this, SLOT(onDisconnect()));

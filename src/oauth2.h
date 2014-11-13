@@ -118,7 +118,6 @@ public slots:
 	void onProxyAuthentication(const QNetworkProxy &proxy, QAuthenticator *auth);
 	void onReplyError(QNetworkReply::NetworkError error);
 	void onSslErrors(const QList<QSslError> &errors);
-	void onUploadProgress(qint64 readBytes, qint64 totalBytes);
 	void onUploadFinished();
 
 private:

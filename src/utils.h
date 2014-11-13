@@ -29,15 +29,6 @@ void PutForegroundWindow(WId id);
 bool IsUsingComposition();
 bool IsOS64bits();
 
-void SetMainWindowId(WId id);
-WId GetMainWindowId();
-
-bool InitSystemProgress();
-bool UninitSystemProgress();
-bool BeginSystemProgress();
-bool UpdateSystemProgress(qint64 value, qint64 total);
-bool EndSystemProgress();
-
 QString encodeEntities(const QString& src, const QString& force = QString());
 QString decodeEntities(const QString& src);
 
