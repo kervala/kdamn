@@ -22,6 +22,7 @@
 #include "roomframe.h"
 #include "oauth2.h"
 #include "configfile.h"
+#include "utils.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -161,7 +162,9 @@ void ChatWidget::appendHtml(const QString &html)
 
 void ChatWidget::appendText(const QString &text)
 {
-	if (m_textFile.isOpen()) m_textFile.write(text.toUtf8() + "\n");
+	if (!m_textFile.isOpen()) return;
+
+	m_textFile.write(decodeEntities(text).toUtf8() + "\n");
 }
 
 QVariant ChatWidget::loadResource(int type, const QUrl &name)
