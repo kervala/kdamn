@@ -28,6 +28,7 @@
 #define LOGOUT_URL HTTPS_URL"/settings/force-logout"
 #define ROCKEDOUT_URL HTTPS_URL"/users/rockedout"
 #define OAUTH2_URL HTTPS_URL"/api/v1/oauth2"
+#define OAUTH2_TOKEN_URL HTTPS_URL"/oauth2/token"
 #define CHAT_URL "http://chat.deviantart.com/chat/Botdom"
 #define DIFI_URL HTTPS_URL"/global/difi.php"
 #define REDIRECT_APP "kdamn://oauth2/login"
@@ -42,6 +43,24 @@ struct StashFile
 	{
 		return other.filename.toLower() == filename.toLower();
 	}
+};
+
+struct Note
+{
+	QString id;
+	QString folderId;
+	QString subject;
+	QString preview; // without cariage returns
+	QString date; // Oct 30, 2014, 1:50:33 PM
+	QString sender;
+	QString text;
+	QString html;
+};
+
+struct Folder
+{
+	QString id;
+	QVector<Note> notes;
 };
 
 typedef QList<StashFile> StashFiles;
@@ -62,6 +81,7 @@ public:
 		ActionLogout,
 		ActionCheckFolders,
 		ActionCheckNotes,
+		ActionDisplayFolder,
 		ActionDisplayNote,
 		ActionRequestAccessToken,
 		ActionRequestDAmnToken,
@@ -87,8 +107,8 @@ public:
 	// DiFi
 	bool requestMessageFolders();
 	bool requestMessageViews();
-	bool requestNotes();
-	bool requestDisplayNote(int noteId);
+	bool requestDisplayFolder(int folderId);
+	bool requestDisplayNote(int folderId, int noteId);
 	
 	static QString getSupportedImageFormatsFilter();
 	static QString getUserAgent();
@@ -108,6 +128,7 @@ signals:
 	void damnTokenReceived(const QString &login, const QString &damntoken);
 	void imageDownloaded(const QString &md5);
 	void imageUploaded(const QString &room, const QString &stashId);
+	void notesDisplayed();
 	void notesReceived(int count);
 	void newVersionDetected(const QString &url, const QString &date, uint size, const QString &version);
 	void uploadProgress(qint64 readBytes, qint64 totalBytes);
@@ -142,6 +163,8 @@ private:
 	void processNewVersions(const QByteArray &content);
 	void processNextAction();
 	void parseSessionVariables(const QByteArray &content);
+	bool parseFolder(const QString &html);
+	bool parseNote(const QString &html, Note &note);
 
 	QNetworkAccessManager *m_manager;
 	QString m_login;
@@ -164,6 +187,8 @@ private:
 	QString m_validateKey;
 
 	QList<eOAuth2Action> m_actions;
+
+	QList<Folder> m_folders;
 
 	static QString s_userAgent;
 	static OAuth2 *s_instance;

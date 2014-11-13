@@ -255,7 +255,7 @@ bool OAuth2::requestAccessToken(const QString &code)
 		query = QString("refresh_token&refresh_token=%1").arg(m_refreshToken);
 	}
 
-	return get(QString("%1/oauth2/token?client_id=%2&client_secret=%3&grant_type=%4").arg(HTTPS_URL).arg(m_clientId).arg(m_clientSecret).arg(query));
+	return get(QString("%1?client_id=%2&client_secret=%3&grant_type=%4").arg(OAUTH2_TOKEN_URL).arg(m_clientId).arg(m_clientSecret).arg(query));
 }
 
 bool OAuth2::requestPlacebo()
@@ -504,8 +504,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 	QUrl query = reply->url();
 #endif
 
-	bool isJson = query.hasQueryItem("access_token") || query.hasQueryItem("grant_type") || query.hasQueryItem("url");
-	bool isDiFi = query.hasQueryItem("c[]") && query.hasQueryItem("t");
+	bool isJson = content.indexOf("{") == 0 || query.hasQueryItem("access_token") || query.hasQueryItem("grant_type") || query.hasQueryItem("url");
 	QString path = reply->url().path();
 
 	reply->deleteLater();
@@ -538,11 +537,14 @@ void OAuth2::onReply(QNetworkReply *reply)
 	}
 	else if (isJson)
 	{
-		processJson(content, path);
-	}
-	else if (isDiFi)
-	{
-		processDiFi(content);
+		if (url.startsWith(DIFI_URL))
+		{
+			processDiFi(content);
+		}
+		else
+		{
+			processJson(content, path);
+		}
 	}
 	else if (url.endsWith("/join/oauth2login"))
 	{
@@ -985,8 +987,12 @@ void OAuth2::processNextAction()
 			requestMessageViews();
 			break;
 
+			case ActionDisplayFolder:
+			requestDisplayFolder(1);
+			break;
+
 			case ActionDisplayNote:
-			requestDisplayNote(m_noteId);
+			requestDisplayNote(1, m_noteId);
 			break;
 
 			case ActionRequestAuthorization:
