@@ -166,6 +166,11 @@
     <string>Upload &amp;screenshot...</string>
    </property>
   </action>
+  <action name="actionCheckNewVersion">
+   <property name="text">
+    <string>Check new version</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
