@@ -31,9 +31,15 @@
 #include "capturedialog.h"
 #include "utils.h"
 #include "configfile.h"
+#include "updatedialog.h"
 
 #ifdef HAVE_CONFIG_H
 	#include "config.h"
+#endif
+
+#ifdef Q_OS_WIN32
+#include <QtWinExtras/QWinTaskbarProgress>
+#include <QtWinExtras/QWinTaskbarButton>
 #endif
 
 #ifdef DEBUG_NEW
@@ -43,6 +49,8 @@
 MainWindow::MainWindow():QMainWindow()
 {
 	setupUi(this);
+
+	m_button = new QWinTaskbarButton(this);
 
 	SetMainWindowId(winId());
 
@@ -63,6 +71,7 @@ MainWindow::MainWindow():QMainWindow()
 
 	// Help menu
 	connect(actionLogs, SIGNAL(triggered()), this, SLOT(onLogs()));
+	connect(actionCheckNewVersion, SIGNAL(triggered()), this, SLOT(onCheckNewVersion()));
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
 	connect(actionAboutQt, SIGNAL(triggered()), this, SLOT(onAboutQt()));
 
@@ -77,6 +86,8 @@ MainWindow::MainWindow():QMainWindow()
 	if (!pos.isNull()) move(pos);
 
 	connect(OAuth2::getInstance(), SIGNAL(loggedOut()), this, SLOT(onLoggedOut()));
+	connect(OAuth2::getInstance(), SIGNAL(newVersionDetected(QString, QString, uint, QString)), this, SLOT(onNewVersion(QString, QString, uint, QString)));
+	connect(OAuth2::getInstance(), SIGNAL(uploadProgress(qint64, qint64)), this, SLOT(onProgress(qint64, qint64)));
 
 	autoConnect();
 }
@@ -118,6 +129,11 @@ void MainWindow::moveEvent(QMoveEvent *e)
 void MainWindow::onLogs()
 {
 	QDesktopServices::openUrl(QUrl::fromLocalFile(ConfigFile::getInstance()->getLogsDirectory()));
+}
+
+void MainWindow::onCheckNewVersion()
+{
+	OAuth2::getInstance()->checkNewVersion();
 }
 
 void MainWindow::onAbout()
@@ -323,4 +339,48 @@ bool MainWindow::event(QEvent *e)
 void MainWindow::onLoggedOut()
 {
 	close();
+}
+
+void MainWindow::onNewVersion(const QString &url, const QString &date, uint size, const QString &version)
+{
+	QMessageBox::StandardButton reply = QMessageBox::question(this,
+		tr("New version"),
+		tr("Version %1 is available since %2.\n\nDo you want to download it now?").arg(version).arg(date),
+		QMessageBox::Yes|QMessageBox::No);
+
+	if (reply == QMessageBox::Yes)
+	{
+		m_button->setWindow(windowHandle());
+
+		UpdateDialog *dialog = new UpdateDialog(this);
+
+		connect(dialog, SIGNAL(downloadProgress(qint64, qint64)), this, SLOT(onProgress(qint64, qint64)));
+
+		dialog->download(url, size);
+		dialog->show();
+	}
+	else
+	{
+	}
+}
+
+void MainWindow::onProgress(qint64 readBytes, qint64 totalBytes)
+{
+	QWinTaskbarProgress *progress = m_button->progress();
+
+	if (readBytes == totalBytes)
+	{
+		// end
+		progress->hide();
+	}
+	else if (readBytes == 0)
+	{
+		// beginning
+		progress->show();
+		progress->setRange(0, totalBytes);
+	}
+	else
+	{
+		progress->setValue(readBytes);
+	}
 }

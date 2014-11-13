@@ -443,6 +443,24 @@ QString OAuth2::getUserAgent()
 	return s_userAgent;
 }
 
+bool OAuth2::checkNewVersion()
+{
+	QString system;
+
+#ifdef Q_OS_WIN32
+	system = "win";
+#ifdef _WIN64
+	system += "64";
+#else
+	system += "32";
+#endif
+#elif defined(Q_OS_OSX)
+	system += "osx";
+#endif
+
+	return !system.isEmpty() ? get(QString("%1?system=%2&version=%3&app=%4").arg(UPDATE_URL).arg(system).arg("0.9.100" /* QApplication::applicationVersion() */).arg(QApplication::applicationName())):false;
+}
+
 bool OAuth2::loginSite(const QString &validationToken, const QString &validationKey)
 {
 #ifdef USE_QT5
@@ -502,7 +520,11 @@ void OAuth2::onReply(QNetworkReply *reply)
 	reply->deleteLater();
 	reply = NULL;
 
-	if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
+	if (url.startsWith(UPDATE_URL))
+	{
+		processNewVersions(content);
+	}
+	else if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
 	{
 		QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
 
@@ -918,6 +940,39 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 	if (status == "error")
 	{
 		emit errorReceived(tr("API error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
+	}
+}
+
+void OAuth2::processNewVersions(const QByteArray &content)
+{
+	QVariantMap map;
+
+#ifdef USE_QT5
+	QJsonParseError jsonError;
+	QJsonDocument doc = QJsonDocument::fromJson(content, &jsonError);
+
+	if (jsonError.error != QJsonParseError::NoError)
+	{
+		emit errorReceived(jsonError.errorString());
+		return;
+	}
+
+	map = doc.toVariant().toMap();
+#else
+	QScriptEngine engine;
+	map = engine.evaluate("(" + QString(content) + ")").toVariant().toMap();
+#endif
+
+	int result = map["result"].toInt();
+
+	if (result)
+	{
+		QString version = map["version"].toString();
+		QString date = map["date"].toString();
+		uint size = map["size"].toUInt();
+		QString url = map["url"].toString();
+
+		emit newVersionDetected(url, date, size, version);
 	}
 }
 

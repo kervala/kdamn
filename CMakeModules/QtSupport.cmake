@@ -87,13 +87,13 @@ MACRO(USE_QT_MODULES)
   SET(QT5 OFF)
 
   # Qt shared modules
-  SET(QT_SHARED_MODULES CLucene Core Gui Help Multimedia Network OpenGL Qml Script ScriptTools Sql Svg Test WebKit Xml XmlPatterns)
+  SET(QT_SHARED_MODULES CLucene Core Declarative Gui Help Multimedia Network OpenGL Qml Script ScriptTools Sql Svg Test WebKit Xml XmlPatterns)
 
   # Qt 4 modules
-  SET(QT4_MODULES ${QT_SHARED_MODULES} Main Declarative)
+  SET(QT4_MODULES ${QT_SHARED_MODULES} Main)
 
   # Qt 5 modules
-  SET(QT5_MODULES ${QT_SHARED_MODULES} Concurrent LinguistTools MultimediaQuick MultimediaWidgets PrintSupport Quick QuickParticles QuickTest Sensors SerialPort V8 Widgets WebKitWidgets Positioning)
+  SET(QT5_MODULES ${QT_SHARED_MODULES} Concurrent LinguistTools MultimediaQuick MultimediaWidgets Nfc OpenGL OpenGLExtensions PlatformSupport Positioning PrintSupport Quick QuickParticles QuickTest QuickWidgets Sensors SerialPort V8 WebKitWidgets WebSockets Widgets WinExtras)
 
   IF(WITH_QT5)
     # Look for Qt 5 in some environment variables

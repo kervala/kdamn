@@ -22,6 +22,8 @@
 
 #include "ui_mainwindow.h"
 
+class QWinTaskbarButton;
+
 class MainWindow : public QMainWindow, public Ui::MainWindow
 {
 	Q_OBJECT
@@ -49,6 +51,7 @@ public slots:
 
 	// help menu
 	void onLogs();
+	void onCheckNewVersion();
 	void onAbout();
 	void onAboutQt();
 
@@ -57,12 +60,16 @@ public slots:
 
 	// signals from OAuth2
 	void onLoggedOut();
+	void onNewVersion(const QString &url, const QString &date, uint size, const QString &version);
+	void onProgress(qint64 readBytes, qint64 totalBytes);
 
 protected:
 	void closeEvent(QCloseEvent *e);
 	void resizeEvent(QResizeEvent *e);
 	void moveEvent(QMoveEvent *e);
 	bool event(QEvent *e);
+
+	QWinTaskbarButton *m_button;
 };
 
 #endif

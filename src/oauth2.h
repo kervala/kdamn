@@ -31,6 +31,7 @@
 #define CHAT_URL "http://chat.deviantart.com/chat/Botdom"
 #define DIFI_URL HTTPS_URL"/global/difi.php"
 #define REDIRECT_APP "kdamn://oauth2/login"
+#define UPDATE_URL "http://kervala.net/utils/update.php"
 
 struct StashFile
 {
@@ -92,6 +93,8 @@ public:
 	static QString getSupportedImageFormatsFilter();
 	static QString getUserAgent();
 
+	bool checkNewVersion();
+
 	bool get(const QString &url, const QString &referer = "");
 	bool post(const QString &url, const QByteArray &data = QByteArray(), const QString &referer = "");
 
@@ -106,6 +109,8 @@ signals:
 	void imageDownloaded(const QString &md5);
 	void imageUploaded(const QString &room, const QString &stashId);
 	void notesReceived(int count);
+	void newVersionDetected(const QString &url, const QString &date, uint size, const QString &version);
+	void uploadProgress(qint64 readBytes, qint64 totalBytes);
 
 public slots:
 	void onReply(QNetworkReply *reply);
@@ -135,6 +140,7 @@ private:
 	void redirect(const QString &url, const QString &referer);
 	void processDiFi(const QByteArray &content);
 	void processJson(const QByteArray &content, const QString &path);
+	void processNewVersions(const QByteArray &content);
 	void processNextAction();
 	void parseSessionVariables(const QByteArray &content);
 

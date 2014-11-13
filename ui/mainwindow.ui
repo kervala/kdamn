@@ -60,6 +60,8 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="actionLogs"/>
+    <addaction name="actionCheckNewVersion"/>
+    <addaction name="separator"/>
     <addaction name="actionAbout"/>
     <addaction name="actionAboutQt"/>
    </widget>
