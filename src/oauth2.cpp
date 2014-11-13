@@ -449,7 +449,7 @@ bool OAuth2::checkUpdates()
 	system += "osx";
 #endif
 
-	return !system.isEmpty() ? get(QString("%1?system=%2&version=%3&app=%4").arg(UPDATE_URL).arg(system).arg("0.9.100" /* QApplication::applicationVersion() */).arg(QApplication::applicationName())):false;
+	return !system.isEmpty() ? get(QString("%1?system=%2&version=%3&app=%4").arg(UPDATE_URL).arg(system).arg(QApplication::applicationVersion()).arg(QApplication::applicationName())):false;
 }
 
 bool OAuth2::loginSite(const QString &validationToken, const QString &validationKey)
