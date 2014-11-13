@@ -50,7 +50,11 @@ bool UpdateDialog::download(const QString &url, uint size)
 {
 	m_size = size;
 	m_url = url;
+#ifdef USE_QT5
 	m_filename = QUrl(url).fileName();
+#else
+	m_filename = QFileInfo(QUrl(url).path()).fileName();
+#endif
 	m_fullpath = getOutputFilename(m_filename);
 
 	return download();
@@ -135,7 +139,7 @@ QString UpdateDialog::getOutputFilename(const QString &filename)
 #ifdef USE_QT5
 	QString path = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
 #else
-	QString path = QDesktopServices::storageLocation(QDesktopServices::DownloadLocation);
+	QString path = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
 #endif
 
 	int i = 0;
