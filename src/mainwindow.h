@@ -64,6 +64,7 @@ public slots:
 	void onProgress(qint64 readBytes, qint64 totalBytes);
 
 protected:
+	void showEvent(QShowEvent *e);
 	void closeEvent(QCloseEvent *e);
 	void resizeEvent(QResizeEvent *e);
 	void moveEvent(QMoveEvent *e);

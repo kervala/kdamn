@@ -50,7 +50,9 @@ MainWindow::MainWindow():QMainWindow()
 {
 	setupUi(this);
 
+#ifdef Q_OS_WIN32
 	m_button = new QWinTaskbarButton(this);
+#endif
 
 	SetMainWindowId(winId());
 
@@ -94,6 +96,15 @@ MainWindow::MainWindow():QMainWindow()
 
 MainWindow::~MainWindow()
 {
+}
+
+void MainWindow::showEvent(QShowEvent *e)
+{
+#ifdef Q_OS_WIN32
+	m_button->setWindow(windowHandle());
+#endif
+
+	e->accept();
 }
 
 void MainWindow::closeEvent(QCloseEvent *e)
@@ -350,8 +361,6 @@ void MainWindow::onNewVersion(const QString &url, const QString &date, uint size
 
 	if (reply == QMessageBox::Yes)
 	{
-		m_button->setWindow(windowHandle());
-
 		UpdateDialog *dialog = new UpdateDialog(this);
 
 		connect(dialog, SIGNAL(downloadProgress(qint64, qint64)), this, SLOT(onProgress(qint64, qint64)));
@@ -366,6 +375,7 @@ void MainWindow::onNewVersion(const QString &url, const QString &date, uint size
 
 void MainWindow::onProgress(qint64 readBytes, qint64 totalBytes)
 {
+#ifdef Q_OS_WIN32
 	QWinTaskbarProgress *progress = m_button->progress();
 
 	if (readBytes == totalBytes)
@@ -383,4 +393,7 @@ void MainWindow::onProgress(qint64 readBytes, qint64 totalBytes)
 	{
 		progress->setValue(readBytes);
 	}
+#else
+	// TODO: for other OSes
+#endif
 }
