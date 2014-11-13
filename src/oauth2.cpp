@@ -434,7 +434,7 @@ QString OAuth2::getUserAgent()
 	return s_userAgent;
 }
 
-bool OAuth2::checkNewVersion()
+bool OAuth2::checkUpdates()
 {
 	QString system;
 

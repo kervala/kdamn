@@ -60,7 +60,7 @@
      <string>&amp;Help</string>
     </property>
     <addaction name="actionLogs"/>
-    <addaction name="actionCheckNewVersion"/>
+    <addaction name="actionCheckUpdates"/>
     <addaction name="separator"/>
     <addaction name="actionAbout"/>
     <addaction name="actionAboutQt"/>
@@ -166,9 +166,19 @@
     <string>Upload &amp;screenshot...</string>
    </property>
   </action>
-  <action name="actionCheckNewVersion">
+  <action name="actionCheckUpdates">
    <property name="text">
-    <string>Check new version</string>
+    <string>Check for updates</string>
+   </property>
+  </action>
+  <action name="actionDisplayNotes">
+   <property name="text">
+    <string>Display notes</string>
+   </property>
+  </action>
+  <action name="actionDisplayNote">
+   <property name="text">
+    <string>Display note</string>
    </property>
   </action>
  </widget>

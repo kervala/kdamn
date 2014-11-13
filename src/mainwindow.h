@@ -51,7 +51,7 @@ public slots:
 
 	// help menu
 	void onLogs();
-	void onCheckNewVersion();
+	void onCheckUpdates();
 	void onAbout();
 	void onAboutQt();
 

@@ -33,6 +33,8 @@ UpdateDialog::UpdateDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt::Win
 	installButton->setVisible(false);
 	retryButton->setVisible(false);
 
+	layout()->setSizeConstraint(QLayout::SetFixedSize);
+
 	m_manager = new QNetworkAccessManager(this);
 
 	connect(m_manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(onReply(QNetworkReply*)));
@@ -80,7 +82,9 @@ bool UpdateDialog::download()
 
 void UpdateDialog::onInstall()
 {
-	if (!m_filename.isEmpty()) QDesktopServices::openUrl(QUrl::fromLocalFile(m_filename));
+	QDesktopServices::openUrl(QUrl::fromLocalFile(m_filename));
+
+	accept();
 }
 
 void UpdateDialog::onCancel()

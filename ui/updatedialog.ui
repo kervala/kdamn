@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>Downloading new version of installer</string>
+      <string>No text</string>
      </property>
     </widget>
    </item>

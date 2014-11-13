@@ -71,7 +71,7 @@ MainWindow::MainWindow():QMainWindow()
 
 	// Help menu
 	connect(actionLogs, SIGNAL(triggered()), this, SLOT(onLogs()));
-	connect(actionCheckNewVersion, SIGNAL(triggered()), this, SLOT(onCheckNewVersion()));
+	connect(actionCheckUpdates, SIGNAL(triggered()), this, SLOT(onCheckUpdates()));
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
 	connect(actionAboutQt, SIGNAL(triggered()), this, SLOT(onAboutQt()));
 
@@ -89,7 +89,11 @@ MainWindow::MainWindow():QMainWindow()
 	connect(OAuth2::getInstance(), SIGNAL(newVersionDetected(QString, QString, uint, QString)), this, SLOT(onNewVersion(QString, QString, uint, QString)));
 	connect(OAuth2::getInstance(), SIGNAL(uploadProgress(qint64, qint64)), this, SLOT(onProgress(qint64, qint64)));
 
+	// auto connect to chat server
 	autoConnect();
+
+	// check for a new version
+	onCheckUpdates();
 }
 
 MainWindow::~MainWindow()
@@ -140,9 +144,9 @@ void MainWindow::onLogs()
 	QDesktopServices::openUrl(QUrl::fromLocalFile(ConfigFile::getInstance()->getLogsDirectory()));
 }
 
-void MainWindow::onCheckNewVersion()
+void MainWindow::onCheckUpdates()
 {
-	OAuth2::getInstance()->checkNewVersion();
+	OAuth2::getInstance()->checkUpdates();
 }
 
 void MainWindow::onAbout()
@@ -357,17 +361,18 @@ void MainWindow::onNewVersion(const QString &url, const QString &date, uint size
 		tr("Version %1 is available since %2.\n\nDo you want to download it now?").arg(version).arg(date),
 		QMessageBox::Yes|QMessageBox::No);
 
-	if (reply == QMessageBox::Yes)
-	{
-		UpdateDialog *dialog = new UpdateDialog(this);
+	if (reply != QMessageBox::Yes) return;
 
-		connect(dialog, SIGNAL(downloadProgress(qint64, qint64)), this, SLOT(onProgress(qint64, qint64)));
+	UpdateDialog dialog(this);
 
-		dialog->download(url, size);
-		dialog->show();
-	}
-	else
+	connect(&dialog, SIGNAL(downloadProgress(qint64, qint64)), this, SLOT(onProgress(qint64, qint64)));
+
+	dialog.download(url, size);
+
+	if (dialog.exec() == QDialog::Accepted)
 	{
+		// if user clicked on Install, close kdAmn
+		close();
 	}
 }
 

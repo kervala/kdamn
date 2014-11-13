@@ -93,7 +93,7 @@ public:
 	static QString getSupportedImageFormatsFilter();
 	static QString getUserAgent();
 
-	bool checkNewVersion();
+	bool checkUpdates();
 
 	bool get(const QString &url, const QString &referer = "");
 	bool post(const QString &url, const QByteArray &data = QByteArray(), const QString &referer = "");
