@@ -49,6 +49,10 @@ public slots:
 	void onUploadFiles();
 	void onUploadScreenshot();
 
+	// notes menu
+	void onDisplayNotes();
+	void onDisplayNote();
+
 	// help menu
 	void onLogs();
 	void onCheckUpdates();

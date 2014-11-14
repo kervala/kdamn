@@ -77,3 +77,21 @@ QString decodeEntities(const QString& src)
 
 	return ret;
 }
+
+QString convertDateToISO(const QString &date)
+{
+	// Oct 30, 2014, 1:50:33 PM
+	QString format = "MMM d, yyyy, h:mm:ss AP";
+	QDateTime dateTime = QLocale(QLocale::English).toDateTime(date, format);
+	QString iso = dateTime.toString(Qt::ISODate);
+	return iso.replace("T", " ");
+}
+
+QString convertIDOToDate(const QString &date)
+{
+	QString iso = date;
+	iso.replace("T", " ");
+	QDateTime valid = QDateTime::fromString(iso, Qt::ISODate);
+
+	return valid.toString(Qt::DefaultLocaleShortDate);
+}

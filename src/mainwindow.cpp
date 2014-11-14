@@ -69,6 +69,10 @@ MainWindow::MainWindow():QMainWindow()
 	connect(actionUploadFiles, SIGNAL(triggered()), this, SLOT(onUploadFiles()));
 	connect(actionUploadScreenshot, SIGNAL(triggered()), this, SLOT(onUploadScreenshot()));
 
+	// Notes menu
+	connect(actionDisplayNotes, SIGNAL(triggered()), this, SLOT(onDisplayNotes()));
+	connect(actionDisplayNote, SIGNAL(triggered()), this, SLOT(onDisplayNote()));
+
 	// Help menu
 	connect(actionLogs, SIGNAL(triggered()), this, SLOT(onLogs()));
 	connect(actionCheckUpdates, SIGNAL(triggered()), this, SLOT(onCheckUpdates()));
@@ -303,6 +307,16 @@ void MainWindow::onUploadScreenshot()
 	if (roomsWidget->getCurrentRoomFrame()) room = roomsWidget->getCurrentRoomFrame()->getRoom();
 
 	OAuth2::getInstance()->uploadToStash(filename, room);
+}
+
+void MainWindow::onDisplayNotes()
+{
+	OAuth2::getInstance()->requestDisplayFolder("1", 0);
+}
+
+void MainWindow::onDisplayNote()
+{
+	OAuth2::getInstance()->requestDisplayNote("1", 1138214864);
 }
 
 void MainWindow::trayActivated(QSystemTrayIcon::ActivationReason reseaon)

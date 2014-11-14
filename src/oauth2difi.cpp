@@ -66,15 +66,8 @@ bool OAuth2::requestMessageViews()
 	return get(QString("%1?c[]=MessageCenter;get_views;%2,oq:notes_unread:0:0:f&t=json").arg(DIFI_URL).arg(m_inboxId));
 }
 
-bool OAuth2::requestDisplayFolder(int folderId)
+bool OAuth2::requestDisplayFolder(const QString &folderId, int offset)
 {
-	if (!m_logged)
-	{
-		m_actions.push_front(ActionDisplayFolder);
-
-		return login();
-	}
-
 #ifdef USE_QT5
 	QUrlQuery params;
 #else
@@ -85,7 +78,7 @@ bool OAuth2::requestDisplayFolder(int folderId)
 
 	// \"unread\"
 
-	params.addQueryItem("c[]", QString("\"Notes\",\"display_folder\",[%1,0,false]").arg(folderId));
+	params.addQueryItem("c[]", QString("\"Notes\",\"display_folder\",[%1,%2,false]").arg(folderId).arg(offset));
 	params.addQueryItem("t", "json");
 	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
 
@@ -100,7 +93,7 @@ bool OAuth2::requestDisplayFolder(int folderId)
 	return post(DIFI_URL, data, HTTPS_URL);
 }
 
-bool OAuth2::requestDisplayNote(int folderId, int noteId)
+bool OAuth2::requestDisplayNote(const QString &folderId, int noteId)
 {
 	if (!m_manager) return false;
 
@@ -207,9 +200,44 @@ void OAuth2::processDiFi(const QByteArray &content)
 					}
 					else if (method == "display_folder")
 					{
-						QVariantMap content = response["content"].toMap();
+						QVariantMap data = response["content"].toMap();
 
-						QString html = QString::fromUtf8(content["body"].toByteArray());
+						QString folderId = data["folderid"].toString();
+						int offset = data["offset"].toInt();
+
+						QString html = QString::fromUtf8(data["body"].toByteArray());
+
+						if (!m_folders.contains(folderId))
+						{
+							// search notes count per page and max offset
+							QRegExp reg("offset=([0-9]+)");
+
+							int pos = 0;
+							int min = -1;
+							int max = -1;
+
+							while((pos = reg.indexIn(html, pos)) > -1)
+							{
+								int v = reg.cap(1).toInt();
+
+								if ((v < min) || (min == -1)) min = v;
+								if ((v > max) || (max == -1)) max = v;
+
+								pos += reg.matchedLength();
+							}
+
+							// init a new folder
+							Folder folder;
+							folder.id = folderId;
+							folder.count = min;
+							folder.maxOffset = max;
+							folder.notes.reserve(max + min); // optimize memory allocation
+
+							m_folders[folderId] = folder;
+						}
+
+						// update current offset
+						m_folders[folderId].offset = offset;
 
 						// hack to fix invalid HTML code
 						int pos1 = html.indexOf("<div class=\"footer\">");
@@ -225,7 +253,18 @@ void OAuth2::processDiFi(const QByteArray &content)
 						}
 
 						// parse HTML code to retrieve notes details
-						parseFolder(html);
+						parseFolder(html, m_folders[folderId]);
+
+						if (offset >= m_folders[folderId].maxOffset)
+						{
+							emit folderReceived(folderId);
+						}
+						else
+						{
+							int nextOffset = m_folders[folderId].offset + m_folders[folderId].count;
+
+							requestDisplayFolder(folderId, nextOffset);
+						}
 					}
 					else if (method == "display_note")
 					{
@@ -234,15 +273,21 @@ void OAuth2::processDiFi(const QByteArray &content)
 						QString noteId = QString::number(data["noteid"].toInt());
 						QString html = QString::fromUtf8(data["body"].toByteArray());
 
-						for(int i = 0; i < m_folders.size(); ++i)
+						QMap<QString, Folder>::iterator it = m_folders.begin(), iend = m_folders.end();
+
+						Note note;
+						note.id = noteId;
+
+						while(it != iend)
 						{
-							for(int j = 0; j < m_folders[i].notes.size(); ++j)
+							int index = it->notes.indexOf(note);
+
+							if (index > -1)
 							{
-								if (m_folders[i].notes[j].id == noteId)
-								{
-									parseNote(html, m_folders[i].notes[j]);
-								}
+								parseNote(html, it->notes[index]);
 							}
+
+							++it;
 						}
 					}
 					else if (method == "display")
@@ -284,10 +329,8 @@ void OAuth2::processDiFi(const QByteArray &content)
 	processNextAction();
 }
 
-bool OAuth2::parseFolder(const QString &html)
+bool OAuth2::parseFolder(const QString &html, Folder &folder)
 {
-	QList<Note> notes;
-
 	QDomDocument doc;
 
 	QString error;
@@ -321,46 +364,22 @@ bool OAuth2::parseFolder(const QString &html)
 
 		// date
 		QDomNode dateNode = node.nextSibling();
-		note.date = dateNode.firstChild().toText().data();
 
+		QString dateAttribute = dateNode.toElement().attribute("title");
+		QString dateText = dateNode.firstChild().toText().data();
+
+		note.date = convertDateToISO(dateText.indexOf("ago") > -1 ? dateAttribute:dateText);
+
+		// preview
 		QDomNode previewNode = dateNode.nextSiblingElement("div");
-		note.preview = previewNode.firstChild().toText().data();
+		note.preview = previewNode.firstChild().toText().data().trimmed();
 
-		if (!note.id.isEmpty()) notes << note;
+		if (!note.id.isEmpty() && !folder.notes.contains(note)) folder.notes << note;
 
 		root = root.nextSibling();
 	}
 
-	foreach(const Note &note, notes)
-	{
-		bool found = false;
-		int i = 0;
-
-		// find the right folder
-		while(i < m_folders.size())
-		{
-			if (m_folders[i].id == note.folderId)
-			{
-				// append note to other notes list
-				m_folders[i].notes << note;
-
-				break;
-			}
-
-			++i;
-		}
-
-		if (!found)
-		{
-			// create a new folder
-			Folder folder;
-			folder.id = note.folderId;
-			folder.notes << note;
-
-			// append folder to folders list
-			m_folders << folder;
-		}
-	}
+	// TODO: sort
 
 	return true;
 }

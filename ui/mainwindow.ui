@@ -80,9 +80,17 @@
     <addaction name="actionUploadFiles"/>
     <addaction name="actionUploadScreenshot"/>
    </widget>
+   <widget class="QMenu" name="menuNotes">
+    <property name="title">
+     <string>Notes</string>
+    </property>
+    <addaction name="actionDisplayNotes"/>
+    <addaction name="actionDisplayNote"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuRoom"/>
    <addaction name="menuTools"/>
+   <addaction name="menuNotes"/>
    <addaction name="menuHelp"/>
   </widget>
   <action name="actionSettings">

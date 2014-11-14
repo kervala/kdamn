@@ -21,6 +21,7 @@
 #include "oauth2.h"
 #include "cookies.h"
 #include "utils.h"
+#include "damn.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -110,6 +111,11 @@ bool OAuth2::post(const QString &url, const QByteArray &data, const QString &ref
 	connect(reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(onSslErrors(QList<QSslError>)));
 
 	return true;
+}
+
+Folder OAuth2::getFolder(const QString &id) const
+{
+	return m_folders.value(id);
 }
 
 bool OAuth2::authorizeApplication(const QString &validateKey, const QString &validateToken, bool authorize)
@@ -510,11 +516,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 	reply->deleteLater();
 	reply = NULL;
 
-	if (url.startsWith(UPDATE_URL))
-	{
-		processNewVersions(content);
-	}
-	else if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
+	if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
 	{
 		QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
 
@@ -540,6 +542,10 @@ void OAuth2::onReply(QNetworkReply *reply)
 		if (url.startsWith(DIFI_URL))
 		{
 			processDiFi(content);
+		}
+		else if (url.startsWith(UPDATE_URL))
+		{
+			processNewVersions(content);
 		}
 		else
 		{
@@ -630,22 +636,6 @@ void OAuth2::onReply(QNetworkReply *reply)
 			requestAuthToken();
 		}
 	}
-	else if (url.endsWith("/Botdom"))
-	{
-		QRegExp reg("dAmn_Login\\( \"([A-Za-z0-9_-]+)\", \"([a-f0-9]{32})\"");
-
-		if (reg.indexIn(content) > -1)
-		{
-			m_login = reg.cap(1);
-			m_damnToken = reg.cap(2);
-
-			emit damnTokenReceived(m_login, m_damnToken);
-		}
-		else
-		{
-			emit errorReceived(tr("Unable to find dAmn_Login"));
-		}
-	}
 	else if (url.indexOf("/applications") > -1 && url.indexOf(QString("client_id=%1").arg(m_clientId)) > -1)
 	{
 		QRegExp reg("name=\"validate_key\" value=\"([0-9]+)\"");
@@ -689,7 +679,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 			emit errorReceived(tr("Unable to find validate_key"));
 		}
 	}
-	else if (url == LOGOUT_URL/* && redirection.isEmpty() && !content.isEmpty() */)
+	else if (url == LOGOUT_URL)
 	{
 		m_logged = false;
 
@@ -913,8 +903,20 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 		QString url = GET_JSON_STRING("url");
 		QString author = GET_JSON_STRING("author_name");
 		QString thumbnail = GET_JSON_STRING("thumbnail_url_150");
-		int width = (int)GET_JSON_DOUBLE("width");
-		int height = (int)GET_JSON_DOUBLE("height");
+		int width = GET_JSON_STRING("width").toInt();
+		int height = GET_JSON_STRING("height").toInt();
+/*
+		DAmnImages images;
+
+		DAmnImage image;
+		image.remoteUrl = url;
+
+		if (DAmn::getInstance()->downloadImage(image)) images << image;
+
+		QString html = QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" local=\"%6\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(image.remoteUrl).arg(link).arg(width).arg(height).arg(image.localUrl);
+
+		DAmn::getInstance()->addWaitingMessage("room", "from", html, images, MessageText);
+*/
 /*
 		StashFile file = m_filesToUpload.front();
 
@@ -988,11 +990,11 @@ void OAuth2::processNextAction()
 			break;
 
 			case ActionDisplayFolder:
-			requestDisplayFolder(1);
+			requestDisplayFolder("1", 0);
 			break;
 
 			case ActionDisplayNote:
-			requestDisplayNote(1, m_noteId);
+			requestDisplayNote("1", m_noteId);
 			break;
 
 			case ActionRequestAuthorization:

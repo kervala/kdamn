@@ -20,6 +20,8 @@
 #ifndef OAUTH2_H
 #define OAUTH2_H
 
+#include "notesmodel.h"
+
 // deviantART URLs
 #define BASE_URL "www.deviantart.com"
 #define HTTPS_URL "https://"BASE_URL
@@ -43,24 +45,6 @@ struct StashFile
 	{
 		return other.filename.toLower() == filename.toLower();
 	}
-};
-
-struct Note
-{
-	QString id;
-	QString folderId;
-	QString subject;
-	QString preview; // without cariage returns
-	QString date; // Oct 30, 2014, 1:50:33 PM
-	QString sender;
-	QString text;
-	QString html;
-};
-
-struct Folder
-{
-	QString id;
-	QVector<Note> notes;
 };
 
 typedef QList<StashFile> StashFiles;
@@ -107,8 +91,8 @@ public:
 	// DiFi
 	bool requestMessageFolders();
 	bool requestMessageViews();
-	bool requestDisplayFolder(int folderId);
-	bool requestDisplayNote(int folderId, int noteId);
+	bool requestDisplayFolder(const QString &folderId, int offset);
+	bool requestDisplayNote(const QString &folderId, int noteId);
 	
 	static QString getSupportedImageFormatsFilter();
 	static QString getUserAgent();
@@ -120,6 +104,8 @@ public:
 
 	bool isLogged() const { return m_logged; }
 
+	Folder getFolder(const QString &id) const;
+
 signals:
 	void loggedIn();
 	void loggedOut();
@@ -128,7 +114,7 @@ signals:
 	void damnTokenReceived(const QString &login, const QString &damntoken);
 	void imageDownloaded(const QString &md5);
 	void imageUploaded(const QString &room, const QString &stashId);
-	void notesDisplayed();
+	void folderReceived(const QString &id);
 	void notesReceived(int count);
 	void newVersionDetected(const QString &url, const QString &date, uint size, const QString &version);
 	void uploadProgress(qint64 readBytes, qint64 totalBytes);
@@ -163,7 +149,7 @@ private:
 	void processNewVersions(const QByteArray &content);
 	void processNextAction();
 	void parseSessionVariables(const QByteArray &content);
-	bool parseFolder(const QString &html);
+	bool parseFolder(const QString &html, Folder &folder);
 	bool parseNote(const QString &html, Note &note);
 
 	QNetworkAccessManager *m_manager;
@@ -188,7 +174,7 @@ private:
 
 	QList<eOAuth2Action> m_actions;
 
-	QList<Folder> m_folders;
+	QMap<QString, Folder> m_folders;
 
 	static QString s_userAgent;
 	static OAuth2 *s_instance;

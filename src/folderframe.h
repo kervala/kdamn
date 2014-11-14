@@ -17,22 +17,33 @@
  *
  */
 
-#ifndef UTILS_H
-#define UTILS_H
+#ifndef FOLDERFRAME_H
+#define FOLDERFRAME_H
 
-class QAbstractItemModel;
+#include "ui_folderframe.h"
 
-void CreateWindowsList(QAbstractItemModel *model);
-bool RestoreMinimizedWindow(WId &id);
-void MinimizeWindow(WId id);
-void PutForegroundWindow(WId id);
-bool IsUsingComposition();
-bool IsOS64bits();
+#include "tabframe.h"
+#include "notesmodel.h"
 
-QString encodeEntities(const QString& src, const QString& force = QString());
-QString decodeEntities(const QString& src);
+class FolderFrame : public TabFrame, public Ui::FolderFrame
+{
+	Q_OBJECT
 
-QString convertDateToISO(const QString &date);
-QString convertIDOToDate(const QString &date);
+public:
+	FolderFrame(QWidget *parent);
+	virtual ~FolderFrame();
+
+	virtual void setSystem(const QString &text);
+
+	void setNotes(const Notes &notes);
+
+public slots:
+	void onSearch();
+
+protected:
+	void updateSplitter();
+
+	NotesModel *m_model;
+};
 
 #endif

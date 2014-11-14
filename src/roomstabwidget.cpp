@@ -24,6 +24,7 @@
 #include "oauth2.h"
 #include "roomframe.h"
 #include "serverframe.h"
+#include "folderframe.h"
 #include "configfile.h"
 #include "systrayicon.h"
 
@@ -70,6 +71,7 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 	connect(oauth, SIGNAL(accessTokenReceived(QString, QString)), this, SLOT(onReceiveAccessToken(QString, QString)));
 	connect(oauth, SIGNAL(imageUploaded(QString, QString)), this, SLOT(onUploadImage(QString, QString)));
 	connect(oauth, SIGNAL(notesReceived(int)), this, SLOT(onReceiveNotes(int)));
+	connect(oauth, SIGNAL(folderReceived(QString)), this, SLOT(onReceiveFolder(QString)));
 
 	m_messagesTimer = new QTimer(this);
 	m_messagesTimer->setSingleShot(true);
@@ -96,6 +98,27 @@ ServerFrame* RoomsTabWidget::getServerFrame()
 	for(int i = 0; i < count(); ++i)
 	{
 		ServerFrame *frame = qobject_cast<ServerFrame*>(widget(i));
+
+		if (frame) return frame;
+	}
+
+	return NULL;
+}
+
+bool RoomsTabWidget::createFolderFrame()
+{
+	int id = addTab(new FolderFrame(this), tr("Folder"));
+
+	setCurrentIndex(id);
+
+	return true;
+}
+
+FolderFrame* RoomsTabWidget::getFolderFrame()
+{
+	for(int i = 0; i < count(); ++i)
+	{
+		FolderFrame *frame = qobject_cast<FolderFrame*>(widget(i));
 
 		if (frame) return frame;
 	}
@@ -238,6 +261,18 @@ void RoomsTabWidget::onReceiveNotes(int count)
 	}
 
 	m_messagesTimer->start(10000);
+}
+
+void RoomsTabWidget::onReceiveFolder(const QString &id)
+{
+	createFolderFrame();
+
+	FolderFrame *frame = getFolderFrame();
+
+	if (frame)
+	{
+		frame->setNotes(OAuth2::getInstance()->getFolder(id).notes);
+	}
 }
 
 void RoomsTabWidget::checkMessages()

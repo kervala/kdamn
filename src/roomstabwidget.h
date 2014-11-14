@@ -24,6 +24,7 @@
 
 class RoomFrame;
 class ServerFrame;
+class FolderFrame;
 
 class RoomsTabWidget : public QTabWidget
 {
@@ -35,6 +36,9 @@ public:
 
 	bool createServerFrame();
 	ServerFrame* getServerFrame();
+
+	bool createFolderFrame();
+	FolderFrame* getFolderFrame();
 
 	bool createRoomFrame(const QString &room);
 	bool removeRoomFrame(const QString &room);
@@ -53,6 +57,7 @@ public slots:
 	void onReceiveAccessToken(const QString &access, const QString &refresh);
 	void onUploadImage(const QString &room, const QString &url);
 	void onReceiveNotes(int count);
+	void onReceiveFolder(const QString &id);
 	void onConnectServer();
 	void onUsers(const QString &room, const QStringList &users);
 	void onJoinRoom(const QString &room);
