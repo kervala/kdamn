@@ -66,8 +66,7 @@ bool OAuth2::requestMessageCenterGetViews()
 	return get(QString("%1?c[]=MessageCenter;get_views;%2,oq:notes_unread:0:0:f&t=json").arg(DIFI_URL).arg(m_inboxId));
 }
 
-// Working
-bool OAuth2::requestNotesCreateFolder(const QString &name, const QString &parentId)
+bool OAuth2::requestNotes(const QString &method, const QString &args)
 {
 	if (!m_manager || !m_logged) return false;
 
@@ -77,7 +76,7 @@ bool OAuth2::requestNotesCreateFolder(const QString &name, const QString &parent
 	QUrl params;
 #endif
 
-	params.addQueryItem("c[]", QString("\"Notes\",\"create_folder\",[\"%1\",%2]").arg(name).arg(parentId));
+	params.addQueryItem("c[]", QString("\"Notes\",\"%1\",[%2]").arg(method).arg(args));
 	params.addQueryItem("t", "json");
 	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
 
@@ -90,337 +89,87 @@ bool OAuth2::requestNotesCreateFolder(const QString &name, const QString &parent
 #endif
 
 	return post(DIFI_URL, data, HTTPS_URL);
+}
+
+// Working
+bool OAuth2::requestNotesCreateFolder(const QString &name, const QString &parentId)
+{
+	return requestNotes("create_folder", QString("\"%1\",%2").arg(name).arg(parentId));
 }
 
 // Working
 bool OAuth2::requestNotesDelete(const QStringList &notesIds)
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"delete\",[[%1]]").arg(notesIds.join(",")));
-	params.addQueryItem("t", "json");
-	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	return requestNotes("delete", QString("[%1]").arg(notesIds.join(",")));
 }
 
 // Working
 bool OAuth2::requestNotesDeleteFolder(const QString &folderId)
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"delete_folder\",[%1]").arg(folderId));
-	params.addQueryItem("t", "json");
-	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	return requestNotes("delete_folder", folderId);
 }
 
 bool OAuth2::requestNotesDisplayFolder(const QString &folderId, int offset)
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
 	// number/string, i.e. 1 for inbox, 2 for sent, as well as 'starred', 'drafts', 'unread', and custom folders.
-
 	// \"unread\"
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"display_folder\",[%1,%2,false]").arg(folderId).arg(offset));
-	params.addQueryItem("t", "json");
-	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	return requestNotes("display_folder", QString("%1,%2,false").arg(folderId).arg(offset));
 }
 
 bool OAuth2::requestNotesDisplayNote(const QString &folderId, const QString &noteId)
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"display_note\",[%1,%2]").arg(folderId).arg(noteId));
-	params.addQueryItem("t", "json");
-	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	return requestNotes("display_note", QString("%1,%2").arg(folderId).arg(noteId));
 }
 
 bool OAuth2::requestNotesMarkAsRead(const QStringList &notesIds)
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"mark_as_read\",[%1]").arg(notesIds.join(",")));
-	params.addQueryItem("t", "json");
-//	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	return requestNotes("mark_as_read", QString("%1").arg(notesIds.join(",")));
 }
 
 bool OAuth2::requestNotesMarkAsUnread(const QStringList &notesIds)
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"mark_as_unread\",[%1]").arg(notesIds.join(",")));
-	params.addQueryItem("t", "json");
-//	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	return requestNotes("mark_as_unread", QString("%1").arg(notesIds.join(",")));
 }
 
 bool OAuth2::requestNotesMove(const QStringList &notesIds, const QString &folderId)
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"move\",[%1,%2]").arg(notesIds.join(",")).arg(folderId));
-	params.addQueryItem("t", "json");
-//	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	return requestNotes("move", QString("%1,%2").arg(notesIds.join(",")).arg(folderId));
 }
 
+// Working
 bool OAuth2::requestNotesPlaceboCall()
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"placebo_call\",[]"));
-	params.addQueryItem("t", "json");
-//	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	return requestNotes("placebo_call", "");
 }
 
 bool OAuth2::requestNotesPreview(const QString &text, bool includeSignature)
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"preview\",[\"%1\",%2]").arg(text).arg(includeSignature ? "true":"false"));
-	params.addQueryItem("t", "json");
-//	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	return requestNotes("preview", QString("\"%1\",%2").arg(text).arg(includeSignature ? "true":"false"));
 }
 
 bool OAuth2::requestNotesRenameFolder(const QString &folderId, const QString &folderName)
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"rename_folder\",[%1,\"%2\"]").arg(folderId).arg(folderName));
-	params.addQueryItem("t", "json");
-//	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	return requestNotes("rename_folder", QString("%1,\"%2\"").arg(folderId).arg(folderName));
 }
 
-bool OAuth2::requestNotesSaveDraft(const QString &dest, const QString &text)
+// Working
+bool OAuth2::requestNotesSaveDraft(const QString &recipients, const QString &subject, const QString &body)
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"save_draft\",[\"%1\",\"%2\"]").arg(dest).arg(text));
-	params.addQueryItem("t", "json");
-//	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	// TODO: check with other values instead of 0
+	// TODO: escape special characters in subject and body
+	return requestNotes("save_draft", QString("\"%1\",\"%2\",\"%3\",0").arg(recipients).arg(subject).arg(body));
 }
 
+// Working
 bool OAuth2::requestNotesStar(const QStringList &notesIds)
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"star\",[%1]").arg(notesIds.join(",")));
-	params.addQueryItem("t", "json");
-//	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	return requestNotes("star", QString("[%1]").arg(notesIds.join(",")));
 }
 
+// Working
 bool OAuth2::requestNotesUnstar(const QStringList &notesIds)
 {
-	if (!m_manager || !m_logged) return false;
-
-#ifdef USE_QT5
-	QUrlQuery params;
-#else
-	QUrl params;
-#endif
-
-	params.addQueryItem("c[]", QString("\"Notes\",\"unstar\",[%1]").arg(notesIds.join(",")));
-	params.addQueryItem("t", "json");
-//	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
-
-	QByteArray data;
-
-#ifdef USE_QT5
-	data = params.query().toUtf8();
-#else
-	data = params.encodedQuery();
-#endif
-
-	return post(DIFI_URL, data, HTTPS_URL);
+	return requestNotes("unstar", QString("[%1]").arg(notesIds.join(",")));
 }
 
 void OAuth2::processDiFi(const QByteArray &content)
@@ -513,6 +262,22 @@ void OAuth2::processDiFi(const QByteArray &content)
 							else if (method == "display_note")
 							{
 								parseNotesDisplayNote(response);
+							}
+							else if (method == "placebo_call")
+							{
+								parseNotesPlaceboCall(response);
+							}
+							else if (method == "star")
+							{
+								parseNotesStar(response);
+							}
+							else if (method == "unstar")
+							{
+								parseNotesUnstar(response);
+							}
+							else if (method == "save_draft")
+							{
+								parseNotesSaveDraft(response);
 							}
 							else
 							{
@@ -854,6 +619,7 @@ bool OAuth2::parseNotesMove(const QVariantMap &response)
 
 bool OAuth2::parseNotesPlaceboCall(const QVariantMap &response)
 {
+	// nothing to parse
 	return true;
 }
 
@@ -869,15 +635,52 @@ bool OAuth2::parseNotesRenameFolder(const QVariantMap &response)
 
 bool OAuth2::parseNotesSaveDraft(const QVariantMap &response)
 {
+	QVariantMap data = response["content"].toMap();
+
+	QString draftId = QString::number(data["draftid"].toInt());
+	QString count = data["count"].toString();
+
+	emit notesDraftSaved(draftId);
+
 	return true;
 }
 
 bool OAuth2::parseNotesStar(const QVariantMap &response)
 {
+	QStringList noteIds;
+
+	QVariantMap data = response["content"].toMap();
+
+	QVariantList ids = data["noteids"].toList();
+
+	foreach(const QVariant &id, ids)
+	{
+		noteIds << QString::number(id.toInt());
+	}
+
+	QString count = data["count"].toString();
+
+	emit notesStarred(noteIds);
+
 	return true;
 }
 
 bool OAuth2::parseNotesUnstar(const QVariantMap &response)
 {
+	QStringList noteIds;
+
+	QVariantMap data = response["content"].toMap();
+
+	QVariantList ids = data["noteids"].toList();
+
+	foreach(const QVariant &id, ids)
+	{
+		noteIds << QString::number(id.toInt());
+	}
+
+	QString count = data["count"].toString();
+
+	emit notesUnstarred(noteIds);
+
 	return true;
 }

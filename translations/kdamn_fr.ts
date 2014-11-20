@@ -235,7 +235,7 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
     </message>
 </context>
 <context>
-    <name>FolderFrame</name>
+    <name>NotesFrame</name>
     <message>
         <location filename="../ui/folderframe.ui" line="25"/>
         <source>Search</source>

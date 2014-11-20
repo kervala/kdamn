@@ -117,7 +117,7 @@ public:
 	bool requestNotesPlaceboCall();
 	bool requestNotesPreview(const QString &text, bool includeSignature);
 	bool requestNotesRenameFolder(const QString &folderId, const QString &folderName);
-	bool requestNotesSaveDraft(const QString &dest, const QString &text);
+	bool requestNotesSaveDraft(const QString &recipients, const QString &subject, const QString &body);
 	bool requestNotesStar(const QStringList &notesIds);
 	bool requestNotesUnstar(const QStringList &notesIds);
 
@@ -151,6 +151,9 @@ signals:
 	void notesFolderCreated(const QString &name, const QString &id);
 	void notesDeleted();
 	void notesFolderDeleted(const QString &id);
+	void notesDraftSaved(const QString &draftId);
+	void notesStarred(const QStringList &noteIds);
+	void notesUnstarred(const QStringList &noteIds);
 
 public slots:
 	void onReply(QNetworkReply *reply);
@@ -175,6 +178,8 @@ private:
 	bool requestAuthToken();
 
 	void addUserAgent(QNetworkRequest &req) const;
+
+	bool requestNotes(const QString &method, const QString &params);
 
 	void redirect(const QString &url, const QString &referer);
 	void processDiFi(const QByteArray &content);
