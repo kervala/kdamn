@@ -29,12 +29,21 @@
 #define LOGIN_URL HTTPS_URL"/users/login"
 #define LOGOUT_URL HTTPS_URL"/settings/force-logout"
 #define ROCKEDOUT_URL HTTPS_URL"/users/rockedout"
+#define NOTES_URL HTTPS_URL"/messages/notes/#1_0"
+#define SENDNOTE_URL HTTP_URL"/messages/notes/send"
 #define OAUTH2_URL HTTPS_URL"/api/v1/oauth2"
 #define OAUTH2_TOKEN_URL HTTPS_URL"/oauth2/token"
 #define CHAT_URL "http://chat.deviantart.com/chat/Botdom"
 #define DIFI_URL HTTPS_URL"/global/difi.php"
 #define REDIRECT_APP "kdamn://oauth2/login"
 #define UPDATE_URL "http://kervala.net/utils/update.php"
+
+struct NoteForm
+{
+	QString recipientsHash;
+	QString subjectHash;
+	QStringList hashes;
+};
 
 struct StashFile
 {
@@ -63,10 +72,7 @@ public:
 		ActionLoginOAuth2,
 		ActionLoginWeb,
 		ActionLogout,
-		ActionCheckFolders,
 		ActionCheckNotes,
-		ActionDisplayFolder,
-		ActionDisplayNote,
 		ActionRequestAccessToken,
 		ActionRequestDAmnToken,
 		ActionRequestAuthorization,
@@ -87,13 +93,34 @@ public:
 	bool uploadToStash(const QString &filename, const QString &room);
 	bool requestImageInfo(const QString &url, const QString &room);
 	bool requestDAmnToken();
+	bool sendNote(const Note &note);
 
 	// DiFi
-	bool requestMessageFolders();
-	bool requestMessageViews();
-	bool requestDisplayFolder(const QString &folderId, int offset);
-	bool requestDisplayNote(const QString &folderId, int noteId);
-	
+
+	// MessageCenter
+	bool requestMessageCenterGetFolders();
+	bool requestMessageCenterGetViews();
+
+	// Notes
+	bool requestNotesCreateFolder(const QString &name, const QString &parentFolderId = QLatin1String("0"));
+	bool requestNotesDelete(const QStringList &notesIds);
+	bool requestNotesDeleteNote(const QString &noteId);
+	bool requestNotesDeleteFolder(const QString &folderId);
+	bool requestNotesDisplay(const QString &noteId);
+	bool requestNotesDisplayDraft(const QString &noteId);
+	bool requestNotesDisplayFolder(const QString &folderId, int offset);
+	bool requestNotesDisplayNote(const QString &folderId, const QString &noteId);
+	bool requestNotesMarkAsRead(const QStringList &notesIds);
+	bool requestNotesMarkAsUnread(const QStringList &notesIds);
+	bool requestNotesMove(const QStringList &notesIds, const QString &folderId);
+	bool requestNotesMoveNote(const QString &folder, const QString &noteId);
+	bool requestNotesPlaceboCall();
+	bool requestNotesPreview(const QString &text, bool includeSignature);
+	bool requestNotesRenameFolder(const QString &folderId, const QString &folderName);
+	bool requestNotesSaveDraft(const QString &dest, const QString &text);
+	bool requestNotesStar(const QStringList &notesIds);
+	bool requestNotesUnstar(const QStringList &notesIds);
+
 	static QString getSupportedImageFormatsFilter();
 	static QString getUserAgent();
 
@@ -114,10 +141,16 @@ signals:
 	void damnTokenReceived(const QString &login, const QString &damntoken);
 	void imageDownloaded(const QString &md5);
 	void imageUploaded(const QString &room, const QString &stashId);
-	void folderReceived(const QString &id);
+	void notesUpdated(const QString &folderId, int offset, int count);
 	void notesReceived(int count);
 	void newVersionDetected(const QString &url, const QString &date, uint size, const QString &version);
 	void uploadProgress(qint64 readBytes, qint64 totalBytes);
+	void noteSent(const QString &id);
+
+	// DiFi signals
+	void notesFolderCreated(const QString &name, const QString &id);
+	void notesDeleted();
+	void notesFolderDeleted(const QString &id);
 
 public slots:
 	void onReply(QNetworkReply *reply);
@@ -148,9 +181,31 @@ private:
 	void processJson(const QByteArray &content, const QString &path);
 	void processNewVersions(const QByteArray &content);
 	void processNextAction();
-	void parseSessionVariables(const QByteArray &content);
+	bool parseSessionVariables(const QByteArray &content);
+	bool parseNotesFolders(const QByteArray &content);
+	bool parseNotesForm(const QByteArray &content);
 	bool parseFolder(const QString &html, Folder &folder);
 	bool parseNote(const QString &html, Note &note);
+
+	// DiFi parsing methods
+	bool parseMessageCenterGetFolders(const QVariantMap &response);
+	bool parseMessageCenterGetViews(const QVariantMap &response);
+
+	bool parseNotesCreateFolder(const QVariantMap &response);
+	bool parseNotesDelete(const QVariantMap &response);
+	bool parseNotesDeleteFolder(const QVariantMap &response);
+	bool parseNotesDisplayFolder(const QVariantMap &response);
+	bool parseNotesDisplayNote(const QVariantMap &response);
+	bool parseNotesMarkAsRead(const QVariantMap &response);
+	bool parseNotesMarkAsUnread(const QVariantMap &response);
+	bool parseNotesMove(const QVariantMap &response);
+	bool parseNotesPlaceboCall(const QVariantMap &response);
+	bool parseNotesPreview(const QVariantMap &response);
+	bool parseNotesRenameFolder(const QVariantMap &response);
+	bool parseNotesSaveDraft(const QVariantMap &response);
+	bool parseNotesStar(const QVariantMap &response);
+	bool parseNotesUnstar(const QVariantMap &response);
+
 
 	QNetworkAccessManager *m_manager;
 	QString m_login;
@@ -173,8 +228,11 @@ private:
 	QString m_validateKey;
 
 	QList<eOAuth2Action> m_actions;
+	QList<Note> m_pendingNotes;
 
 	QMap<QString, Folder> m_folders;
+
+	NoteForm m_noteForm;
 
 	static QString s_userAgent;
 	static OAuth2 *s_instance;

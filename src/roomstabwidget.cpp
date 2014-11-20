@@ -24,7 +24,7 @@
 #include "oauth2.h"
 #include "roomframe.h"
 #include "serverframe.h"
-#include "folderframe.h"
+#include "notesframe.h"
 #include "configfile.h"
 #include "systrayicon.h"
 
@@ -66,12 +66,13 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 	connect(damn, SIGNAL(authenticationFailedWrongToken()), this, SLOT(onRequestDAmnToken()));
 
 	OAuth2 *oauth = new OAuth2(this);
+	connect(oauth, SIGNAL(loggedIn()), this, SLOT(onLoggedIn()));
 	connect(oauth, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
 	connect(oauth, SIGNAL(damnTokenReceived(QString, QString)), this, SLOT(onReceiveDAmnToken(QString, QString)));
 	connect(oauth, SIGNAL(accessTokenReceived(QString, QString)), this, SLOT(onReceiveAccessToken(QString, QString)));
 	connect(oauth, SIGNAL(imageUploaded(QString, QString)), this, SLOT(onUploadImage(QString, QString)));
 	connect(oauth, SIGNAL(notesReceived(int)), this, SLOT(onReceiveNotes(int)));
-	connect(oauth, SIGNAL(folderReceived(QString)), this, SLOT(onReceiveFolder(QString)));
+	connect(oauth, SIGNAL(notesUpdated(QString, int, int)), this, SLOT(onUpdateNotes(QString, int, int)));
 
 	m_messagesTimer = new QTimer(this);
 	m_messagesTimer->setSingleShot(true);
@@ -105,20 +106,20 @@ ServerFrame* RoomsTabWidget::getServerFrame()
 	return NULL;
 }
 
-bool RoomsTabWidget::createFolderFrame()
+bool RoomsTabWidget::createNotesFrame()
 {
-	int id = addTab(new FolderFrame(this), tr("Folder"));
+	int id = addTab(new NotesFrame(this), tr("Notes"));
 
 	setCurrentIndex(id);
 
 	return true;
 }
 
-FolderFrame* RoomsTabWidget::getFolderFrame()
+NotesFrame* RoomsTabWidget::getNotesFrame()
 {
 	for(int i = 0; i < count(); ++i)
 	{
-		FolderFrame *frame = qobject_cast<FolderFrame*>(widget(i));
+		NotesFrame *frame = qobject_cast<NotesFrame*>(widget(i));
 
 		if (frame) return frame;
 	}
@@ -191,7 +192,8 @@ void RoomsTabWidget::onConnectServer()
 		++it;
 	}
 
-	m_messagesTimer->start(10000);
+	// we need to log to DA site for OAuth2 and DiFi requests
+	OAuth2::getInstance()->login();
 }
 
 void RoomsTabWidget::onRequestDAmnToken()
@@ -212,6 +214,11 @@ void RoomsTabWidget::onRequestDAmnToken()
 	{
 		login();
 	}
+}
+
+void RoomsTabWidget::onLoggedIn()
+{
+	m_messagesTimer->start(10000);
 }
 
 void RoomsTabWidget::onReceiveDAmnToken(const QString &login, const QString &authtoken)
@@ -263,15 +270,30 @@ void RoomsTabWidget::onReceiveNotes(int count)
 	m_messagesTimer->start(10000);
 }
 
-void RoomsTabWidget::onReceiveFolder(const QString &id)
+void RoomsTabWidget::onUpdateNotes(const QString &folderId, int offset, int count)
 {
-	createFolderFrame();
+	NotesFrame *frame = getNotesFrame();
 
-	FolderFrame *frame = getFolderFrame();
+	if (!frame)
+	{
+		// frame not yet created, create it
+		createNotesFrame();
+
+		frame = getNotesFrame();
+	}
 
 	if (frame)
 	{
-		frame->setNotes(OAuth2::getInstance()->getFolder(id).notes);
+		const Notes &notes = OAuth2::getInstance()->getFolder(folderId).notes;
+
+		if (frame->getCurrentFolderId() != folderId)
+		{
+			frame->setNotes(notes);
+		}
+		else
+		{
+			frame->updateNotes(notes, offset, count);
+		}
 	}
 }
 

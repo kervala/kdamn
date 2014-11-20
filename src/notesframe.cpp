@@ -18,15 +18,15 @@
  */
 
 #include "common.h"
-#include "folderframe.h"
-#include "moc_folderframe.cpp"
+#include "notesframe.h"
+#include "moc_notesframe.cpp"
 #include "notesmodel.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
 #endif
 
-FolderFrame::FolderFrame(QWidget *parent):TabFrame(parent), m_model(NULL)
+NotesFrame::NotesFrame(QWidget *parent):TabFrame(parent), m_model(NULL)
 {
 	setupUi(this);
 
@@ -41,27 +41,39 @@ FolderFrame::FolderFrame(QWidget *parent):TabFrame(parent), m_model(NULL)
 //	connect(usersView, SIGNAL(doubleClicked(QModelIndex)), SLOT(onUserDoubleClicked(QModelIndex)));
 }
 
-FolderFrame::~FolderFrame()
+NotesFrame::~NotesFrame()
 {
 }
 
-void FolderFrame::setSystem(const QString &text)
+void NotesFrame::setSystem(const QString &text)
 {
 }
 
-void FolderFrame::setNotes(const Notes &notes)
+QString NotesFrame::getCurrentFolderId() const
+{
+	return m_folderId;
+}
+
+void NotesFrame::setNotes(const Notes &notes)
 {
 	m_model->setNotes(notes);
 
 	notesView->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
 }
 
-void FolderFrame::onSearch()
+void NotesFrame::updateNotes(const Notes &notes, int offset, int count)
+{
+	m_model->updateNotes(notes, offset, count);
+
+	notesView->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
+}
+
+void NotesFrame::onSearch()
 {
 //	QStringList lines = searchEdit->getLines();
 }
 
-void FolderFrame::updateSplitter()
+void NotesFrame::updateSplitter()
 {
 /*
 	QStringList users = m_usersModel->stringList();

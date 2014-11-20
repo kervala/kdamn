@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>FolderFrame</class>
- <widget class="QFrame" name="FolderFrame">
+ <class>NotesFrame</class>
+ <widget class="QFrame" name="NotesFrame">
   <property name="geometry">
    <rect>
     <x>0</x>

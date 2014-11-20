@@ -32,6 +32,7 @@ struct Note
 	QString preview; // without cariage returns
 	QString date; // Oct 30, 2014, 1:50:33 PM
 	QString sender;
+	QStringList recipients;
 	QString text;
 	QString html;
 
@@ -61,6 +62,7 @@ public:
 	virtual ~NotesModel();
 
 	void setNotes(const Notes &notes);
+	void updateNotes(const Notes &notes, int offset, int count);
 
 	QModelIndex index(int row, int column, const QModelIndex &parent) const;
 	QModelIndex parent(const QModelIndex &index) const;

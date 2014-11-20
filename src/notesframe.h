@@ -17,25 +17,28 @@
  *
  */
 
-#ifndef FOLDERFRAME_H
-#define FOLDERFRAME_H
+#ifndef NOTESFRAME_H
+#define NOTESFRAME_H
 
-#include "ui_folderframe.h"
+#include "ui_notesframe.h"
 
 #include "tabframe.h"
 #include "notesmodel.h"
 
-class FolderFrame : public TabFrame, public Ui::FolderFrame
+class NotesFrame : public TabFrame, public Ui::NotesFrame
 {
 	Q_OBJECT
 
 public:
-	FolderFrame(QWidget *parent);
-	virtual ~FolderFrame();
+	NotesFrame(QWidget *parent);
+	virtual ~NotesFrame();
 
 	virtual void setSystem(const QString &text);
 
+	QString getCurrentFolderId() const;
+
 	void setNotes(const Notes &notes);
+	void updateNotes(const Notes &notes, int offset, int count);
 
 public slots:
 	void onSearch();
@@ -44,6 +47,8 @@ protected:
 	void updateSplitter();
 
 	NotesModel *m_model;
+
+	QString m_folderId;
 };
 
 #endif

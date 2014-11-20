@@ -311,12 +311,16 @@ void MainWindow::onUploadScreenshot()
 
 void MainWindow::onDisplayNotes()
 {
-	OAuth2::getInstance()->requestDisplayFolder("1", 0);
+	OAuth2::getInstance()->requestNotesDisplayFolder("1", 0);
 }
 
 void MainWindow::onDisplayNote()
 {
 	OAuth2::getInstance()->requestDisplayNote("1", 1138214864);
+//	OAuth2::getInstance()->requestNotesCreateFolder("test_folder");
+//	OAuth2::getInstance()->requestNotesDelete();
+//	OAuth2::getInstance()->requestNotesDelete(QStringList() << "1152523405");
+//	OAuth2::getInstance()->requestMessageCenterGetFolders();
 }
 
 void MainWindow::trayActivated(QSystemTrayIcon::ActivationReason reseaon)

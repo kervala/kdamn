@@ -298,6 +298,50 @@ bool OAuth2::requestDAmnToken()
 	return get(QString("%1/user/damntoken?access_token=%2").arg(OAUTH2_URL).arg(m_accessToken));
 }
 
+bool OAuth2::sendNote(const Note &note)
+{
+	if (m_noteForm.hashes.isEmpty())
+	{
+		m_pendingNotes << note;
+
+		return get(NOTES_URL);
+	}
+
+#ifdef USE_QT5
+	QUrlQuery params;
+#else
+	QUrl params;
+#endif
+
+	params.addQueryItem("validate_token", m_validateToken);
+	params.addQueryItem("validate_key", m_validateKey);
+	params.addQueryItem("recipients", "");
+	params.addQueryItem("ref", "2"); // 1_0
+	params.addQueryItem("parentid", ""); // 0
+
+	// only one hash must be filled
+	foreach(const QString &hash, m_noteForm.hashes)
+	{
+		params.addQueryItem(hash, hash == m_noteForm.recipientsHash ? note.recipients.join(", "):"");
+	}
+
+	params.addQueryItem("friends", "");
+	params.addQueryItem(m_noteForm.subjectHash, note.subject);
+
+	params.addQueryItem("body", note.text);
+//	params.addQueryItem("signature", note.hasSignature);
+
+	QByteArray data;
+
+#ifdef USE_QT5
+	data = params.query().toUtf8();
+#else
+	data = params.encodedQuery();
+#endif
+
+	return post(QString("%1?%2").arg(SENDNOTE_URL).arg(m_validateKey), data, NOTES_URL);
+}
+
 bool OAuth2::requestStash(const QString &filename, const QString &room)
 {
 	if (m_accessToken.isEmpty()) return false;
@@ -627,7 +671,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 			// redirection to user home page
 			m_logged = true;
 
-			requestMessageViews();
+			requestMessageCenterGetViews();
 
 			emit loggedIn();
 		}
@@ -679,6 +723,13 @@ void OAuth2::onReply(QNetworkReply *reply)
 			emit errorReceived(tr("Unable to find validate_key"));
 		}
 	}
+	else if (url == NOTES_URL)
+	{
+		if (parseSessionVariables(content) && parseNotesFolders(content) && parseNotesForm(content) && !m_pendingNotes.isEmpty())
+		{
+			sendNote(m_pendingNotes.first());
+		}
+	}
 	else if (url == LOGOUT_URL)
 	{
 		m_logged = false;
@@ -688,6 +739,28 @@ void OAuth2::onReply(QNetworkReply *reply)
 		m_validateKey.clear();
 
 		emit loggedOut();
+	}
+	else if (url.startsWith(SENDNOTE_URL))
+	{
+		int pos = redirection.indexOf("?success=");
+
+		if (pos > -1)
+		{
+			// mail successfully sent
+
+			// remove it from pending queue
+			m_pendingNotes.pop_front();
+
+			// reset note form
+			m_noteForm = NoteForm();
+
+			QString id = redirection.mid(pos + 9);
+
+			emit noteSent(id);
+		}
+		else
+		{
+		}
 	}
 	else if (m_logged && redirection.isEmpty() && !content.isEmpty())
 	{
@@ -981,20 +1054,8 @@ void OAuth2::processNextAction()
 
 		switch(action)
 		{
-			case ActionCheckFolders:
-			requestMessageFolders();
-			break;
-
 			case ActionCheckNotes:
-			requestMessageViews();
-			break;
-
-			case ActionDisplayFolder:
-			requestDisplayFolder("1", 0);
-			break;
-
-			case ActionDisplayNote:
-			requestDisplayNote("1", m_noteId);
+			requestMessageCenterGetViews();
 			break;
 
 			case ActionRequestAuthorization:
@@ -1027,7 +1088,7 @@ void OAuth2::processNextAction()
 	}
 }
 
-void OAuth2::parseSessionVariables(const QByteArray &content)
+bool OAuth2::parseSessionVariables(const QByteArray &content)
 {
 	QRegExp reg;
 
@@ -1052,8 +1113,75 @@ void OAuth2::parseSessionVariables(const QByteArray &content)
 		m_validateKey = reg.cap(1);
 	}
 
-	if (m_sessionId.isEmpty())
+	if (!m_validateKey.isEmpty() && !m_validateToken.isEmpty()) return true;
+
+	emit errorReceived(tr("Unable to find validate token or key"));
+
+	return false;
+}
+
+bool OAuth2::parseNotesFolders(const QByteArray &content)
+{
+	QRegExp reg;
+
+	reg.setPattern("data-folderid=\"([a-z0-9]+)\" href=\"#([a-z0-9_]+)\" rel=\"([0-9]+)\" title=\"([^\"]+)\"");
+
+	int pos = 0;
+
+	while((pos = reg.indexIn(content, pos)) > -1)
 	{
-		emit errorReceived(tr("Unable to find validate token or key"));
+		QString folderId = reg.cap(1);
+		QString folderName = reg.cap(4);
+
+		qDebug() << "Found" << folderId << folderName;
+
+		pos += reg.matchedLength();
 	}
+
+	return true;
+}
+
+bool OAuth2::parseNotesForm(const QByteArray &content)
+{
+	// clear previous hashes
+	m_noteForm.hashes.clear();
+	m_noteForm.recipientsHash.clear();
+	m_noteForm.subjectHash.clear();
+
+	QRegExp reg;
+
+	// parse all hashes from CSS (the one not hidden is recipients)
+	reg.setPattern("#l_([0-9a-f]{20})\\{(display:none)?\\}");
+
+	int pos = 0;
+	int lastPos = pos;
+
+	while((pos = reg.indexIn(content, pos)) > -1)
+	{
+		QString hash = reg.cap(1);
+		bool hidden = !reg.cap(2).isEmpty();
+
+		m_noteForm.hashes << hash;
+
+		if (!hidden)
+		{
+			m_noteForm.recipientsHash = hash;
+		}
+
+		pos += reg.matchedLength();
+		lastPos = pos;
+	}
+
+	pos = lastPos;
+
+	// parse subject hash
+	reg.setPattern("for=\"([a-f0-9]+)\" >Subject</label>");
+
+	pos = reg.indexIn(content, pos);
+
+	if (pos < 0) return false;
+
+	m_noteForm.subjectHash = reg.cap(1);
+
+	return true;
 }

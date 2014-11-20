@@ -24,7 +24,7 @@
 
 class RoomFrame;
 class ServerFrame;
-class FolderFrame;
+class NotesFrame;
 
 class RoomsTabWidget : public QTabWidget
 {
@@ -37,8 +37,8 @@ public:
 	bool createServerFrame();
 	ServerFrame* getServerFrame();
 
-	bool createFolderFrame();
-	FolderFrame* getFolderFrame();
+	bool createNotesFrame();
+	NotesFrame* getNotesFrame();
 
 	bool createRoomFrame(const QString &room);
 	bool removeRoomFrame(const QString &room);
@@ -53,11 +53,6 @@ public slots:
 	// slots activated from DAmn signals
 	void onRequestDAmnToken();
 	void onText(const QString &room, const QString &user, EMessageType type, const QString &text, bool html);
-	void onReceiveDAmnToken(const QString &login, const QString &authtoken);
-	void onReceiveAccessToken(const QString &access, const QString &refresh);
-	void onUploadImage(const QString &room, const QString &url);
-	void onReceiveNotes(int count);
-	void onReceiveFolder(const QString &id);
 	void onConnectServer();
 	void onUsers(const QString &room, const QStringList &users);
 	void onJoinRoom(const QString &room);
@@ -67,6 +62,14 @@ public slots:
 	void onUserKick(const QString &room, const QString &user, const QString &by);
 	void onUserPriv(const QString &room, const QString &user, const QString &by, const QString &pc);
 	void onError(const QString &error);
+
+	// slots activated from OAuth2 signals
+	void onLoggedIn();
+	void onReceiveDAmnToken(const QString &login, const QString &authtoken);
+	void onReceiveAccessToken(const QString &access, const QString &refresh);
+	void onUploadImage(const QString &room, const QString &url);
+	void onReceiveNotes(int count);
+	void onUpdateNotes(const QString &folderId, int offset, int count);
 
 	// slots activated from widgets
 	void onRoomFocus(int index);
