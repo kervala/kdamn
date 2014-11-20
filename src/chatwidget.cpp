@@ -35,7 +35,7 @@ QString ChatWidget::s_css = \
 	".system { color: #666; }\n" \
 	".hidden { display: none; }\n";
 
-ChatWidget::ChatWidget(QWidget *parent):QTextBrowser(parent), m_focus(false), m_lastReload(QDateTime::currentDateTime())
+ChatWidget::ChatWidget(QWidget *parent):QTextBrowser(parent), m_focus(false), m_lastReload(QDateTime::currentDateTime()), m_textReceived(false), m_htmlReceived(false)
 {
 	connect(this, SIGNAL(anchorClicked(QUrl)), this, SLOT(onUrl(QUrl)));
 
@@ -67,12 +67,16 @@ void ChatWidget::setText(const QString &user, const QString &text, bool html)
 {
 	if (html)
 	{
+		m_htmlReceived = true;
+
 		appendHtml(QString("<div class=\"normal\">%1<span class=\"username\">&lt;%2&gt;</span> %3</div>").arg(getTimestamp(true)).arg(user).arg(text));
 
 		startAnimations(text);
 	}
 	else
 	{
+		m_textReceived = true;
+
 		appendText(QString("%1<%2> %3").arg(getTimestamp(false)).arg(user).arg(text));
 	}
 }
@@ -157,14 +161,20 @@ void ChatWidget::appendHtml(const QString &html)
 
 	append(html);
 
+	if (!m_htmlReceived) return;
+	
+	if (!m_htmlFile.isOpen()) openLogs();
+
 	if (m_htmlFile.isOpen()) m_htmlFile.write(html.toUtf8() + "\n");
 }
 
 void ChatWidget::appendText(const QString &text)
 {
-	if (!m_textFile.isOpen()) return;
+	if (!m_textReceived) return;
 
-	m_textFile.write(decodeEntities(text).toUtf8() + "\n");
+	if (!m_textFile.isOpen()) openLogs();
+
+	if (m_textFile.isOpen()) m_textFile.write(decodeEntities(text).toUtf8() + "\n");
 }
 
 QVariant ChatWidget::loadResource(int type, const QUrl &name)
@@ -259,8 +269,6 @@ void ChatWidget::setFocus(bool focus)
 void ChatWidget::setRoom(const QString &room)
 {
 	m_room = room;
-
-	openLogs();
 }
 
 void ChatWidget::openLogs()
@@ -308,7 +316,7 @@ void ChatWidget::closeLogs()
 		m_htmlFile.close();
 	}
 
-	m_textFile.close();
+	if (m_textFile.isOpen()) m_textFile.close();
 }
 
 void ChatWidget::animate(int frame)

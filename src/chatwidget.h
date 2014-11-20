@@ -70,6 +70,8 @@ protected:
 	bool m_focus;
 	QString m_room;
 	QDateTime m_lastReload;
+	bool m_textReceived;
+	bool m_htmlReceived;
 
 	QFile m_htmlFile;
 	QFile m_textFile;
