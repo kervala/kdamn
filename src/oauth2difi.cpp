@@ -200,6 +200,8 @@ void OAuth2::processDiFi(const QByteArray &content)
 
 	if (!content.isEmpty())
 	{
+		QVariantMap map;
+
 #ifdef USE_QT5
 		QJsonParseError jsonError;
 		QJsonDocument doc = QJsonDocument::fromJson(content, &jsonError);
@@ -210,10 +212,10 @@ void OAuth2::processDiFi(const QByteArray &content)
 			return;
 		}
 
-		QVariantMap map = doc.toVariant().toMap();
+		map = doc.toVariant().toMap();
 #else
 		QScriptEngine engine;
-		QScriptValue object = engine.evaluate("(" + QString(content) + ")");
+		map = engine.evaluate("(" + QString(content) + ")").toVariant().toMap();
 #endif
 
 		QVariantMap difi = map["DiFi"].toMap();
