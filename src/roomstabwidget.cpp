@@ -25,6 +25,7 @@
 #include "roomframe.h"
 #include "serverframe.h"
 #include "notesframe.h"
+#include "noteframe.h"
 #include "configfile.h"
 #include "systrayicon.h"
 
@@ -73,6 +74,8 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 	connect(oauth, SIGNAL(imageUploaded(QString, QString)), this, SLOT(onUploadImage(QString, QString)));
 	connect(oauth, SIGNAL(notesReceived(int)), this, SLOT(onReceiveNotes(int)));
 	connect(oauth, SIGNAL(notesUpdated(QString, int, int)), this, SLOT(onUpdateNotes(QString, int, int)));
+	connect(oauth, SIGNAL(notePrepared()), this, SLOT(onPrepareNote()));
+	connect(oauth, SIGNAL(noteSent(QString)), this, SLOT(onSendNote(QString)));
 
 	m_messagesTimer = new QTimer(this);
 	m_messagesTimer->setSingleShot(true);
@@ -115,11 +118,70 @@ bool RoomsTabWidget::createNotesFrame()
 	return true;
 }
 
+bool RoomsTabWidget::removeNotesFrame()
+{
+	for(int i = 0; i < count(); ++i)
+	{
+		NotesFrame *frame = qobject_cast<NotesFrame*>(widget(i));
+
+		if (frame)
+		{
+			removeTab(i);
+
+			delete frame;
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
 NotesFrame* RoomsTabWidget::getNotesFrame()
 {
 	for(int i = 0; i < count(); ++i)
 	{
 		NotesFrame *frame = qobject_cast<NotesFrame*>(widget(i));
+
+		if (frame) return frame;
+	}
+
+	return NULL;
+}
+
+bool RoomsTabWidget::createNoteFrame()
+{
+	int id = addTab(new NoteFrame(this), tr("Note"));
+
+	setCurrentIndex(id);
+
+	return true;
+}
+
+bool RoomsTabWidget::removeNoteFrame()
+{
+	for(int i = 0; i < count(); ++i)
+	{
+		NoteFrame *frame = qobject_cast<NoteFrame*>(widget(i));
+
+		if (frame)
+		{
+			removeTab(i);
+
+			delete frame;
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+NoteFrame* RoomsTabWidget::getNoteFrame()
+{
+	for(int i = 0; i < count(); ++i)
+	{
+		NoteFrame *frame = qobject_cast<NoteFrame*>(widget(i));
 
 		if (frame) return frame;
 	}
@@ -150,6 +212,8 @@ bool RoomsTabWidget::removeRoomFrame(const QString &room)
 			removeTab(i);
 
 			delete frame;
+
+			return true;
 		}
 	}
 
@@ -295,6 +359,22 @@ void RoomsTabWidget::onUpdateNotes(const QString &folderId, int offset, int coun
 			frame->updateNotes(notes, offset, count);
 		}
 	}
+}
+
+void RoomsTabWidget::onPrepareNote()
+{
+	NoteFrame *frame = getNoteFrame();
+
+	if (!frame)
+	{
+		// frame not yet created, create it
+		createNoteFrame();
+	}
+}
+
+void RoomsTabWidget::onSendNote(const QString &noteId)
+{
+	removeNoteFrame();
 }
 
 void RoomsTabWidget::checkMessages()

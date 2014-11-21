@@ -52,6 +52,7 @@ public slots:
 	// notes menu
 	void onDisplayNotes();
 	void onDisplayNote();
+	void onSendNote();
 
 	// help menu
 	void onLogs();

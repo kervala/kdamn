@@ -93,6 +93,8 @@ public:
 	bool uploadToStash(const QString &filename, const QString &room);
 	bool requestImageInfo(const QString &url, const QString &room);
 	bool requestDAmnToken();
+
+	bool prepareNote();
 	bool sendNote(const Note &note);
 
 	// DiFi
@@ -146,6 +148,7 @@ signals:
 	void newVersionDetected(const QString &url, const QString &date, uint size, const QString &version);
 	void uploadProgress(qint64 readBytes, qint64 totalBytes);
 	void noteSent(const QString &id);
+	void notePrepared();
 
 	// DiFi signals
 	void notesFolderCreated(const QString &name, const QString &id);
@@ -179,7 +182,11 @@ private:
 
 	void addUserAgent(QNetworkRequest &req) const;
 
-	bool requestNotes(const QString &method, const QString &params);
+	bool requestGet(const QString &cls, const QString &method, const QString &args);
+	bool requestPost(const QString &cls, const QString &method, const QString &args);
+
+	bool requestNotes(const QString &method, const QString &args);
+	bool requestMessageCenter(const QString &method, const QString &args);
 
 	void redirect(const QString &url, const QString &referer);
 	void processDiFi(const QByteArray &content);
@@ -233,9 +240,8 @@ private:
 	QString m_validateKey;
 
 	QList<eOAuth2Action> m_actions;
-	QList<Note> m_pendingNotes;
 
-	QMap<QString, Folder> m_folders;
+	Folders m_folders;
 
 	NoteForm m_noteForm;
 

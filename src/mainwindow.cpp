@@ -72,6 +72,7 @@ MainWindow::MainWindow():QMainWindow()
 	// Notes menu
 	connect(actionDisplayNotes, SIGNAL(triggered()), this, SLOT(onDisplayNotes()));
 	connect(actionDisplayNote, SIGNAL(triggered()), this, SLOT(onDisplayNote()));
+	connect(actionSendNote, SIGNAL(triggered()), this, SLOT(onSendNote()));
 
 	// Help menu
 	connect(actionLogs, SIGNAL(triggered()), this, SLOT(onLogs()));
@@ -317,10 +318,11 @@ void MainWindow::onDisplayNotes()
 void MainWindow::onDisplayNote()
 {
 	OAuth2::getInstance()->requestDisplayNote("1", 1138214864);
-//	OAuth2::getInstance()->requestNotesCreateFolder("test_folder");
-//	OAuth2::getInstance()->requestNotesDelete();
-//	OAuth2::getInstance()->requestNotesDelete(QStringList() << "1152523405");
-//	OAuth2::getInstance()->requestMessageCenterGetFolders();
+}
+
+void MainWindow::onSendNote()
+{
+	OAuth2::getInstance()->prepareNote();
 }
 
 void MainWindow::trayActivated(QSystemTrayIcon::ActivationReason reseaon)

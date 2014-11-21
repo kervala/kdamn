@@ -46,27 +46,16 @@
 
 */
 
-// MessageCenter
-
-// Working
-bool OAuth2::requestMessageCenterGetFolders()
+// helper to query GET DiFi methods
+bool OAuth2::requestGet(const QString &cls, const QString &method, const QString &args)
 {
-	return get(QString("%1?c[]=MessageCenter;get_folders;&t=json").arg(DIFI_URL));
+	if (!m_manager || !m_logged) return false;
+
+	return get(QString("%1?c[]=%2;%3;%4&t=json").arg(DIFI_URL).arg(cls).arg(method).arg(args), HTTPS_URL);
 }
 
-bool OAuth2::requestMessageCenterGetViews()
-{
-	if (!m_inboxId)
-	{
-		m_actions.push_front(ActionCheckNotes);
-
-		return requestMessageCenterGetFolders();
-	}
-
-	return get(QString("%1?c[]=MessageCenter;get_views;%2,oq:notes_unread:0:0:f&t=json").arg(DIFI_URL).arg(m_inboxId));
-}
-
-bool OAuth2::requestNotes(const QString &method, const QString &args)
+// helper to query POST DiFi methods
+bool OAuth2::requestPost(const QString &cls, const QString &method, const QString &args)
 {
 	if (!m_manager || !m_logged) return false;
 
@@ -76,7 +65,7 @@ bool OAuth2::requestNotes(const QString &method, const QString &args)
 	QUrl params;
 #endif
 
-	params.addQueryItem("c[]", QString("\"Notes\",\"%1\",[%2]").arg(method).arg(args));
+	params.addQueryItem("c[]", QString("\"%1\",\"%2\",[%3]").arg(cls).arg(method).arg(args));
 	params.addQueryItem("t", "json");
 	params.addQueryItem("ui", qobject_cast<Cookies*>(m_manager->cookieJar())->get("userinfo"));
 
@@ -89,6 +78,38 @@ bool OAuth2::requestNotes(const QString &method, const QString &args)
 #endif
 
 	return post(DIFI_URL, data, HTTPS_URL);
+}
+
+// MessageCenter
+
+// helper to query MessageCenter DiFi methods
+bool OAuth2::requestMessageCenter(const QString &method, const QString &args)
+{
+	return requestGet("MessageCenter", method, args);
+}
+
+// Working
+bool OAuth2::requestMessageCenterGetFolders()
+{
+	return requestMessageCenter("get_folders", "");
+}
+
+bool OAuth2::requestMessageCenterGetViews()
+{
+	if (!m_inboxId)
+	{
+		m_actions.push_front(ActionCheckNotes);
+
+		return requestMessageCenterGetFolders();
+	}
+
+	return requestMessageCenter("get_views", QString("%1,oq:notes_unread:0:0:f").arg(m_inboxId));
+}
+
+// helper to query Notes DiFi methods
+bool OAuth2::requestNotes(const QString &method, const QString &args)
+{
+	return requestPost("Notes", method, args);
 }
 
 // Working

@@ -86,6 +86,7 @@
     </property>
     <addaction name="actionDisplayNotes"/>
     <addaction name="actionDisplayNote"/>
+    <addaction name="actionSendNote"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuRoom"/>
@@ -187,6 +188,11 @@
   <action name="actionDisplayNote">
    <property name="text">
     <string>Display note</string>
+   </property>
+  </action>
+  <action name="actionSendNote">
+   <property name="text">
+    <string>&amp;Send note...</string>
    </property>
   </action>
  </widget>

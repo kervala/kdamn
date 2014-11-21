@@ -298,14 +298,14 @@ bool OAuth2::requestDAmnToken()
 	return get(QString("%1/user/damntoken?access_token=%2").arg(OAUTH2_URL).arg(m_accessToken));
 }
 
+bool OAuth2::prepareNote()
+{
+	return get(NOTES_URL);
+}
+
 bool OAuth2::sendNote(const Note &note)
 {
-	if (m_noteForm.hashes.isEmpty())
-	{
-		m_pendingNotes << note;
-
-		return get(NOTES_URL);
-	}
+	if (m_noteForm.hashes.isEmpty()) return false;
 
 #ifdef USE_QT5
 	QUrlQuery params;
@@ -316,8 +316,8 @@ bool OAuth2::sendNote(const Note &note)
 	params.addQueryItem("validate_token", m_validateToken);
 	params.addQueryItem("validate_key", m_validateKey);
 	params.addQueryItem("recipients", "");
-	params.addQueryItem("ref", "2"); // 1_0
-	params.addQueryItem("parentid", ""); // 0
+	params.addQueryItem("ref", "new-note");
+	params.addQueryItem("parentid", "");
 
 	// only one hash must be filled
 	foreach(const QString &hash, m_noteForm.hashes)
@@ -329,7 +329,8 @@ bool OAuth2::sendNote(const Note &note)
 	params.addQueryItem(m_noteForm.subjectHash, note.subject);
 
 	params.addQueryItem("body", note.text);
-//	params.addQueryItem("signature", note.hasSignature);
+
+	if (note.hasSignature) params.addQueryItem("signature", "on");
 
 	QByteArray data;
 
@@ -725,10 +726,12 @@ void OAuth2::onReply(QNetworkReply *reply)
 	}
 	else if (url == NOTES_URL)
 	{
-		if (parseSessionVariables(content) && parseNotesFolders(content) && parseNotesForm(content) && !m_pendingNotes.isEmpty())
-		{
-			sendNote(m_pendingNotes.first());
-		}
+		// prepare note
+		parseSessionVariables(content);
+		parseNotesFolders(content);
+		parseNotesForm(content);
+
+		emit notePrepared();
 	}
 	else if (url == LOGOUT_URL)
 	{
@@ -747,9 +750,6 @@ void OAuth2::onReply(QNetworkReply *reply)
 		if (pos > -1)
 		{
 			// mail successfully sent
-
-			// remove it from pending queue
-			m_pendingNotes.pop_front();
 
 			// reset note form
 			m_noteForm = NoteForm();

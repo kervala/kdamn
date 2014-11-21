@@ -25,6 +25,7 @@
 class RoomFrame;
 class ServerFrame;
 class NotesFrame;
+class NoteFrame;
 
 class RoomsTabWidget : public QTabWidget
 {
@@ -38,7 +39,12 @@ public:
 	ServerFrame* getServerFrame();
 
 	bool createNotesFrame();
+	bool removeNotesFrame();
 	NotesFrame* getNotesFrame();
+
+	bool createNoteFrame();
+	bool removeNoteFrame();
+	NoteFrame* getNoteFrame();
 
 	bool createRoomFrame(const QString &room);
 	bool removeRoomFrame(const QString &room);
@@ -70,6 +76,8 @@ public slots:
 	void onUploadImage(const QString &room, const QString &url);
 	void onReceiveNotes(int count);
 	void onUpdateNotes(const QString &folderId, int offset, int count);
+	void onPrepareNote();
+	void onSendNote(const QString &noteId);
 
 	// slots activated from widgets
 	void onRoomFocus(int index);

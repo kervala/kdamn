@@ -35,6 +35,11 @@ struct Note
 	QStringList recipients;
 	QString text;
 	QString html;
+	bool hasSignature;
+
+	Note():hasSignature(false)
+	{
+	}
 
 	bool operator == (const Note &other) const
 	{
@@ -47,11 +52,14 @@ typedef QVector<Note> Notes;
 struct Folder
 {
 	QString id;
+	QString name;
 	Notes notes;
 	int count; // notes per request
 	int offset; // current offset
 	int maxOffset; // last offset
 };
+
+typedef QMap<QString, Folder> Folders;
 
 class NotesModel : public QAbstractItemModel
 {
