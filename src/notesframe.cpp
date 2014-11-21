@@ -34,7 +34,11 @@ NotesFrame::NotesFrame(QWidget *parent):TabFrame(parent), m_model(NULL)
 
 	notesView->setModel(m_model);
 
+#ifdef USE_QT5
 	notesView->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
+#else
+	// TODO: Qt 4 equivalent
+#endif
 	notesView->verticalHeader()->setDefaultSectionSize(notesView->fontMetrics().height() + 4);
 
 	connect(searchEdit, SIGNAL(returnPressed()), SLOT(onSearch()));
