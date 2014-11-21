@@ -47,7 +47,7 @@ void NotesModel::updateNotes(const Notes &notes, int offset, int count)
 {
 	m_notes = notes;
 
-	emit dataChanged(index(offset, 0, QModelIndex()), index(offset + count - 1, 3, QModelIndex()), QVector<int>() << Qt::DisplayRole);
+	emit dataChanged(index(offset, 0, QModelIndex()), index(offset + count - 1, 3, QModelIndex()));
 }
 
 QModelIndex NotesModel::index(int row, int column, const QModelIndex &parent) const
