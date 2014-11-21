@@ -177,7 +177,6 @@ private:
 
 	// site process
 	QString getAuthorizationUrl() const;
-	bool loginSite(const QString &validationToken, const QString &validationKey);
 	bool requestAuthToken();
 
 	void addUserAgent(QNetworkRequest &req) const;

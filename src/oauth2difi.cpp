@@ -211,6 +211,10 @@ void OAuth2::processDiFi(const QByteArray &content)
 		}
 
 		QVariantMap map = doc.toVariant().toMap();
+#else
+		QScriptEngine engine;
+		QScriptValue object = engine.evaluate("(" + QString(content) + ")");
+#endif
 
 		QVariantMap difi = map["DiFi"].toMap();
 
@@ -346,10 +350,6 @@ void OAuth2::processDiFi(const QByteArray &content)
 		{
 			qWarning() << "JSON data not processed (not valid DiFi)" << content;
 		}
-#else
-		QScriptEngine engine;
-		QScriptValue object = engine.evaluate("(" + QString(content) + ")");
-#endif
 	}
 
 	// TODO: equivalent for Qt 4
