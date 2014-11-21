@@ -309,7 +309,7 @@ void RoomsTabWidget::onUploadImage(const QString &room, const QString &stashId)
 	QString url = QString("http://sta.sh/0%1").arg(base36StashId);
 
 	DAmn::getInstance()->send(room, url);
-//	OAuth2::getInstance()->requestImageInfo(url, "");
+//	OAuth2::getInstance()->requestImageInfo(url, room);
 }
 
 void RoomsTabWidget::onReceiveNotes(int count)
@@ -379,7 +379,7 @@ void RoomsTabWidget::onSendNote(const QString &noteId)
 
 void RoomsTabWidget::checkMessages()
 {
-	OAuth2::getInstance()->requestMessageViews();
+	OAuth2::getInstance()->requestMessageCenterGetViews();
 }
 
 void RoomsTabWidget::onText(const QString &room, const QString &user, EMessageType type, const QString &text, bool html)
