@@ -151,12 +151,18 @@ signals:
 	void notePrepared();
 
 	// DiFi signals
+	void foldersReceived();
 	void notesFolderCreated(const QString &name, const QString &id);
 	void notesDeleted();
 	void notesFolderDeleted(const QString &id);
+	void notesFolderRenamed(const QString &folderId, const QString &folderName);
+	void notesRead(const QStringList &noteIds);
+	void notesUnread(const QStringList &noteIds);
 	void notesDraftSaved(const QString &draftId);
 	void notesStarred(const QStringList &noteIds);
 	void notesUnstarred(const QStringList &noteIds);
+	void notesPreviewReceived(const QString &html);
+	void notesMoved();
 
 public slots:
 	void onReply(QNetworkReply *reply);
@@ -198,6 +204,8 @@ private:
 	bool parseFolder(const QString &html, Folder &folder);
 	bool parseNote(const QString &html, Note &note);
 
+	bool parseNotesIdsAndCount(const QVariantMap &response, QStringList &notesIds, int &count);
+
 	// DiFi parsing methods
 	bool parseMessageCenterGetFolders(const QVariantMap &response);
 	bool parseMessageCenterGetViews(const QVariantMap &response);
@@ -210,7 +218,6 @@ private:
 	bool parseNotesMarkAsRead(const QVariantMap &response);
 	bool parseNotesMarkAsUnread(const QVariantMap &response);
 	bool parseNotesMove(const QVariantMap &response);
-	bool parseNotesPlaceboCall(const QVariantMap &response);
 	bool parseNotesPreview(const QVariantMap &response);
 	bool parseNotesRenameFolder(const QVariantMap &response);
 	bool parseNotesSaveDraft(const QVariantMap &response);

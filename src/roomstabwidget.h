@@ -71,6 +71,7 @@ public slots:
 
 	// slots activated from OAuth2 signals
 	void onLoggedIn();
+	void onReceiveFolders();
 	void onReceiveDAmnToken(const QString &login, const QString &authtoken);
 	void onReceiveAccessToken(const QString &access, const QString &refresh);
 	void onUploadImage(const QString &room, const QString &url);

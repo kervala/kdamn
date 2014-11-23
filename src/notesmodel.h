@@ -36,8 +36,10 @@ struct Note
 	QString text;
 	QString html;
 	bool hasSignature;
+	bool starred;
+	bool unread;
 
-	Note():hasSignature(false)
+	Note():hasSignature(false), starred(false), unread(false)
 	{
 	}
 

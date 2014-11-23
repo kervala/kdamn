@@ -709,7 +709,16 @@ bool OAuth2::parseNotesFolders(const QByteArray &content)
 		QString folderId = reg.cap(1);
 		QString folderName = reg.cap(4);
 
-		qDebug() << "Found" << folderId << folderName;
+		// create folder
+		Folder folder;
+		folder.id = folderId;
+		folder.name = folderName;
+
+		folder.offset = 0;
+		folder.maxOffset = 0;
+		folder.count = 0;
+
+		m_folders[folderId] = folder;
 
 		pos += reg.matchedLength();
 	}

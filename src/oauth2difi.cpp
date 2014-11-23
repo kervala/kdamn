@@ -94,14 +94,10 @@ bool OAuth2::requestMessageCenterGetFolders()
 	return requestMessageCenter("get_folders", "");
 }
 
+// Working
 bool OAuth2::requestMessageCenterGetViews()
 {
-	if (!m_inboxId)
-	{
-		m_actions.push_front(ActionCheckNotes);
-
-		return requestMessageCenterGetFolders();
-	}
+	if (!m_inboxId) return false;
 
 	return requestMessageCenter("get_views", QString("%1,oq:notes_unread:0:0:f").arg(m_inboxId));
 }
@@ -130,31 +126,35 @@ bool OAuth2::requestNotesDeleteFolder(const QString &folderId)
 	return requestNotes("delete_folder", folderId);
 }
 
+// Working
 bool OAuth2::requestNotesDisplayFolder(const QString &folderId, int offset)
 {
 	// number/string, i.e. 1 for inbox, 2 for sent, as well as 'starred', 'drafts', 'unread', and custom folders.
-	// \"unread\"
 	return requestNotes("display_folder", QString("%1,%2,false").arg(folderId).arg(offset));
 }
 
+// Working
 bool OAuth2::requestNotesDisplayNote(const QString &folderId, const QString &noteId)
 {
 	return requestNotes("display_note", QString("%1,%2").arg(folderId).arg(noteId));
 }
 
+// Working
 bool OAuth2::requestNotesMarkAsRead(const QStringList &notesIds)
 {
-	return requestNotes("mark_as_read", QString("%1").arg(notesIds.join(",")));
+	return requestNotes("mark_as_read", QString("[%1]").arg(notesIds.join(",")));
 }
 
+// Working
 bool OAuth2::requestNotesMarkAsUnread(const QStringList &notesIds)
 {
-	return requestNotes("mark_as_unread", QString("%1").arg(notesIds.join(",")));
+	return requestNotes("mark_as_unread", QString("[%1]").arg(notesIds.join(",")));
 }
 
+// Working
 bool OAuth2::requestNotesMove(const QStringList &notesIds, const QString &folderId)
 {
-	return requestNotes("move", QString("%1,%2").arg(notesIds.join(",")).arg(folderId));
+	return requestNotes("move", QString("[%1],%2").arg(notesIds.join(",")).arg(folderId));
 }
 
 // Working
@@ -163,11 +163,13 @@ bool OAuth2::requestNotesPlaceboCall()
 	return requestNotes("placebo_call", "");
 }
 
+// Working
 bool OAuth2::requestNotesPreview(const QString &text, bool includeSignature)
 {
 	return requestNotes("preview", QString("\"%1\",%2").arg(text).arg(includeSignature ? "true":"false"));
 }
 
+// Working
 bool OAuth2::requestNotesRenameFolder(const QString &folderId, const QString &folderName)
 {
 	return requestNotes("rename_folder", QString("%1,\"%2\"").arg(folderId).arg(folderName));
@@ -280,7 +282,7 @@ void OAuth2::processDiFi(const QByteArray &content)
 							}
 							else if (method == "display")
 							{
-								// complately useless, content is null
+								// completely useless, content is null
 							}
 							else if (method == "display_folder")
 							{
@@ -290,9 +292,33 @@ void OAuth2::processDiFi(const QByteArray &content)
 							{
 								parseNotesDisplayNote(response);
 							}
+							else if (method == "mark_as_read")
+							{
+								parseNotesMarkAsRead(response);
+							}
+							else if (method == "mark_as_unread")
+							{
+								parseNotesMarkAsUnread(response);
+							}
+							else if (method == "move")
+							{
+								parseNotesMove(response);
+							}
 							else if (method == "placebo_call")
 							{
-								parseNotesPlaceboCall(response);
+								// completely useless, content is null
+							}
+							else if (method == "preview")
+							{
+								parseNotesPreview(response);
+							}
+							else if (method == "rename_folder")
+							{
+								parseNotesRenameFolder(response);
+							}
+							else if (method == "save_draft")
+							{
+								parseNotesSaveDraft(response);
 							}
 							else if (method == "star")
 							{
@@ -301,10 +327,6 @@ void OAuth2::processDiFi(const QByteArray &content)
 							else if (method == "unstar")
 							{
 								parseNotesUnstar(response);
-							}
-							else if (method == "save_draft")
-							{
-								parseNotesSaveDraft(response);
 							}
 							else
 							{
@@ -353,8 +375,6 @@ void OAuth2::processDiFi(const QByteArray &content)
 			qWarning() << "JSON data not processed (not valid DiFi)" << content;
 		}
 	}
-
-	// TODO: equivalent for Qt 4
 
 	if (status == "error")
 	{
@@ -409,6 +429,8 @@ bool OAuth2::parseFolder(const QString &html, Folder &folder)
 		QDomNode previewNode = dateNode.nextSiblingElement("div");
 		note.preview = previewNode.firstChild().toText().data().trimmed();
 
+		// TODO: parse unread and starred states
+
 		if (!note.id.isEmpty() && !folder.notes.contains(note)) folder.notes << note;
 
 		root = root.nextSibling();
@@ -421,31 +443,82 @@ bool OAuth2::parseFolder(const QString &html, Folder &folder)
 
 bool OAuth2::parseNote(const QString &html, Note &note)
 {
-	QDomDocument doc;
+	QRegExp reg;
 
-	QString error;
-	int line, column;
+	reg.setPattern("<span class=\"mcb-ts\" title=\"([^\"]+)\">([^<]+)</span>");
 
-	if (!doc.setContent("<root>" + html + "</root>", &error, &line, &column))
+	int pos = reg.indexIn(html);
+
+	if (pos > -1)
 	{
-		qDebug() << error << line << column;
+		QString dateAttribute = reg.cap(1);
+		QString dateText = reg.cap(2);
 
-		return false;
+		note.date = convertDateToISO(dateText.indexOf("ago") > -1 ? dateAttribute:dateText);
+
+		pos += reg.matchedLength();
 	}
 
-	QDomNode root = doc.firstChild().firstChild().firstChild().firstChild(); // root div div form
+	reg.setPattern("<span class=\"mcb-title\">([^<]+)</span>");
 
-	QDomNode ch = root.firstChildElement("div");
+	pos = reg.indexIn(html, pos);
 
-	if (ch.isNull()) return false;
+	if (pos > -1)
+	{
+		note.subject = reg.cap(1);
 
-	QDomNode textarea = ch.firstChild().firstChild().firstChildElement("textarea");
-	note.text = textarea.firstChild().toText().data();
+		pos += reg.matchedLength();
+	}
 
-	// extract note HTML in another XML document
-	QDomDocument out;
-	out.appendChild(out.importNode(textarea.nextSibling(), true));
-	note.html = out.toString();
+	reg.setPattern("<span class=\"mcb-from\" username=\"([^\"]+)\">");
+
+	pos = reg.indexIn(html, pos);
+
+	if (pos > -1)
+	{
+		note.sender = reg.cap(1);
+
+		pos += reg.matchedLength();
+	}
+
+	reg.setPattern("<textarea class=\"mcb-body\" style=\"display: none\">(.+)</textarea>");
+
+	pos = reg.indexIn(html, pos);
+
+	if (pos > -1)
+	{
+		note.text = decodeEntities(reg.cap(1));
+
+		pos += reg.matchedLength();
+	}
+
+	reg.setPattern("<div class=\"mcb-body wrap-text\">(.+)</div>");
+	reg.setMinimal(true);
+
+	pos = reg.indexIn(html, pos);
+
+	if (pos > -1)
+	{
+		note.html = reg.cap(1);
+
+		pos += reg.matchedLength();
+	}
+
+	return true;
+}
+
+bool OAuth2::parseNotesIdsAndCount(const QVariantMap &response, QStringList &notesIds, int &count)
+{
+	QVariantMap data = response["content"].toMap();
+
+	QVariantList ids = data["noteids"].toList();
+
+	foreach(const QVariant &id, ids)
+	{
+		notesIds << QString::number(id.toInt());
+	}
+
+	count = data["count"].toString().toInt();
 
 	return true;
 }
@@ -467,6 +540,8 @@ bool OAuth2::parseMessageCenterGetFolders(const QVariantMap &response)
 			m_inboxId = folderId.toInt();
 		}
 	}
+
+	emit foldersReceived();
 
 	return true;
 }
@@ -544,7 +619,7 @@ bool OAuth2::parseNotesDisplayFolder(const QVariantMap &response)
 
 	QString html = QString::fromUtf8(data["body"].toByteArray());
 
-	if (!m_folders.contains(folderId))
+	if (m_folders[folderId].count == 0)
 	{
 		// search notes count per page and max offset
 		QRegExp reg("offset=([0-9]+)");
@@ -563,14 +638,10 @@ bool OAuth2::parseNotesDisplayFolder(const QVariantMap &response)
 			pos += reg.matchedLength();
 		}
 
-		// init a new folder
-		Folder folder;
-		folder.id = folderId;
-		folder.count = min;
-		folder.maxOffset = max;
-		folder.notes.reserve(max + min); // optimize memory allocation
-
-		m_folders[folderId] = folder;
+		// update folder
+		m_folders[folderId].count = min;
+		m_folders[folderId].maxOffset = max;
+		m_folders[folderId].notes.reserve(max + min); // optimize memory allocation
 	}
 
 	// update current offset
@@ -610,49 +681,96 @@ bool OAuth2::parseNotesDisplayNote(const QVariantMap &response)
 	Note note;
 	note.id = noteId;
 
+	int index = -1;
+
 	while(it != iend)
 	{
-		int index = it->notes.indexOf(note);
+		index = it->notes.indexOf(note);
 
-		if (index > -1)
-		{
-			parseNote(html, it->notes[index]);
-		}
+		if (index > -1) break;
 
 		++it;
 	}
+
+	if (!parseNote(html, index > -1 ? it->notes[index]:note)) return false;
+
+	if (index == -1)
+	{
+		// note id not found in folders, or folder not parsed yet
+		// TODO: save note somewhere
+	}
+
+//	emit notesNoteParsed();
 
 	return true;
 }
 
 bool OAuth2::parseNotesMarkAsRead(const QVariantMap &response)
 {
+	QStringList noteIds;
+	int count;
+
+	if (!parseNotesIdsAndCount(response, noteIds, count)) return false;
+
+	emit notesRead(noteIds);
+
 	return true;
 }
 
 bool OAuth2::parseNotesMarkAsUnread(const QVariantMap &response)
 {
+	QStringList noteIds;
+	int count;
+
+	if (!parseNotesIdsAndCount(response, noteIds, count)) return false;
+
+	emit notesUnread(noteIds);
+
 	return true;
 }
 
 bool OAuth2::parseNotesMove(const QVariantMap &response)
 {
-	return true;
-}
+	QVariantMap data = response["content"].toMap();
 
-bool OAuth2::parseNotesPlaceboCall(const QVariantMap &response)
-{
-	// nothing to parse
+	QList<QString> folders;
+
+	QVariantMap::const_iterator it = data.begin(), iend = data.end();
+
+	while(it != iend)
+	{
+		QString folderId = it.key();
+		int count = it.value().toString().toInt();
+
+		++it;
+	}
+
+	emit notesMoved();
+
 	return true;
 }
 
 bool OAuth2::parseNotesPreview(const QVariantMap &response)
 {
+	QString html = response["content"].toString();
+
+	emit notesPreviewReceived(html);
+
 	return true;
 }
 
 bool OAuth2::parseNotesRenameFolder(const QVariantMap &response)
 {
+	QVariantMap data = response["content"].toMap();
+
+	QString name = data["foldername"].toString();
+	QString id = QString::number(data["folderid"].toInt());
+
+	// rename folder
+	m_folders[id].name = name;
+
+	emit notesFolderRenamed(id, name);
+
 	return true;
 }
 
@@ -671,17 +789,9 @@ bool OAuth2::parseNotesSaveDraft(const QVariantMap &response)
 bool OAuth2::parseNotesStar(const QVariantMap &response)
 {
 	QStringList noteIds;
+	int count;
 
-	QVariantMap data = response["content"].toMap();
-
-	QVariantList ids = data["noteids"].toList();
-
-	foreach(const QVariant &id, ids)
-	{
-		noteIds << QString::number(id.toInt());
-	}
-
-	QString count = data["count"].toString();
+	if (!parseNotesIdsAndCount(response, noteIds, count)) return false;
 
 	emit notesStarred(noteIds);
 
@@ -691,17 +801,9 @@ bool OAuth2::parseNotesStar(const QVariantMap &response)
 bool OAuth2::parseNotesUnstar(const QVariantMap &response)
 {
 	QStringList noteIds;
+	int count;
 
-	QVariantMap data = response["content"].toMap();
-
-	QVariantList ids = data["noteids"].toList();
-
-	foreach(const QVariant &id, ids)
-	{
-		noteIds << QString::number(id.toInt());
-	}
-
-	QString count = data["count"].toString();
+	if (!parseNotesIdsAndCount(response, noteIds, count)) return false;
 
 	emit notesUnstarred(noteIds);
 

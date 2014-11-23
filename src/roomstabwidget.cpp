@@ -67,6 +67,7 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 	connect(damn, SIGNAL(authenticationFailedWrongToken()), this, SLOT(onRequestDAmnToken()));
 
 	OAuth2 *oauth = new OAuth2(this);
+	connect(oauth, SIGNAL(foldersReceived()), this, SLOT(onReceiveFolders()));
 	connect(oauth, SIGNAL(loggedIn()), this, SLOT(onLoggedIn()));
 	connect(oauth, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
 	connect(oauth, SIGNAL(damnTokenReceived(QString, QString)), this, SLOT(onReceiveDAmnToken(QString, QString)));
@@ -282,6 +283,12 @@ void RoomsTabWidget::onRequestDAmnToken()
 
 void RoomsTabWidget::onLoggedIn()
 {
+	OAuth2::getInstance()->requestMessageCenterGetFolders();
+}
+
+void RoomsTabWidget::onReceiveFolders()
+{
+	// begin to check for notes
 	m_messagesTimer->start(10000);
 }
 
