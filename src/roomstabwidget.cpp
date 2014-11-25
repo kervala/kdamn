@@ -355,15 +355,15 @@ void RoomsTabWidget::onUpdateNotes(const QString &folderId, int offset, int coun
 
 	if (frame)
 	{
-		const Notes &notes = OAuth2::getInstance()->getFolder(folderId).notes;
+		const Folder &folder = OAuth2::getInstance()->getFolder(folderId);
 
 		if (frame->getCurrentFolderId() != folderId)
 		{
-			frame->setNotes(notes);
+			frame->setFolder(folder);
 		}
 		else
 		{
-			frame->updateNotes(notes, offset, count);
+			frame->updateFolder(folder, offset, count);
 		}
 	}
 }
@@ -386,7 +386,7 @@ void RoomsTabWidget::onSendNote(const QString &noteId)
 
 void RoomsTabWidget::checkMessages()
 {
-	OAuth2::getInstance()->requestMessageCenterGetViews();
+//	OAuth2::getInstance()->requestMessageCenterGetViews();
 }
 
 void RoomsTabWidget::onText(const QString &room, const QString &user, EMessageType type, const QString &text, bool html)

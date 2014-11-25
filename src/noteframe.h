@@ -33,6 +33,7 @@ public:
 	virtual ~NoteFrame();
 
 	virtual void setSystem(const QString &text);
+
 public slots:
 	void onSaveDraft();
 	void onPreview();

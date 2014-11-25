@@ -20,7 +20,7 @@
 #ifndef OAUTH2_H
 #define OAUTH2_H
 
-#include "notesmodel.h"
+#include "folder.h"
 
 // deviantART URLs
 #define BASE_URL "www.deviantart.com"

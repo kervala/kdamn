@@ -714,7 +714,6 @@ bool OAuth2::parseNotesFolders(const QByteArray &content)
 		folder.id = folderId;
 		folder.name = folderName;
 
-		folder.offset = 0;
 		folder.maxOffset = 0;
 		folder.count = 0;
 

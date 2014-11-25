@@ -21,6 +21,7 @@
 #include "notesframe.h"
 #include "moc_notesframe.cpp"
 #include "notesmodel.h"
+#include "oauth2.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -43,6 +44,7 @@ NotesFrame::NotesFrame(QWidget *parent):TabFrame(parent), m_model(NULL)
 
 	connect(searchEdit, SIGNAL(returnPressed()), SLOT(onSearch()));
 //	connect(usersView, SIGNAL(doubleClicked(QModelIndex)), SLOT(onUserDoubleClicked(QModelIndex)));
+	connect(m_model, SIGNAL(loadNewData(int)), SLOT(onLoadNewData(int)));
 }
 
 NotesFrame::~NotesFrame()
@@ -58,16 +60,20 @@ QString NotesFrame::getCurrentFolderId() const
 	return m_folderId;
 }
 
-void NotesFrame::setNotes(const Notes &notes)
+void NotesFrame::setFolder(const Folder &folder)
 {
-	m_model->setNotes(notes);
+	if (!folder.notes.isEmpty() && m_folderId.isEmpty()) m_folderId = folder.notes.front().folderId;
+
+	m_model->setFolder(folder);
 
 	notesView->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
 }
 
-void NotesFrame::updateNotes(const Notes &notes, int offset, int count)
+void NotesFrame::updateFolder(const Folder &folder, int offset, int count)
 {
-	m_model->updateNotes(notes, offset, count);
+	if (!folder.notes.isEmpty() && m_folderId.isEmpty()) m_folderId = folder.notes.front().folderId;
+
+	m_model->updateFolder(folder, offset, count);
 
 	notesView->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
 }
@@ -75,6 +81,11 @@ void NotesFrame::updateNotes(const Notes &notes, int offset, int count)
 void NotesFrame::onSearch()
 {
 //	QStringList lines = searchEdit->getLines();
+}
+
+void NotesFrame::onLoadNewData(int offset)
+{
+	OAuth2::getInstance()->requestNotesDisplayFolder(m_folderId, offset);
 }
 
 void NotesFrame::updateSplitter()

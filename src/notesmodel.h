@@ -22,48 +22,11 @@
 #ifndef NOTESMODEL_H
 #define NOTESMODEL_H
 
-#include <QtCore/QAbstractItemModel>
+#include "folder.h"
 
-struct Note
-{
-	QString id;
-	QString folderId;
-	QString subject;
-	QString preview; // without cariage returns
-	QString date; // Oct 30, 2014, 1:50:33 PM
-	QString sender;
-	QStringList recipients;
-	QString text;
-	QString html;
-	bool hasSignature;
-	bool starred;
-	bool unread;
+#include <QtCore/QAbstractTableModel>
 
-	Note():hasSignature(false), starred(false), unread(false)
-	{
-	}
-
-	bool operator == (const Note &other) const
-	{
-		return id == other.id;
-	}
-};
-
-typedef QVector<Note> Notes;
-
-struct Folder
-{
-	QString id;
-	QString name;
-	Notes notes;
-	int count; // notes per request
-	int offset; // current offset
-	int maxOffset; // last offset
-};
-
-typedef QMap<QString, Folder> Folders;
-
-class NotesModel : public QAbstractItemModel
+class NotesModel : public QAbstractTableModel
 {
 	Q_OBJECT
 
@@ -71,19 +34,22 @@ public:
 	NotesModel(QObject *parent);
 	virtual ~NotesModel();
 
-	void setNotes(const Notes &notes);
-	void updateNotes(const Notes &notes, int offset, int count);
+	void setFolder(const Folder &folder);
+	void updateFolder(const Folder &folder, int offset, int count);
 
-	QModelIndex index(int row, int column, const QModelIndex &parent) const;
-	QModelIndex parent(const QModelIndex &index) const;
 	int rowCount(const QModelIndex &parent) const;
 	int columnCount(const QModelIndex &parent) const;
 	QVariant data(const QModelIndex &index, int role) const;
 	QVariant headerData(int section, Qt::Orientation orientation, int role) const;
-	Qt::ItemFlags flags(const QModelIndex &index) const;
+
+	bool canFetchMore (const QModelIndex &parent) const;
+	void fetchMore (const QModelIndex &parent);
+
+signals:
+	void loadNewData(int offset) const;
 
 protected:
-	Notes m_notes;
+	Folder m_folder;
 };
 
 #endif

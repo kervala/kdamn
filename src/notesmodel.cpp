@@ -26,45 +26,38 @@
 	#define new DEBUG_NEW
 #endif
 
-NotesModel::NotesModel(QObject *parent):QAbstractItemModel(parent)
+NotesModel::NotesModel(QObject *parent):QAbstractTableModel(parent)
 {
 }
 
 NotesModel::~NotesModel()
 {
+	m_folder.save();
 }
 
-void NotesModel::setNotes(const Notes &notes)
+void NotesModel::setFolder(const Folder &folder)
 {
 	beginResetModel();
 
-	m_notes = notes;
+	m_folder = folder;
 
 	endResetModel();
 }
 
-void NotesModel::updateNotes(const Notes &notes, int offset, int count)
+void NotesModel::updateFolder(const Folder &folder, int offset, int count)
 {
-	m_notes = notes;
+	beginInsertRows(QModelIndex(), offset, offset + count - 1);
 
-	emit dataChanged(index(offset, 0, QModelIndex()), index(offset + count - 1, 3, QModelIndex()));
-}
+	m_folder = folder;
 
-QModelIndex NotesModel::index(int row, int column, const QModelIndex &parent) const
-{
-	if (!hasIndex(row, column, parent)) return QModelIndex();
+	endInsertRows();
 
-	return createIndex(row, column, (void*)&m_notes[row]);
-}
-
-QModelIndex NotesModel::parent(const QModelIndex &/* index */) const
-{
-	return QModelIndex();
+//	emit dataChanged(index(offset, 0, QModelIndex()), index(offset + count - 1, 3, QModelIndex()));
 }
 
 int NotesModel::rowCount(const QModelIndex &/* parent */) const
 {
-	return m_notes.size();
+	return m_folder.notes.size();
 }
 
 int NotesModel::columnCount(const QModelIndex &/* parent */) const
@@ -78,7 +71,7 @@ QVariant NotesModel::data(const QModelIndex &index, int role) const
 
 	if (role != Qt::DisplayRole) return QVariant();
 
-	const Note &note = m_notes[index.row()];
+	const Note &note = m_folder.notes[index.row()];
 
 	switch(index.column())
 	{
@@ -92,7 +85,7 @@ QVariant NotesModel::data(const QModelIndex &index, int role) const
 		return note.date;
 
 		case 3:
-		return note.preview;
+		return note.preview.left(50);
 
 		default:
 		break;
@@ -124,12 +117,15 @@ QVariant NotesModel::headerData(int section, Qt::Orientation orientation, int ro
 		}
 	}
 
-	return QAbstractItemModel::headerData(section, orientation, role);
+	return QAbstractTableModel::headerData(section, orientation, role);
 }
 
-Qt::ItemFlags NotesModel::flags(const QModelIndex &index) const
+bool NotesModel::canFetchMore(const QModelIndex &parent) const
 {
-	if (!index.isValid()) return 0;
+	return (m_folder.maxOffset > 0) && (m_folder.maxOffset > m_folder.notes.size());
+}
 
-	return (/*Qt::ItemIsDragEnabled|*/Qt::ItemIsSelectable|Qt::ItemIsEnabled);
+void NotesModel::fetchMore(const QModelIndex &parent)
+{
+	emit loadNewData(m_folder.notes.size());
 }

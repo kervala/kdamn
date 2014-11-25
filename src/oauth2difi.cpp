@@ -386,54 +386,107 @@ void OAuth2::processDiFi(const QByteArray &content)
 
 bool OAuth2::parseFolder(const QString &html, Folder &folder)
 {
-	QDomDocument doc;
+	QRegExp rootReg("data-noteid=\"([0-9]+)\" class=\"([a-z ]+)\"");
 
-	QString error;
-	int line, column;
+	int pos = 0, lastPos = 0;
 
-	if (!doc.setContent("<root>" + html + "</root>", &error, &line, &column))
+	while((pos = rootReg.indexIn(html, pos)) > -1)
 	{
-		qDebug() << error << line << column;
+		lastPos = pos;
 
-		return false;
-	}
-
-	QDomNode root = doc.firstChild().firstChild().firstChild().firstChild(); // root div ul li
-
-	while (!root.isNull())
-	{
 		Note note;
+		note.id = rootReg.cap(1);
 
-		QDomNode node = root.firstChild().firstChildElement("div"); // div useless div
+		QString classes = rootReg.cap(2);
+
+		note.unread = classes.indexOf("unread") > -1;
+		note.replied = classes.indexOf("replied") > -1;
+
+		QRegExp reg;
+
+		reg.setPattern("class=\"icon_star ( starred)?\"");
+
+		pos = reg.indexIn(html, pos);
+
+		if (pos > -1)
+		{
+			note.starred = !reg.cap(1).isEmpty();
+
+			lastPos = pos;
+		}
+		else
+		{
+			pos = lastPos;
+		}
 
 		// subject
-		QDomNode subjectNode = node.firstChild();
-		QDomNode infoNode = subjectNode.firstChild();
-		note.id = infoNode.toElement().attribute("data-noteid");
-		note.folderId = infoNode.toElement().attribute("data-folderid");
-		note.subject = infoNode.firstChild().toText().data();
+		reg.setPattern("data-noteid=\"([0-9]+)\" data-folderid=\"([0-9]+)\" href=\"#([0-9_/]+)\" title=\"([^\"]+)\" class=\"wrap-for-ts-(abs|rel)\">([^<]+)");
+
+		pos = reg.indexIn(html, pos);
+
+		if (pos > -1)
+		{
+			note.id = reg.cap(1);
+			note.folderId = reg.cap(2);
+			note.subject = reg.cap(6);
+
+			lastPos = pos;
+		}
+		else
+		{
+			pos = lastPos;
+		}
 
 		// sender
-		QDomNode senderNode = subjectNode.nextSibling();
-		note.sender = senderNode.firstChild().nextSibling().firstChild().firstChild().toText().data();
+		reg.setPattern("href=\"http://([a-z0-9-.]+).deviantart.com/\">([^<]+)");
+
+		pos = reg.indexIn(html, pos);
+
+		if (pos > -1)
+		{
+			note.sender = reg.cap(2);
+
+			lastPos = pos;
+		}
+		else
+		{
+			pos = lastPos;
+		}
 
 		// date
-		QDomNode dateNode = node.nextSibling();
+		reg.setPattern("<span class=\"ts\" title=\"([^\"]+)\">([^<]+)");
 
-		QString dateAttribute = dateNode.toElement().attribute("title");
-		QString dateText = dateNode.firstChild().toText().data();
+		pos = reg.indexIn(html, pos);
 
-		note.date = convertDateToISO(dateText.indexOf("ago") > -1 ? dateAttribute:dateText);
+		if (pos > -1)
+		{
+			QString dateAttribute = reg.cap(1);
+			QString dateText = reg.cap(2);
+
+			note.date = convertDateToISO(dateText.indexOf("ago") > -1 ? dateAttribute:dateText);
+
+			lastPos = pos;
+		}
+		else
+		{
+			pos = lastPos;
+		}
 
 		// preview
-		QDomNode previewNode = dateNode.nextSiblingElement("div");
-		note.preview = previewNode.firstChild().toText().data().trimmed();
+		reg.setPattern("<div class=\"note-preview expandable\">([^<]+)");
 
-		// TODO: parse unread and starred states
+		pos = reg.indexIn(html, pos);
 
-		if (!note.id.isEmpty() && !folder.notes.contains(note)) folder.notes << note;
+		if (pos > -1)
+		{
+			note.preview = reg.cap(1).trimmed();
+		}
+		else
+		{
+			pos = lastPos;
+		}
 
-		root = root.nextSibling();
+		folder.addNote(note);
 	}
 
 	// TODO: sort
@@ -619,7 +672,7 @@ bool OAuth2::parseNotesDisplayFolder(const QVariantMap &response)
 
 	QString html = QString::fromUtf8(data["body"].toByteArray());
 
-	if (m_folders[folderId].count == 0)
+	if (/* !m_folders.contains(folderId) || */ m_folders[folderId].count == 0)
 	{
 		// search notes count per page and max offset
 		QRegExp reg("offset=([0-9]+)");
@@ -639,13 +692,8 @@ bool OAuth2::parseNotesDisplayFolder(const QVariantMap &response)
 		}
 
 		// update folder
-		m_folders[folderId].count = min;
-		m_folders[folderId].maxOffset = max;
-		m_folders[folderId].notes.reserve(max + min); // optimize memory allocation
+		m_folders[folderId].updateValues(min, max);
 	}
-
-	// update current offset
-	m_folders[folderId].offset = offset;
 
 	// hack to fix invalid HTML code
 	int pos1 = html.indexOf("<div class=\"footer\">");
@@ -661,10 +709,9 @@ bool OAuth2::parseNotesDisplayFolder(const QVariantMap &response)
 	}
 
 	// parse HTML code to retrieve notes details
-	if (parseFolder(html, m_folders[folderId]))
-	{
-		emit notesUpdated(folderId, offset, m_folders[folderId].count);
-	}
+	if (!parseFolder(html, m_folders[folderId])) return false;
+
+	emit notesUpdated(folderId, offset, m_folders[folderId].count);
 
 	return true;
 }

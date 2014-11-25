@@ -37,11 +37,12 @@ public:
 
 	QString getCurrentFolderId() const;
 
-	void setNotes(const Notes &notes);
-	void updateNotes(const Notes &notes, int offset, int count);
+	void setFolder(const Folder &folder);
+	void updateFolder(const Folder &folder, int offset, int count);
 
 public slots:
 	void onSearch();
+	void onLoadNewData(int offset);
 
 protected:
 	void updateSplitter();
