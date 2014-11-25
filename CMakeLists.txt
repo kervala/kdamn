@@ -46,7 +46,7 @@ SETUP_EXTERNAL()
 GEN_CONFIG_H()
 GEN_REVISION_H()
 
-USE_QT_MODULES(Gui Network Script Svg Xml QT5 Widgets WinExtras)
+USE_QT_MODULES(Gui Network Script Svg QT5 Widgets WinExtras)
 
 IF(UNIX AND NOT APPLE)
   FIND_PACKAGE(X11)
