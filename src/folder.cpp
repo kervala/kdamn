@@ -47,13 +47,21 @@ bool Folder::load()
 
 	if (!file.open(QFile::ReadOnly)) return false;
 
-	QJsonParseError error;
+	QByteArray data = file.readAll();
 
-	QJsonDocument doc = QJsonDocument::fromJson(file.readAll(), &error);
+	QVariantMap map;
+
+#ifdef USE_QT5
+	QJsonParseError error;
+	QJsonDocument doc = QJsonDocument::fromJson(data, &error);
 
 	if (doc.isEmpty()) return false;
 
-	QVariantMap map = doc.toVariant().toMap();
+	map = doc.toVariant().toMap();
+#else
+	QScriptEngine engine;
+	map = engine.evaluate("(" + QString(data) + ")").toVariant().toMap();
+#endif
 
 	id = map["id"].toString();
 	name = map["name"].toString();
@@ -123,16 +131,24 @@ bool Folder::save()
 
 	map["notes"] = listNotes;
 
+	QByteArray data;
+
+#ifdef USE_QT5
 	QJsonObject obj = QJsonObject::fromVariantMap(map);
 
 	QJsonDocument doc;
 	doc.setObject(obj);
 
+	data = doc.toJson();
+#else
+	// TODO: find equivalent
+#endif
+
 	QFile file("test.json");
 
 	if (!file.open(QFile::WriteOnly)) return false;
 
-	file.write(doc.toJson());
+	file.write(data);
 
 	return true;
 }
