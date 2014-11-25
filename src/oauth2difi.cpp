@@ -695,19 +695,6 @@ bool OAuth2::parseNotesDisplayFolder(const QVariantMap &response)
 		m_folders[folderId].updateValues(min, max);
 	}
 
-	// hack to fix invalid HTML code
-	int pos1 = html.indexOf("<div class=\"footer\">");
-
-	if (pos1 > -1)
-	{
-		int pos2 = html.indexOf("        </ul>", pos1);
-
-		if (pos2 > -1)
-		{
-			html = html.remove(pos1, pos2-pos1+1);
-		}
-	}
-
 	// parse HTML code to retrieve notes details
 	if (!parseFolder(html, m_folders[folderId])) return false;
 
