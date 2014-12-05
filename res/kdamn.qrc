@@ -1,8 +1,8 @@
 <RCC>
   <qresource prefix="icons">
-    <file>kdamn.svg</file>
-    <file>kdamn_blue.svg</file>
-    <file>kdamn_red.svg</file>
+    <file>icon.svg</file>
+    <file>icon_blue.svg</file>
+    <file>icon_red.svg</file>
   </qresource>
   <qresource prefix="images">
     <file>blank.png</file>
