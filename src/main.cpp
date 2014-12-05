@@ -51,14 +51,14 @@ int main(int argv, char *args[])
 	_CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
-	Q_INIT_RESOURCE(kdamn);
+	Q_INIT_RESOURCE(resources);
 
 	QApplication app(argv, args);
 
 	QApplication::setApplicationName(PRODUCT);
 	QApplication::setOrganizationName(AUTHOR);
 	QApplication::setApplicationVersion(VERSION);
-	QApplication::setWindowIcon(QIcon(":/icons/kdamn.svg"));
+	QApplication::setWindowIcon(QIcon(":/icons/icon.svg"));
 
 	QString locale = QLocale::system().name().left(2);
 
