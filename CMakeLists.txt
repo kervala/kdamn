@@ -19,7 +19,7 @@ SET(VERSION_PATCH "REVISION")
 SET(AUTHOR "Kervala")
 SET(PRODUCT "kdAmn")
 SET(DESCRIPTION "deviantART Messaging Network (dAmn) chat client")
-SET(TARGET_ICON "kdamn.ico")
+SET(TARGET_ICON "icon.ico")
 SET(TARGET "kdamn")
 SET(YEAR "2013-2014")
 
