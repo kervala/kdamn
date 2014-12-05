@@ -68,7 +68,7 @@ bool SystrayIcon::create()
 	gsettings set com.canonical.Unity.Panel systray-whitelist "['Dropbox', 'Foo', 'Bar']"
 */
 
-	m_icon = new QSystemTrayIcon(QIcon(":/icons/kdamn.svg"), this);
+	m_icon = new QSystemTrayIcon(QIcon(":/icons/icon.svg"), this);
 
 	connect(m_icon, SIGNAL(messageClicked()), this, SLOT(onMessageClicked()));
 
@@ -102,9 +102,9 @@ void SystrayIcon::updateStatus()
 
 	switch(status)
 	{
-		case StatusNormal: icon = ":/icons/kdamn.svg"; break;
-		case StatusTalkOther: icon = ":/icons/kdamn_blue.svg"; break;
-		case StatusTalkMe: icon = ":/icons/kdamn_red.svg"; break;
+		case StatusNormal: icon = ":/icons/icon.svg"; break;
+		case StatusTalkOther: icon = ":/icons/icon_blue.svg"; break;
+		case StatusTalkMe: icon = ":/icons/icon_red.svg"; break;
 		default: break;
 	}
 
