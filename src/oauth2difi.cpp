@@ -463,6 +463,11 @@ bool OAuth2::parseFolder(const QString &html, Folder &folder, int &count)
 		folder.addNote(note);
 	}
 
+	if (count != 25)
+	{
+		qDebug() << "strange not 25 notes";
+	}
+
 	// TODO: sort
 
 	return true;
