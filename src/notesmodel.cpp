@@ -48,6 +48,9 @@ void NotesModel::setFolder(const Folder &folder)
 
 void NotesModel::updateFolder(const Folder &folder, int offset, int count)
 {
+	// prevent inserting wrong rows
+	if (offset < m_folder.notes.size()) return;
+
 	beginInsertRows(QModelIndex(), offset, offset + count - 1);
 
 	m_folder = folder;
