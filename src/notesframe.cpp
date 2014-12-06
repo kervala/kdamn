@@ -84,6 +84,15 @@ void NotesFrame::updateFolder(const Folder &folder, int offset, int count)
 	m_model->updateFolder(folder, offset, count);
 }
 
+void NotesFrame::updateNote(const Note &note)
+{
+	m_model->updateNote(note);
+
+	// TODO: check if this is the selected note
+
+	previewEdit->setText(note.text);
+}
+
 void NotesFrame::onSearch()
 {
 //	QStringList lines = searchEdit->getLines();

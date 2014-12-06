@@ -144,6 +144,7 @@ signals:
 	void imageDownloaded(const QString &md5);
 	void imageUploaded(const QString &room, const QString &stashId);
 	void notesUpdated(const QString &folderId, int offset, int count);
+	void noteUpdated(const QString &folderId, const QString &noteId);
 	void notesReceived(int count);
 	void newVersionDetected(const QString &url, const QString &date, uint size, const QString &version);
 	void uploadProgress(qint64 readBytes, qint64 totalBytes);

@@ -36,6 +36,7 @@ public:
 
 	void setFolder(const Folder &folder);
 	void updateFolder(const Folder &folder, int offset, int count);
+	void updateNote(const Note &note);
 
 	int rowCount(const QModelIndex &parent) const;
 	int columnCount(const QModelIndex &parent) const;
@@ -44,6 +45,8 @@ public:
 
 	bool canFetchMore (const QModelIndex &parent) const;
 	void fetchMore (const QModelIndex &parent);
+
+	const Note& getNote(int i) const;
 
 signals:
 	void loadNewData(int offset) const;

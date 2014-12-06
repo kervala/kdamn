@@ -39,6 +39,7 @@ public:
 
 	void setFolder(const Folder &folder);
 	void updateFolder(const Folder &folder, int offset, int count);
+	void updateNote(const Note &note);
 
 public slots:
 	void onSearch();

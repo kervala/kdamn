@@ -75,6 +75,8 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 	connect(oauth, SIGNAL(imageUploaded(QString, QString)), this, SLOT(onUploadImage(QString, QString)));
 	connect(oauth, SIGNAL(notesReceived(int)), this, SLOT(onReceiveNotes(int)));
 	connect(oauth, SIGNAL(notesUpdated(QString, int, int)), this, SLOT(onUpdateNotes(QString, int, int)));
+	connect(oauth, SIGNAL(noteUpdated(QString, QString)), this, SLOT(onUpdateNote(QString, QString)));
+
 	connect(oauth, SIGNAL(notePrepared()), this, SLOT(onPrepareNote()));
 	connect(oauth, SIGNAL(noteSent(QString)), this, SLOT(onSendNote(QString)));
 
@@ -364,6 +366,43 @@ void RoomsTabWidget::onUpdateNotes(const QString &folderId, int offset, int coun
 		else
 		{
 			frame->updateFolder(folder, offset, count);
+		}
+	}
+}
+
+void RoomsTabWidget::onUpdateNote(const QString &folderId, const QString &noteId)
+{
+	NotesFrame *frame = getNotesFrame();
+
+	if (!frame)
+	{
+		// frame not yet created, create it
+		createNotesFrame();
+
+		frame = getNotesFrame();
+	}
+
+	if (frame)
+	{
+		const Folder &folder = OAuth2::getInstance()->getFolder(folderId);
+
+		if (frame->getCurrentFolderId() == folderId)
+		{
+			Note note;
+			note.id = noteId;
+			
+			int pos = folder.notes.indexOf(note);
+
+			if (pos > -1)
+			{
+				note = folder.notes[pos];
+
+				frame->updateNote(note);
+			}
+		}
+		else
+		{
+			// TODO: note in another folder
 		}
 	}
 }

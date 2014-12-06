@@ -398,6 +398,7 @@ bool OAuth2::parseFolder(const QString &html, Folder &folder, int &count)
 
 		Note note;
 		note.id = rootReg.cap(1);
+		note.folderId = folder.id;
 
 		QString classes = rootReg.cap(2);
 
@@ -713,9 +714,14 @@ bool OAuth2::parseNotesDisplayNote(const QVariantMap &response)
 	{
 		// note id not found in folders, or folder not parsed yet
 		// TODO: save note somewhere
+		qDebug() << "note not found in folder";
+	}
+	else
+	{
+		note = it->notes[index];
 	}
 
-//	emit notesNoteParsed();
+	emit noteUpdated(note.folderId, note.id);
 
 	return true;
 }

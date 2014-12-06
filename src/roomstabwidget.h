@@ -77,6 +77,7 @@ public slots:
 	void onUploadImage(const QString &room, const QString &url);
 	void onReceiveNotes(int count);
 	void onUpdateNotes(const QString &folderId, int offset, int count);
+	void onUpdateNote(const QString &folderId, const QString &noteId);
 	void onPrepareNote();
 	void onSendNote(const QString &noteId);
 

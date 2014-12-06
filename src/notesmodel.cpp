@@ -60,6 +60,20 @@ void NotesModel::updateFolder(const Folder &folder, int offset, int count)
 	m_waitingData = false;
 }
 
+void NotesModel::updateNote(const Note &note)
+{
+	int pos = m_folder.notes.indexOf(note);
+
+	if (pos > -1)
+	{
+		m_folder.notes[pos] = note;
+	}
+	else
+	{
+		// TODO: not in current folder
+	}
+}
+
 int NotesModel::rowCount(const QModelIndex &/* parent */) const
 {
 	return m_folder.notes.size();
@@ -127,4 +141,9 @@ void NotesModel::fetchMore(const QModelIndex &parent)
 	m_waitingData = true;
 
 	emit loadNewData(m_folder.notes.size());
+}
+
+const Note& NotesModel::getNote(int i) const
+{
+	return m_folder.notes[i];
 }
