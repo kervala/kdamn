@@ -55,6 +55,8 @@ NotesFrame::NotesFrame(QWidget *parent):TabFrame(parent), m_model(NULL)
 	connect(searchEdit, SIGNAL(returnPressed()), SLOT(onSearch()));
 //	connect(usersView, SIGNAL(doubleClicked(QModelIndex)), SLOT(onUserDoubleClicked(QModelIndex)));
 	connect(m_model, SIGNAL(loadNewData(int)), SLOT(onLoadNewData(int)));
+
+	connect(notesView->selectionModel(), SIGNAL(selectionChanged(QItemSelection, QItemSelection)), SLOT(onNotesSelected(QItemSelection, QItemSelection)));
 }
 
 NotesFrame::~NotesFrame()
@@ -114,4 +116,37 @@ void NotesFrame::resizeEvent(QResizeEvent *e)
 	notesView->horizontalHeader()->resizeSection(2, dateWidth);
 
 	TabFrame::resizeEvent(e);
+}
+
+void NotesFrame::onNotesSelected(const QItemSelection &selected, const QItemSelection &deselected)
+{
+	QString preview;
+	QString noteId;
+
+	foreach(const QItemSelectionRange &range, selected)
+	{
+		int top = range.top();
+		int bottom = range.bottom();
+
+		for (int i = top; i <= bottom; ++i)
+		{
+			const Note &note = m_model->getNote(i);
+
+			if (note.text.isEmpty())
+			{
+				preview = note.preview;
+				noteId = note.id;
+			}
+			else
+			{
+				preview = note.text;
+			}
+
+			break;
+		}
+	}
+
+	previewEdit->setText(preview);
+
+	if (!noteId.isEmpty()) OAuth2::getInstance()->requestNotesDisplayNote(m_folderId, noteId);
 }

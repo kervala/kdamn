@@ -44,6 +44,7 @@ public:
 public slots:
 	void onSearch();
 	void onLoadNewData(int offset);
+	void onNotesSelected(const QItemSelection &selected, const QItemSelection &deselected);
 
 protected:
 	void resizeEvent(QResizeEvent *e);
