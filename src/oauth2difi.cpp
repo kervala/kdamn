@@ -384,7 +384,7 @@ void OAuth2::processDiFi(const QByteArray &content)
 	processNextAction();
 }
 
-bool OAuth2::parseFolder(const QString &html, Folder &folder)
+bool OAuth2::parseFolder(const QString &html, Folder &folder, int &count)
 {
 	QRegExp rootReg("data-noteid=\"([0-9]+)\" class=\"([a-z ]+)\"");
 
@@ -392,7 +392,9 @@ bool OAuth2::parseFolder(const QString &html, Folder &folder)
 
 	while((pos = rootReg.indexIn(html, pos)) > -1)
 	{
-		lastPos = pos;
+		++count;
+
+		lastPos = pos + rootReg.matchedLength();
 
 		Note note;
 		note.id = rootReg.cap(1);
@@ -695,10 +697,12 @@ bool OAuth2::parseNotesDisplayFolder(const QVariantMap &response)
 		m_folders[folderId].updateValues(min, max);
 	}
 
-	// parse HTML code to retrieve notes details
-	if (!parseFolder(html, m_folders[folderId])) return false;
+	int count = 0;
 
-	emit notesUpdated(folderId, offset, m_folders[folderId].count);
+	// parse HTML code to retrieve notes details
+	if (!parseFolder(html, m_folders[folderId], count)) return false;
+
+	emit notesUpdated(folderId, offset, count);
 
 	return true;
 }

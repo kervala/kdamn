@@ -201,7 +201,7 @@ private:
 	bool parseSessionVariables(const QByteArray &content);
 	bool parseNotesFolders(const QByteArray &content);
 	bool parseNotesForm(const QByteArray &content);
-	bool parseFolder(const QString &html, Folder &folder);
+	bool parseFolder(const QString &html, Folder &folder, int &count);
 	bool parseNote(const QString &html, Note &note);
 
 	bool parseNotesIdsAndCount(const QVariantMap &response, QStringList &notesIds, int &count);
