@@ -42,7 +42,7 @@
      <x>0</x>
      <y>0</y>
      <width>519</width>
-     <height>21</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -85,7 +85,6 @@
      <string>Notes</string>
     </property>
     <addaction name="actionDisplayNotes"/>
-    <addaction name="actionDisplayNote"/>
     <addaction name="actionSendNote"/>
    </widget>
    <addaction name="menuFile"/>
@@ -183,11 +182,6 @@
   <action name="actionDisplayNotes">
    <property name="text">
     <string>Display notes</string>
-   </property>
-  </action>
-  <action name="actionDisplayNote">
-   <property name="text">
-    <string>Display note</string>
    </property>
   </action>
   <action name="actionSendNote">

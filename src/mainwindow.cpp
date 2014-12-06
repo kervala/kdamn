@@ -71,7 +71,6 @@ MainWindow::MainWindow():QMainWindow()
 
 	// Notes menu
 	connect(actionDisplayNotes, SIGNAL(triggered()), this, SLOT(onDisplayNotes()));
-	connect(actionDisplayNote, SIGNAL(triggered()), this, SLOT(onDisplayNote()));
 	connect(actionSendNote, SIGNAL(triggered()), this, SLOT(onSendNote()));
 
 	// Help menu
@@ -313,10 +312,6 @@ void MainWindow::onUploadScreenshot()
 void MainWindow::onDisplayNotes()
 {
 	OAuth2::getInstance()->requestNotesDisplayFolder("1", 0);
-}
-
-void MainWindow::onDisplayNote()
-{
 }
 
 void MainWindow::onSendNote()
