@@ -26,7 +26,7 @@
 	#define new DEBUG_NEW
 #endif
 
-NotesModel::NotesModel(QObject *parent):QAbstractTableModel(parent)
+NotesModel::NotesModel(QObject *parent):QAbstractTableModel(parent), m_waitingData(false)
 {
 }
 
@@ -42,6 +42,8 @@ void NotesModel::setFolder(const Folder &folder)
 	m_folder = folder;
 
 	endResetModel();
+
+	m_waitingData = false;
 }
 
 void NotesModel::updateFolder(const Folder &folder, int offset, int count)
@@ -52,7 +54,7 @@ void NotesModel::updateFolder(const Folder &folder, int offset, int count)
 
 	endInsertRows();
 
-//	emit dataChanged(index(offset, 0, QModelIndex()), index(offset + count - 1, 3, QModelIndex()));
+	m_waitingData = false;
 }
 
 int NotesModel::rowCount(const QModelIndex &/* parent */) const
@@ -122,10 +124,12 @@ QVariant NotesModel::headerData(int section, Qt::Orientation orientation, int ro
 
 bool NotesModel::canFetchMore(const QModelIndex &parent) const
 {
-	return (m_folder.maxOffset > 0) && (m_folder.maxOffset > m_folder.notes.size());
+	return !m_waitingData && (m_folder.maxOffset > 0) && (m_folder.maxOffset > m_folder.notes.size());
 }
 
 void NotesModel::fetchMore(const QModelIndex &parent)
 {
+	m_waitingData = true;
+
 	emit loadNewData(m_folder.notes.size());
 }

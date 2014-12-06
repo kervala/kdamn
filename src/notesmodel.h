@@ -50,6 +50,7 @@ signals:
 
 protected:
 	Folder m_folder;
+	bool m_waitingData;
 };
 
 #endif
