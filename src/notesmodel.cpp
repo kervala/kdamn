@@ -64,7 +64,7 @@ int NotesModel::rowCount(const QModelIndex &/* parent */) const
 
 int NotesModel::columnCount(const QModelIndex &/* parent */) const
 {
-	return 4;
+	return 3;
 }
 
 QVariant NotesModel::data(const QModelIndex &index, int role) const
@@ -85,9 +85,6 @@ QVariant NotesModel::data(const QModelIndex &index, int role) const
 
 		case 2:
 		return note.date;
-
-		case 3:
-		return note.preview.left(50);
 
 		default:
 		break;
@@ -110,9 +107,6 @@ QVariant NotesModel::headerData(int section, Qt::Orientation orientation, int ro
 
 			case 2:
 			return tr("Date");
-
-			case 3:
-			return tr("Preview");
 
 			default:
 			break;
