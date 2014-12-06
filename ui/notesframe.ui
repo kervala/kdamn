@@ -77,7 +77,11 @@
        <bool>false</bool>
       </attribute>
      </widget>
-     <widget class="QTextEdit" name="previewEdit"/>
+     <widget class="QTextEdit" name="previewEdit">
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
     </widget>
    </item>
   </layout>
