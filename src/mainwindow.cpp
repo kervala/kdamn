@@ -317,7 +317,6 @@ void MainWindow::onDisplayNotes()
 
 void MainWindow::onDisplayNote()
 {
-	OAuth2::getInstance()->requestNotesDisplayNote("1", "1138214864");
 }
 
 void MainWindow::onSendNote()
