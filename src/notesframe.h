@@ -45,7 +45,7 @@ public slots:
 	void onLoadNewData(int offset);
 
 protected:
-	void updateSplitter();
+	void resizeEvent(QResizeEvent *e);
 
 	NotesModel *m_model;
 

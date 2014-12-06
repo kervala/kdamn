@@ -42,6 +42,16 @@ NotesFrame::NotesFrame(QWidget *parent):TabFrame(parent), m_model(NULL)
 #endif
 	notesView->verticalHeader()->setDefaultSectionSize(notesView->fontMetrics().height() + 4);
 
+	notesView->horizontalHeader()->setCascadingSectionResizes(true);
+	notesView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
+	notesView->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
+	notesView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
+
+	int dateWidth = notesView->fontMetrics().width("0000-00-00 00:00:00") + 4;
+	notesView->horizontalHeader()->resizeSection(1, 150);
+	notesView->horizontalHeader()->resizeSection(2, dateWidth);
+	// we'll compute first section width later
+
 	connect(searchEdit, SIGNAL(returnPressed()), SLOT(onSearch()));
 //	connect(usersView, SIGNAL(doubleClicked(QModelIndex)), SLOT(onUserDoubleClicked(QModelIndex)));
 	connect(m_model, SIGNAL(loadNewData(int)), SLOT(onLoadNewData(int)));
@@ -65,8 +75,6 @@ void NotesFrame::setFolder(const Folder &folder)
 	if (!folder.notes.isEmpty() && m_folderId.isEmpty()) m_folderId = folder.notes.front().folderId;
 
 	m_model->setFolder(folder);
-
-	notesView->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
 }
 
 void NotesFrame::updateFolder(const Folder &folder, int offset, int count)
@@ -74,8 +82,6 @@ void NotesFrame::updateFolder(const Folder &folder, int offset, int count)
 	if (!folder.notes.isEmpty() && m_folderId.isEmpty()) m_folderId = folder.notes.front().folderId;
 
 	m_model->updateFolder(folder, offset, count);
-
-	notesView->horizontalHeader()->resizeSections(QHeaderView::ResizeToContents);
 }
 
 void NotesFrame::onSearch()
@@ -88,24 +94,15 @@ void NotesFrame::onLoadNewData(int offset)
 	OAuth2::getInstance()->requestNotesDisplayFolder(m_folderId, offset);
 }
 
-void NotesFrame::updateSplitter()
+void NotesFrame::resizeEvent(QResizeEvent *e)
 {
-/*
-	QStringList users = m_usersModel->stringList();
+	int totalWidth = e->size().width() - qApp->style()->pixelMetric(QStyle::PM_ScrollBarExtent) - 4;
+	int senderWidth = notesView->horizontalHeader()->sectionSize(1);
+	int dateWidth = notesView->horizontalHeader()->sectionSize(2);
 
-	int min = 65536;
-	int max = 0;
+	notesView->horizontalHeader()->resizeSection(0, totalWidth - senderWidth - dateWidth);
+	notesView->horizontalHeader()->resizeSection(1, senderWidth);
+	notesView->horizontalHeader()->resizeSection(2, dateWidth);
 
-	foreach(const QString &user, users)
-	{
-//		int width = usersView->fontMetrics().boundingRect(member.name).width();
-		int width = usersView->fontMetrics().width(user)+10;
-
-		if (width < min) min = width;
-		if (width > max) max = width;
-	}
-
-	usersView->setMinimumWidth(min);
-	usersView->setMaximumWidth(max);
-*/
+	TabFrame::resizeEvent(e);
 }
