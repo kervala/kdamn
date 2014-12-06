@@ -69,9 +69,7 @@ int NotesModel::columnCount(const QModelIndex &/* parent */) const
 
 QVariant NotesModel::data(const QModelIndex &index, int role) const
 {
-	if (!index.isValid()) return QVariant();
-
-	if (role != Qt::DisplayRole) return QVariant();
+	if (!index.isValid() || index.row() >= m_folder.notes.size() || index.row() < 0 || role != Qt::DisplayRole) return QVariant();
 
 	const Note &note = m_folder.notes[index.row()];
 
