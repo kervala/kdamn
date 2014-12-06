@@ -390,7 +390,7 @@ bool OAuth2::parseFolder(const QString &html, Folder &folder, int &count)
 
 	int pos = 0, lastPos = 0;
 
-	while((pos = rootReg.indexIn(html, pos)) > -1)
+	while((pos = rootReg.indexIn(html, lastPos)) > -1)
 	{
 		++count;
 
@@ -408,57 +408,39 @@ bool OAuth2::parseFolder(const QString &html, Folder &folder, int &count)
 
 		reg.setPattern("class=\"icon_star ( starred)?\"");
 
-		pos = reg.indexIn(html, pos);
+		pos = reg.indexIn(html, lastPos);
 
 		if (pos > -1)
 		{
 			note.starred = !reg.cap(1).isEmpty();
-
-			lastPos = pos;
-		}
-		else
-		{
-			pos = lastPos;
 		}
 
 		// subject
 		reg.setPattern("data-noteid=\"([0-9]+)\" data-folderid=\"([0-9]+)\" href=\"#([0-9_/]+)\" title=\"([^\"]+)\" class=\"wrap-for-ts-(abs|rel)\">([^<]+)");
 
-		pos = reg.indexIn(html, pos);
+		pos = reg.indexIn(html, lastPos);
 
 		if (pos > -1)
 		{
 			note.id = reg.cap(1);
 			note.folderId = reg.cap(2);
 			note.subject = reg.cap(6);
-
-			lastPos = pos;
-		}
-		else
-		{
-			pos = lastPos;
 		}
 
 		// sender
 		reg.setPattern("username\"([^>]*)>([^<]+)");
 
-		pos = reg.indexIn(html, pos);
+		pos = reg.indexIn(html, lastPos);
 
 		if (pos > -1)
 		{
 			note.sender = reg.cap(2);
-
-			lastPos = pos;
-		}
-		else
-		{
-			pos = lastPos;
 		}
 
 		// date
 		reg.setPattern("<span class=\"ts\" title=\"([^\"]+)\">([^<]+)");
 
-		pos = reg.indexIn(html, pos);
+		pos = reg.indexIn(html, lastPos);
 
 		if (pos > -1)
 		{
@@ -466,26 +448,16 @@ bool OAuth2::parseFolder(const QString &html, Folder &folder, int &count)
 			QString dateText = reg.cap(2);
 
 			note.date = convertDateToISO(dateText.indexOf("ago") > -1 ? dateAttribute:dateText);
-
-			lastPos = pos;
-		}
-		else
-		{
-			pos = lastPos;
 		}
 
 		// preview
 		reg.setPattern("<div class=\"note-preview expandable\">([^<]+)");
 
-		pos = reg.indexIn(html, pos);
+		pos = reg.indexIn(html, lastPos);
 
 		if (pos > -1)
 		{
 			note.preview = reg.cap(1).trimmed();
-		}
-		else
-		{
-			pos = lastPos;
 		}
 
 		folder.addNote(note);
