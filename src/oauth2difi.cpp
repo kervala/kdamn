@@ -438,7 +438,7 @@ bool OAuth2::parseFolder(const QString &html, Folder &folder)
 		}
 
 		// sender
-		reg.setPattern("href=\"http://([a-z0-9-.]+).deviantart.com/\">([^<]+)");
+		reg.setPattern("username\"([^>]*)>([^<]+)");
 
 		pos = reg.indexIn(html, pos);
 
