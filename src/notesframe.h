@@ -25,6 +25,8 @@
 #include "tabframe.h"
 #include "notesmodel.h"
 
+class NotesSortFilterProxyModel;
+
 class NotesFrame : public TabFrame, public Ui::NotesFrame
 {
 	Q_OBJECT
@@ -42,6 +44,7 @@ public:
 	void updateNote(const Note &note);
 
 public slots:
+	void onSearchChanged(const QString &search);
 	void onSearch();
 	void onLoadNewData(int offset);
 	void onNotesSelected(const QItemSelection &selected, const QItemSelection &deselected);
@@ -50,6 +53,7 @@ protected:
 	void resizeEvent(QResizeEvent *e);
 
 	NotesModel *m_model;
+	NotesSortFilterProxyModel *m_proxyModel;
 
 	QString m_folderId;
 };

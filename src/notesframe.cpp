@@ -20,7 +20,7 @@
 #include "common.h"
 #include "notesframe.h"
 #include "moc_notesframe.cpp"
-#include "notesmodel.h"
+#include "notessortfilterproxymodel.h"
 #include "oauth2.h"
 
 #ifdef DEBUG_NEW
@@ -33,7 +33,16 @@ NotesFrame::NotesFrame(QWidget *parent):TabFrame(parent), m_model(NULL)
 
 	m_model = new NotesModel(this);
 
-	notesView->setModel(m_model);
+	m_proxyModel = new NotesSortFilterProxyModel(this);
+	m_proxyModel->setDynamicSortFilter(true);
+	m_proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+	m_proxyModel->setSourceModel(m_model);
+
+	notesView->setModel(m_proxyModel);
+
+	// by default sort by date descending order
+	m_proxyModel->sort(2, Qt::DescendingOrder);
+	notesView->horizontalHeader()->setSortIndicator(2, Qt::DescendingOrder);
 
 #ifdef USE_QT5
 	notesView->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
@@ -52,6 +61,7 @@ NotesFrame::NotesFrame(QWidget *parent):TabFrame(parent), m_model(NULL)
 	notesView->horizontalHeader()->resizeSection(2, dateWidth);
 	// we'll compute first section width later
 
+	connect(searchEdit, SIGNAL(textChanged(QString)), this, SLOT(onSearchChanged(QString)));
 	connect(searchEdit, SIGNAL(returnPressed()), SLOT(onSearch()));
 //	connect(usersView, SIGNAL(doubleClicked(QModelIndex)), SLOT(onUserDoubleClicked(QModelIndex)));
 	connect(m_model, SIGNAL(loadNewData(int)), SLOT(onLoadNewData(int)));
@@ -95,6 +105,11 @@ void NotesFrame::updateNote(const Note &note)
 	previewEdit->setText(note.text);
 }
 
+void NotesFrame::onSearchChanged(const QString &search)
+{
+	m_proxyModel->setFilterFixedString(search);
+}
+
 void NotesFrame::onSearch()
 {
 //	QStringList lines = searchEdit->getLines();
@@ -125,8 +140,8 @@ void NotesFrame::onNotesSelected(const QItemSelection &selected, const QItemSele
 
 	foreach(const QItemSelectionRange &range, selected)
 	{
-		int top = range.top();
-		int bottom = range.bottom();
+		int top = m_proxyModel->mapToSource(m_proxyModel->index(range.top(), 0)).row();
+		int bottom = m_proxyModel->mapToSource(m_proxyModel->index(range.bottom(), 0)).row();
 
 		for (int i = top; i <= bottom; ++i)
 		{
