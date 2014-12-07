@@ -11,6 +11,10 @@ c:
 call:convert_desktop icon icon %DIR%
 call:convert %DIR%\header %DIR%\header 57 1
 
+convert %DIR%\header.png -units PixelsPerInch -density 72 -alpha off BMP3:%DIR%\header.bmp
+
+del %DIR%\header.png
+
 echo "Done."
 
 pause
