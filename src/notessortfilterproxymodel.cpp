@@ -36,40 +36,10 @@ bool NotesSortFilterProxyModel::filterAcceptsRow(int sourceRow, const QModelInde
 
 	const Note &note = model->getNote(sourceRow);
 
-	return note.date.contains(filterRegExp())
-		|| note.preview.contains(filterRegExp())
-		|| note.sender.contains(filterRegExp())
-		|| note.subject.contains(filterRegExp());
-}
+	QRegExp reg = filterRegExp();
 
-bool NotesSortFilterProxyModel::lessThan(const QModelIndex &left, const QModelIndex &right) const
-{
-	NotesModel *model = qobject_cast<NotesModel*>(sourceModel());
-
-	int column = left.column();
-
-	if (right.column() != column)
-	{
-		qDebug() << "Error different columns";
-	}
-
-	const Note &leftNote = model->getNote(left.row());
-	const Note &rightNote = model->getNote(right.row());
-
-	switch(column)
-	{
-		case 0:
-		return leftNote.subject < rightNote.subject;
-
-		case 1:
-		return leftNote.sender < rightNote.sender;
-		
-		case 2:
-		return leftNote.date < rightNote.date;
-
-		default:
-		break;
-	}
-
-	return false;
+	return note.date.contains(reg)
+		|| note.sender.contains(reg)
+		|| note.subject.contains(reg)
+		|| note.preview.contains(reg);
 }

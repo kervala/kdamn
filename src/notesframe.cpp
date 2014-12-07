@@ -36,6 +36,7 @@ NotesFrame::NotesFrame(QWidget *parent):TabFrame(parent), m_model(NULL)
 	m_proxyModel = new NotesSortFilterProxyModel(this);
 	m_proxyModel->setDynamicSortFilter(true);
 	m_proxyModel->setFilterCaseSensitivity(Qt::CaseInsensitive);
+	m_proxyModel->setSortCaseSensitivity(Qt::CaseInsensitive);
 	m_proxyModel->setSourceModel(m_model);
 
 	notesView->setModel(m_proxyModel);
