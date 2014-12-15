@@ -23,7 +23,7 @@ SET(TARGET_ICON "icon.ico")
 SET(TARGET "kdamn")
 SET(YEAR "2013-2014")
 
-INIT_PROJECT()
+PROJECT(${PRODUCT} C CXX)
 
 # Instruct CMake to run moc automatically when needed.
 SET(CMAKE_AUTOMOC ON)
