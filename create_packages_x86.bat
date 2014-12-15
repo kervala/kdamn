@@ -1,6 +1,6 @@
 call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x86
 
-set QTDIR=D:/External/vc10/qt-5.3.1-static-32
+set QTDIR=D:/External/vc10/qt-5.4.0-static-32
 
 set PATH=%PATH%;C:\Program files (x86)\CMake\bin
 
