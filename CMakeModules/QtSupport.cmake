@@ -335,9 +335,9 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
 
       IF(QT_STATIC)
         ADD_DEFINITIONS(-DQT_STATICPLUGIN)
-      
-        FIND_PACKAGE(MyPNG)
-        FIND_PACKAGE(JPEG)
+
+        FIND_PACKAGE(MyPNG REQUIRED)
+        FIND_PACKAGE(JPEG REQUIRED)
 
         TARGET_LINK_LIBRARIES(${_TARGET} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
 
@@ -360,12 +360,6 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
               SET(CMAKE_FIND_LIBRARY_SUFFIXES .dylib)
               FIND_LIBRARY(CUPS_LIBRARY cups)
               SET(CMAKE_FIND_LIBRARY_SUFFIXES ${OLD_CMAKE_FIND_LIBRARY_SUFFIXES})
-
-              # harfbuzz is needed since Qt 5.3
-              SET(HB_LIB "${QT_LIBRARY_DIR}/libqtharfbuzzng.a")
-              IF(EXISTS ${HB_LIB})
-                TARGET_LINK_LIBRARIES(${_TARGET} ${HB_LIB})
-              ENDIF()
 
               FIND_LIBRARY(IOKIT_FRAMEWORK IOKit)
               FIND_LIBRARY(FOUNDATION_FRAMEWORK Foundation)
@@ -392,12 +386,23 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
           ENDIF()
           IF(_MODULE STREQUAL Network)
             IF(WIN32)
-              TARGET_LINK_LIBRARIES(${_TARGET} ${WINSDK_LIBRARY_DIR}/Crypt32.lib)
+              FIND_PACKAGE(OpenSSL REQUIRED)
+              TARGET_LINK_LIBRARIES(${_TARGET} ${WINSDK_LIBRARY_DIR}/Crypt32.lib ${OPENSSL_LIBRARIES})
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL Gui)
             LINK_QT_PLUGIN(${_TARGET} imageformats qico)
             LINK_QT_PLUGIN(${_TARGET} imageformats qmng)
+
+            # harfbuzz is needed since Qt 5.3
+            IF(APPLE)
+              SET(HB_LIB "${QT_LIBRARY_DIR}/libqtharfbuzzng.a")
+            ELSEIF(WIN32)
+              SET(HB_LIB "${QT_LIBRARY_DIR}/qtharfbuzzng.lib")
+            ENDIF()
+            IF(EXISTS ${HB_LIB})
+              TARGET_LINK_LIBRARIES(${_TARGET} ${HB_LIB})
+            ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL Multimedia)
             IF(WIN32)
@@ -569,20 +574,20 @@ MACRO(INSTALL_QT_LIBRARIES)
           ENDIF()
         ENDIF()
       ENDFOREACH()
+
+      # Install zlib DLL if found in Qt directory
+      INSTALL_LIBRARY(zlib1)
+
+      # Install OpenSSL libraries
+      FOREACH(_ARG ${EXTERNAL_BINARY_PATH})
+        IF(EXISTS "${_ARG}/libeay32.dll")
+          INSTALL(FILES
+            "${_ARG}/libeay32.dll"
+            "${_ARG}/ssleay32.dll"
+            DESTINATION ${BIN_PREFIX})
+        ENDIF()
+      ENDFOREACH(_ARG)
     ENDIF()
-
-    # Install zlib DLL if found in Qt directory
-    INSTALL_LIBRARY(zlib1)
-
-    # Install OpenSSL libraries
-    FOREACH(_ARG ${EXTERNAL_BINARY_PATH})
-      IF(EXISTS "${_ARG}/libeay32.dll")
-        INSTALL(FILES
-          "${_ARG}/libeay32.dll"
-          "${_ARG}/ssleay32.dll"
-          DESTINATION ${BIN_PREFIX})
-      ENDIF()
-    ENDFOREACH(_ARG)
   ENDIF()
 ENDMACRO(INSTALL_QT_LIBRARIES)
 
