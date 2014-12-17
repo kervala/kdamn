@@ -45,7 +45,7 @@
 	#define new DEBUG_NEW
 #endif
 
-int main(int argv, char *args[])
+int main(int argc, char *argv[])
 {
 #if defined(_MSC_VER) && defined(_DEBUG)
 	_CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -53,7 +53,7 @@ int main(int argv, char *args[])
 
 	Q_INIT_RESOURCE(resources);
 
-	QApplication app(argv, args);
+	QApplication app(argc, argv);
 
 	QApplication::setApplicationName(PRODUCT);
 	QApplication::setOrganizationName(AUTHOR);
