@@ -82,7 +82,7 @@ bool UpdateDialog::download()
 
 void UpdateDialog::onInstall()
 {
-	QDesktopServices::openUrl(QUrl::fromLocalFile(m_filename));
+	QDesktopServices::openUrl(QUrl::fromLocalFile(m_fullpath));
 
 	accept();
 }
