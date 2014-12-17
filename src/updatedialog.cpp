@@ -125,7 +125,7 @@ void UpdateDialog::onReply(QNetworkReply *reply)
 
 	reply->deleteLater();
 
-	QFile file(m_filename);
+	QFile file(m_fullpath);
 
 	if (file.open(QIODevice::WriteOnly))
 	{
@@ -133,6 +133,10 @@ void UpdateDialog::onReply(QNetworkReply *reply)
 
 		label->setText(tr("Your download is complete, click on \"Install\" to install the new version."));
 		installButton->setVisible(true);
+	}
+	else
+	{
+		label->setText(tr("Your download is complete, but we're unable to create file %1.").arg(m_fullpath));
 	}
 }
 
