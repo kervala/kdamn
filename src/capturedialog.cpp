@@ -36,7 +36,7 @@ CaptureDialog::CaptureDialog(QWidget *parent):QDialog(parent), m_handle(0)
 	windowsListView->setModel(model);
 
 	int rowHeight = windowsListView->sizeHintForRow(0) + 1;
-	windowsListView->setMinimumHeight(std::min(6, model->rowCount()) * rowHeight);
+	windowsListView->setMinimumHeight(qMin(6, model->rowCount()) * rowHeight);
 
 	connect(windowsListView, SIGNAL(pressed(const QModelIndex &)), this, SLOT(enableButton(const QModelIndex &)));
 	connect(windowsListView, SIGNAL(doubleClicked(const QModelIndex &)), this, SLOT(validateButton(const QModelIndex &)));
