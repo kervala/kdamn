@@ -177,6 +177,7 @@ void MainWindow::onConnect()
 void MainWindow::onDisconnect()
 {
 	DAmn::getInstance()->disconnect();
+	OAuth2::getInstance()->logout();
 }
 
 void MainWindow::onSettings()
@@ -365,7 +366,8 @@ bool MainWindow::event(QEvent *e)
 
 void MainWindow::onLoggedOut()
 {
-	close();
+	// only close window if already hidden (when close button pressed)
+	if (isHidden()) close();
 }
 
 void MainWindow::onNewVersion(const QString &url, const QString &date, uint size, const QString &version)

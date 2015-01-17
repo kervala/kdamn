@@ -173,6 +173,17 @@ bool OAuth2::login()
 
 bool OAuth2::logout()
 {
+	if (!m_logged)
+	{
+		m_sessionId.clear();
+		m_validateToken.clear();
+		m_validateKey.clear();
+
+		emit loggedOut();
+
+		return false;
+	}
+
 	if (m_sessionId.isEmpty() || m_validateToken.isEmpty() || m_validateKey.isEmpty())
 	{
 		m_actions.push_front(ActionLogout);
