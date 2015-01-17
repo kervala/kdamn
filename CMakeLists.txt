@@ -19,9 +19,8 @@ SET(VERSION_PATCH "REVISION")
 SET(AUTHOR "Kervala")
 SET(PRODUCT "kdAmn")
 SET(DESCRIPTION "deviantART Messaging Network (dAmn) chat client")
-SET(TARGET_ICON "icon.ico")
 SET(TARGET "kdamn")
-SET(YEAR "2013-2014")
+SET(YEAR "2013-2015")
 
 PROJECT(${PRODUCT} C CXX)
 
@@ -68,7 +67,7 @@ SET_TARGET_GUI_EXECUTABLE(${TARGET} ${SRC} ${RES} ${UI} ${HEADER} ${TS})
 SET_TARGET_LABEL(${TARGET} ${PRODUCT})
 
 IF(APPLE)
-  SET(MACOSX_BUNDLE_GUI_IDENTIFIER "net.kervala.kdamn")
+  SET(MACOSX_BUNDLE_GUI_IDENTIFIER "net.kervala.${TARGET}")
 ENDIF(APPLE)
 
 IF(X11_FOUND)
@@ -129,8 +128,8 @@ SET(CPACK_NSIS_MUI_UNIICON ${CMAKE_SOURCE_DIR}/res/icon.ico)
 SET(CPACK_NSIS_INSTALLED_ICON_NAME "${TARGET}.exe")
 SET(CPACK_PACKAGE_ICON "${CMAKE_SOURCE_DIR}/res\\\\header.bmp") # 150x57
 SET(CPACK_NSIS_DISPLAY_NAME ${PRODUCT})
-SET(CPACK_NSIS_HELP_LINK "http://dev.kervala.net/projects/kdamn")
-SET(CPACK_NSIS_URL_INFO_ABOUT "http://dev.kervala.net/projects/kdamn")
+SET(CPACK_NSIS_HELP_LINK "http://dev.kervala.net/projects/${TARGET}")
+SET(CPACK_NSIS_URL_INFO_ABOUT "http://dev.kervala.net/projects/${TARGET}")
 SET(CPACK_NSIS_CONTACT "kervala@gmail.com")
 SET(CPACK_NSIS_COMPRESSOR "/SOLID lzma")
 
