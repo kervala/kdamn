@@ -37,7 +37,7 @@ ConnectDialog::ConnectDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt::W
 
 	loginEdit->setText(ConfigFile::getInstance()->getLogin());
 	passwordEdit->setText(ConfigFile::getInstance()->getPassword());
-	rememberPasswordBox->setChecked(ConfigFile::getInstance()->isRememberPassword());
+	rememberPasswordBox->setChecked(ConfigFile::getInstance()->getRememberPassword());
 }
 
 ConnectDialog::~ConnectDialog()
@@ -52,7 +52,7 @@ void ConnectDialog::accept()
 
 	ConfigFile::getInstance()->setLogin(login);
 	ConfigFile::getInstance()->setPassword(remember ? password:"");
-	ConfigFile::getInstance()->rememberPassword(remember);
+	ConfigFile::getInstance()->setRememberPassword(remember);
 	ConfigFile::getInstance()->setDAmnTokenMethod(MethodOAuth2);
 
 	// reset all tokens

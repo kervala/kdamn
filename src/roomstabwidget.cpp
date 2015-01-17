@@ -273,7 +273,7 @@ void RoomsTabWidget::onRequestDAmnToken()
 	OAuth2::getInstance()->setDAmnToken("");
 	DAmn::getInstance()->setToken("");
 
-	if (ConfigFile::getInstance()->isRememberPassword() && !user.isEmpty() && !password.isEmpty())
+	if (ConfigFile::getInstance()->getRememberPassword() && !user.isEmpty() && !password.isEmpty())
 	{
 		OAuth2::getInstance()->requestDAmnToken();
 	}
@@ -291,7 +291,7 @@ void RoomsTabWidget::onLoggedIn()
 void RoomsTabWidget::onReceiveFolders()
 {
 	// begin to check for notes
-	m_messagesTimer->start(10000);
+	m_messagesTimer->start(ConfigFile::getInstance()->getCheckMessagesDelay() * 1000);
 }
 
 void RoomsTabWidget::onReceiveDAmnToken(const QString &login, const QString &authtoken)
@@ -340,7 +340,7 @@ void RoomsTabWidget::onReceiveNotes(int count)
 		lastCount = count;
 	}
 
-	m_messagesTimer->start(10000);
+	m_messagesTimer->start(ConfigFile::getInstance()->getCheckMessagesDelay() * 1000);
 }
 
 void RoomsTabWidget::onUpdateNotes(const QString &folderId, int offset, int count)

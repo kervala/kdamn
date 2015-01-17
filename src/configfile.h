@@ -20,6 +20,29 @@
 #ifndef CONFIGFILE_H
 #define CONFIGFILE_H
 
+#define DECLARE_SIMPLE_VAR(type, function, var) \
+public:\
+	void set##function(type var);\
+	type get##function() const;\
+protected:\
+	type m_##var;
+
+#define DECLARE_TYPED_VAR(type, function, var) \
+public:\
+	void set##function(const type &var);\
+	type get##function() const;\
+protected:\
+	type m_##var;
+
+#define DECLARE_QSTRING_VAR(function, var) \
+DECLARE_TYPED_VAR(QString, function, var);
+
+#define DECLARE_INT_VAR(function, var) \
+DECLARE_SIMPLE_VAR(int, function, var);
+
+#define DECLARE_BOOL_VAR(function, var) \
+DECLARE_SIMPLE_VAR(bool, function, var);
+
 struct ConfigRoom
 {
 	QString name;
@@ -78,39 +101,6 @@ public:
 
 	static ConfigFile* getInstance() { return s_instance; }
 
-	QString getLogin() const;
-	void setLogin(const QString &login);
-
-	QString getPassword() const;
-	void setPassword(const QString &password);
-
-	bool isRememberPassword() const;
-	void rememberPassword(bool remember);
-
-	QString getDAmnToken() const;
-	void setDAmnToken(const QString &token);
-
-	QString getAccessToken() const;
-	void setAccessToken(const QString &token);
-
-	QString getRefreshToken() const;
-	void setRefreshToken(const QString &token);
-
-	DAmnTokenMethod getDAmnTokenMethod() const;
-	void setDAmnTokenMethod(DAmnTokenMethod method);
-
-	QSize getWindowSize() const;
-	void setWindowSize(const QSize &size);
-
-	QPoint getWindowPosition() const;
-	void setWindowPosition(const QPoint &pos);
-
-	int getAnimationFrameDelay() const;
-	void setAnimationFrameDelay(int delay);
-
-	int getAutoSaveDelay() const;
-	void setAutoSaveDelay(int delay);
-
 	ConfigRooms getRooms() const;
 	ConfigRoomsIterator getRoom(const QString &name, bool insert = false);
 	void setRoomValue(const QString &room, int value);
@@ -122,14 +112,22 @@ public:
 	QList<QNetworkCookie> getCookies() const;
 	void setCookies(const QList<QNetworkCookie> &cookies);
 
-	bool getDisplayTimestamps() const;
-	void setDisplayTimestamps(bool display);
-
-	bool getEnableAnimations() const;
-	void setEnableAnimations(bool enable);
-
-	QString getLogsDirectory() const;
-	void setLogsDirectory(const QString &dir);
+DECLARE_QSTRING_VAR(Login, login);
+DECLARE_QSTRING_VAR(Password, password);
+DECLARE_BOOL_VAR(RememberPassword, rememberPassword);
+DECLARE_QSTRING_VAR(DAmnToken, damnToken);
+DECLARE_QSTRING_VAR(AccessToken, accessToken);
+DECLARE_QSTRING_VAR(RefreshToken, refreshToken);
+DECLARE_INT_VAR(AnimationFrameDelay, animationFrameDelay);
+DECLARE_INT_VAR(AutoSaveDelay, autoSaveDelay);
+DECLARE_INT_VAR(CheckMessagesDelay, checkMessagesDelay);
+DECLARE_BOOL_VAR(DisplayTimestamps, displayTimestamps);
+DECLARE_BOOL_VAR(EnableAnimations, enableAnimations);
+DECLARE_QSTRING_VAR(LogsDirectory, logsDirectory);
+DECLARE_TYPED_VAR(DAmnTokenMethod, DAmnTokenMethod, method);
+DECLARE_TYPED_VAR(QSize, WindowSize, size);
+DECLARE_TYPED_VAR(QPoint, WindowPosition, position);
+DECLARE_INT_VAR(Splitter, splitter);
 
 public slots:
 	bool load();
@@ -146,25 +144,9 @@ private:
 
 	QSettings m_settings;
 
-	QString m_login;
-	QString m_password;
-	bool m_rememberPassword;
-	QString m_damnToken;
-	DAmnTokenMethod m_method;
 	ConfigRooms m_rooms;
-	QString m_accessToken;
-	QString m_refreshToken;
-	int m_animationFrameDelay;
-	bool m_displayTimestamps;
-	bool m_enableAnimations;
-	QString m_logsDirectory;
 
-	int m_autoSaveDelay;
 	bool m_modified;
-
-	QSize m_size;
-	QPoint m_position;
-	int m_splitter;
 
 	QList<QNetworkCookie> m_cookies;
 };

@@ -28,11 +28,67 @@
 	#define new DEBUG_NEW
 #endif
 
+#define IMPLEMENT_TYPED_VAR(type, function, var) \
+void ConfigFile::set##function(const type &var)\
+{\
+	if (m_##var == var) return;\
+	\
+	m_##var = var;\
+	modified(true);\
+}\
+\
+type ConfigFile::get##function() const\
+{\
+	return m_##var;\
+}
+
+#define IMPLEMENT_QSTRING_VAR(function, var) \
+void ConfigFile::set##function(const QString &var)\
+{\
+	if (m_##var == var) return;\
+	\
+	m_##var = var;\
+	modified(true);\
+}\
+\
+QString ConfigFile::get##function() const\
+{\
+	return m_##var;\
+}
+
+#define IMPLEMENT_INT_VAR(function, var) \
+void ConfigFile::set##function(int var)\
+{\
+	if (m_##var == var) return;\
+	\
+	m_##var = var;\
+	modified(true);\
+}\
+\
+int ConfigFile::get##function() const\
+{\
+	return m_##var;\
+}
+
+#define IMPLEMENT_BOOL_VAR(function, var) \
+void ConfigFile::set##function(bool var)\
+{\
+	if (m_##var == var) return;\
+	\
+	m_##var = var;\
+	modified(true);\
+}\
+\
+bool ConfigFile::get##function() const\
+{\
+	return m_##var;\
+}
+
 ConfigFile* ConfigFile::s_instance = NULL;
 
 ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT),
 	m_rememberPassword(true), m_method(MethodOAuth2), m_animationFrameDelay(100), m_displayTimestamps(true), m_enableAnimations(true),
-	m_autoSaveDelay(30), m_modified(false), m_size(0, 0), m_position(0, 0), m_splitter(0)
+	m_autoSaveDelay(30), m_checkMessagesDelay(60), m_modified(false), m_size(0, 0), m_position(0, 0), m_splitter(0)
 {
 	if (!s_instance) s_instance = this;
 
@@ -66,8 +122,14 @@ bool ConfigFile::load()
 
 	int version = m_settings.value("version", 1).toInt();
 
-	if (version == 2) loadVersion2();
-	else loadVersion1();
+	if (version == 2)
+	{
+		loadVersion2();
+	}
+	else
+	{
+		loadVersion1();
+	}
 
 	autoSave();
 
@@ -102,6 +164,7 @@ bool ConfigFile::loadVersion1()
 
 bool ConfigFile::loadVersion2()
 {
+	// general parameters
 	m_autoSaveDelay = m_settings.value("autosave").toInt();
 
 	// server parameters
@@ -163,6 +226,13 @@ bool ConfigFile::loadVersion2()
 
 	m_settings.endGroup();
 
+	// messages parameters
+	m_settings.beginGroup("messages");
+
+	m_checkMessagesDelay = m_settings.value("check_messages_delay", 60).toInt(); // in seconds
+
+	m_settings.endGroup();
+
 	return true;
 }
 
@@ -180,6 +250,7 @@ bool ConfigFile::save()
 
 	// general parameters
 	m_settings.setValue("version", 2);
+	m_settings.setValue("autosave", m_autoSaveDelay);
 
 	// server parameters
 	m_settings.beginGroup("server");
@@ -237,102 +308,18 @@ bool ConfigFile::save()
 
 	m_settings.endGroup();
 
+	// messages parameters
+	m_settings.beginGroup("messages");
+
+	m_settings.setValue("check_messages_delay", m_checkMessagesDelay);
+
+	m_settings.endGroup();
+
 	modified(false);
 
 	autoSave();
 
 	return true;
-}
-
-QString ConfigFile::getLogin() const
-{
-	return m_login;
-}
-
-void ConfigFile::setLogin(const QString &login)
-{
-	if (m_login == login) return;
-
-	m_login = login;
-	modified(true);
-}
-
-QString ConfigFile::getPassword() const
-{
-	return m_password;
-}
-
-void ConfigFile::setPassword(const QString &password)
-{
-	if (m_password == password) return;
-
-	m_password = password;
-	modified(true);
-}
-
-bool ConfigFile::isRememberPassword() const
-{
-	return m_rememberPassword;
-}
-
-void ConfigFile::rememberPassword(bool remember)
-{
-	if (m_rememberPassword == remember) return;
-
-	m_rememberPassword = remember;
-	modified(true);
-}
-
-QString ConfigFile::getDAmnToken() const
-{
-	return m_damnToken;
-}
-
-void ConfigFile::setDAmnToken(const QString &token)
-{
-	if (m_damnToken == token) return;
-
-	m_damnToken = token;
-	modified(true);
-}
-
-QString ConfigFile::getAccessToken() const
-{
-	return m_accessToken;
-}
-
-void ConfigFile::setAccessToken(const QString &token)
-{
-	if (m_accessToken == token) return;
-
-	m_accessToken = token;
-	modified(true);
-}
-
-QString ConfigFile::getRefreshToken() const
-{
-	return m_refreshToken;
-}
-
-void ConfigFile::setRefreshToken(const QString &token)
-{
-	if (m_refreshToken == token) return;
-
-	m_refreshToken = token;
-	modified(true);
-}
-
-DAmnTokenMethod ConfigFile::getDAmnTokenMethod() const
-{
-	return m_method;
-}
-
-void ConfigFile::setDAmnTokenMethod(DAmnTokenMethod method)
-{
-	if (m_method == method) return;
-
-	m_method = method;
-	modified(true);
 }
 
 QSize ConfigFile::getWindowSize() const
@@ -358,32 +345,6 @@ void ConfigFile::setWindowPosition(const QPoint &pos)
 	if (m_position == pos || pos.isNull()) return;
 
 	m_position = pos;
-	modified(true);
-}
-
-int ConfigFile::getAnimationFrameDelay() const
-{
-	return m_animationFrameDelay;
-}
-
-void ConfigFile::setAnimationFrameDelay(int delay)
-{
-	if (m_animationFrameDelay == delay) return;
-
-	m_animationFrameDelay = delay;
-	modified(true);
-}
-
-int ConfigFile::getAutoSaveDelay() const
-{
-	return m_autoSaveDelay;
-}
-
-void ConfigFile::setAutoSaveDelay(int delay)
-{
-	if (m_autoSaveDelay == delay) return;
-
-	m_autoSaveDelay = delay;
 	modified(true);
 }
 
@@ -486,54 +447,18 @@ void ConfigFile::modified(bool modified)
 	m_modified = modified;
 }
 
-QList<QNetworkCookie> ConfigFile::getCookies() const
-{
-	return m_cookies;
-}
-
-void ConfigFile::setCookies(const QList<QNetworkCookie> &cookies)
-{
-	if (m_cookies == cookies) return;
-
-	m_cookies = cookies;
-
-	modified(true);
-}
-
-bool ConfigFile::getDisplayTimestamps() const
-{
-	return m_displayTimestamps;
-}
-
-void ConfigFile::setDisplayTimestamps(bool display)
-{
-	if (m_displayTimestamps == display) return;
-
-	m_displayTimestamps = display;
-
-	modified(true);
-}
-
-bool ConfigFile::getEnableAnimations() const
-{
-	return m_enableAnimations;
-}
-
-void ConfigFile::setEnableAnimations(bool enable)
-{
-	if (m_enableAnimations == enable) return;
-
-	m_enableAnimations = enable;
-
-	modified(true);
-}
-
-QString ConfigFile::getLogsDirectory() const
-{
-	return m_logsDirectory;
-}
-
-void ConfigFile::setLogsDirectory(const QString &dir)
-{
-	m_logsDirectory = dir;
-}
+IMPLEMENT_QSTRING_VAR(Login, login);
+IMPLEMENT_QSTRING_VAR(Password, password);
+IMPLEMENT_BOOL_VAR(RememberPassword, rememberPassword);
+IMPLEMENT_TYPED_VAR(DAmnTokenMethod, DAmnTokenMethod, method);
+IMPLEMENT_QSTRING_VAR(DAmnToken, damnToken);
+IMPLEMENT_QSTRING_VAR(AccessToken, accessToken);
+IMPLEMENT_QSTRING_VAR(RefreshToken, refreshToken);
+IMPLEMENT_INT_VAR(AnimationFrameDelay, animationFrameDelay);
+IMPLEMENT_INT_VAR(AutoSaveDelay, autoSaveDelay);
+IMPLEMENT_INT_VAR(CheckMessagesDelay, checkMessagesDelay);
+IMPLEMENT_BOOL_VAR(DisplayTimestamps, displayTimestamps);
+IMPLEMENT_BOOL_VAR(EnableAnimations, enableAnimations);
+IMPLEMENT_QSTRING_VAR(LogsDirectory, logsDirectory);
+IMPLEMENT_INT_VAR(Splitter, splitter);
+IMPLEMENT_TYPED_VAR(QList<QNetworkCookie>, Cookies, cookies);
