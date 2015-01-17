@@ -37,7 +37,7 @@ QString DAmn::getRoomType(const QString &room) const
 bool DAmn::client()
 {
 	begin();
-	writeLine("dAmnClient 0.2");
+	writeLine("dAmnClient 0.3");
 	writeLine(QString("agent=%1 %2").arg(PRODUCT).arg(VERSION));
 	return end();
 }
