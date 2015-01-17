@@ -425,7 +425,7 @@ void RoomsTabWidget::onSendNote(const QString &noteId)
 
 void RoomsTabWidget::checkMessages()
 {
-//	OAuth2::getInstance()->requestMessageCenterGetViews();
+	OAuth2::getInstance()->requestMessageCenterGetViews();
 }
 
 void RoomsTabWidget::onText(const QString &room, const QString &user, EMessageType type, const QString &text, bool html)
