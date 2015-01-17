@@ -34,7 +34,6 @@
 #define SENDNOTE_URL HTTP_URL"/messages/notes/send"
 #define OAUTH2_URL HTTPS_URL"/api/v1/oauth2"
 #define OAUTH2_TOKEN_URL HTTPS_URL"/oauth2/token"
-#define CHAT_URL "http://chat.deviantart.com/chat/Botdom"
 #define DIFI_URL HTTPS_URL"/global/difi.php"
 #define REDIRECT_APP "kdamn://oauth2/login"
 #define UPDATE_URL "http://kervala.net/utils/update.php"
@@ -188,7 +187,6 @@ private:
 
 	// site process
 	QString getAuthorizationUrl() const;
-	bool requestAuthToken();
 
 	void addUserAgent(QNetworkRequest &req) const;
 

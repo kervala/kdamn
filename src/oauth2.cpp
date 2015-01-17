@@ -323,11 +323,6 @@ QString OAuth2::getUserAgent()
 	return s_userAgent;
 }
 
-bool OAuth2::requestAuthToken()
-{
-	return get(CHAT_URL);
-}
-
 void OAuth2::onReply(QNetworkReply *reply)
 {
 	if (reply->error() == QNetworkReply::NoError)
