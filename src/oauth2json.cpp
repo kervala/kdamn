@@ -46,19 +46,12 @@ bool OAuth2::requestImageInfo(const QString &url, const QString &room)
 
 QString OAuth2::getAuthorizationUrl() const
 {
-	return QString("%1/oauth2/authorize?response_type=code&client_id=%2&redirect_uri=%3").arg(HTTPS_URL).arg(m_clientId).arg(REDIRECT_APP);
+	return QString("%1?response_type=code&client_id=%2&redirect_uri=%3&scope=basic").arg(AUTHORIZE_URL).arg(m_clientId).arg(REDIRECT_APP);
 }
 
 bool OAuth2::requestAuthorization()
 {
-	if (!m_logged)
-	{
-		m_actions.push_front(ActionRequestAuthorization);
-
-		return login();
-	}
-
-	return get(getAuthorizationUrl());
+	return get(getAuthorizationUrl(), OAUTH2LOGIN_URL);
 }
 
 bool OAuth2::requestAccessToken(const QString &code)

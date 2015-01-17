@@ -150,6 +150,10 @@ bool OAuth2::login()
 #endif
 
 	params.addQueryItem("client_id", QString::number(m_clientId));
+	params.addQueryItem("response_type", "code");
+	params.addQueryItem("redirect_uri", REDIRECT_APP);
+	params.addQueryItem("scope", "basic");
+	params.addQueryItem("state", "");
 	params.addQueryItem("subdomain", "www");
 	params.addQueryItem("referrer", getAuthorizationUrl());
 	params.addQueryItem("oauth2", "1");
@@ -164,7 +168,7 @@ bool OAuth2::login()
 	data = params.encodedQuery();
 #endif
 
-	return post(QString("%1/join/oauth2login").arg(HTTPS_URL), data);
+	return post(OAUTH2LOGIN_URL, data);
 }
 
 bool OAuth2::logout()
@@ -173,7 +177,7 @@ bool OAuth2::logout()
 	{
 		m_actions.push_front(ActionLogout);
 
-		return get("https://www.deviantart.com/settings/sessions");
+		return get(SESSIONS_URL);
 	}
 
 #ifdef USE_QT5
@@ -194,7 +198,7 @@ bool OAuth2::logout()
 	data = params.encodedQuery();
 #endif
 
-	return post(LOGOUT_URL, data, "https://www.deviantart.com/settings/sessions");
+	return post(LOGOUT_URL, data, SESSIONS_URL);
 }
 
 bool OAuth2::prepareNote()
@@ -328,246 +332,41 @@ void OAuth2::onReply(QNetworkReply *reply)
 {
 	if (reply->error() == QNetworkReply::NoError)
 	{
-	}
+		qobject_cast<Cookies*>(m_manager->cookieJar())->saveToDisk();
 
-	qobject_cast<Cookies*>(m_manager->cookieJar())->saveToDisk();
+		QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
+		QString url = reply->url().toString();
+		QByteArray content = reply->readAll();
+		int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
 
-	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
-	QString url = reply->url().toString();
-	QByteArray content = reply->readAll();
+		// if status code 302 (redirection), we can clear content
+		if (statusCode == 302) content.clear();
 
-	qDebug() << "URL:" << url;
-	qDebug() << "Redirection:" << redirection;
-
-#ifdef USE_QT5
-	QUrlQuery query(reply->url().query());
-#else
-	QUrl query = reply->url();
+#ifdef _DEBUG
+		qDebug() << "URL:" << url;
+		qDebug() << "Redirection:" << redirection;
 #endif
 
-	bool isJson = content.indexOf("{") == 0 || query.hasQueryItem("access_token") || query.hasQueryItem("grant_type") || query.hasQueryItem("url");
-	QString path = reply->url().path();
-
-	reply->deleteLater();
-	reply = NULL;
-
-	if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
-	{
-		QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
-
-		QString cachePath;
-
-#ifdef USE_QT5
-		cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-#else
-		cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
-#endif
-
-		QFile file(QString("%1/%2").arg(QDir::fromNativeSeparators(cachePath)).arg(md5));
-
-		if (file.open(QIODevice::WriteOnly))
+		if (!redirection.isEmpty() && content.isEmpty())
 		{
-			file.write(content);
+			processRedirection(redirection, url);
 		}
-
-		emit imageDownloaded(md5);
-	}
-	else if (isJson)
-	{
-		if (url.startsWith(DIFI_URL))
+		else if (redirection.isEmpty() && !content.isEmpty())
 		{
-			processDiFi(content);
-		}
-		else if (url.startsWith(UPDATE_URL))
-		{
-			processNewVersions(content);
+			processContent(content, url);
 		}
 		else
 		{
-			processJson(content, path);
+			qDebug() << "Error: both content and redirection are defined";
 		}
-	}
-	else if (url.endsWith("/join/oauth2login"))
-	{
-		// when using oauth2
-		if (redirection.endsWith("/join/blank"))
-		{
-			m_logged = true;
-
-			emit loggedIn();
-
-			processNextAction();
-		}
-		else
-		{
-			if (content.indexOf("The username or password you entered was incorrect.") > -1)
-			{
-				// wrong login or password
-				emit errorReceived(tr("Login '%1' or password is incorrect").arg(m_login));
-			}
-			else
-			{
-				// <span class="field_error" rel="password">
-				emit errorReceived(tr("Unknown error for login '%1'").arg(m_login));
-			}
-		}
-	}
-	else if (url.endsWith("/join/oauth2"))
-	{
-		// fill OAuth2 login form
-		login();
-	}
-	else if (redirection.startsWith(REDIRECT_APP))
-	{
-#ifdef USE_QT5
-		QUrlQuery query(QUrl(redirection).query());
-
-		if (query.hasQueryItem("code"))
-		{
-			requestAccessToken(query.queryItemValue("code"));
-		}
-		else if (query.hasQueryItem("error"))
-		{
-			emit errorReceived(query.queryItemValue("error_description"));
-		}
-#else
-		QRegExp reg(QString("^%1\\?code=([0-9a-f]+)$").arg(REDIRECT_APP));
-
-		if (reg.indexIn(redirection) > -1)
-		{
-			requestAccessToken(reg.cap(1));
-		}
-#endif
-		else
-		{
-			emit errorReceived(tr("Unknown error while redirected to %1").arg(redirection));
-		}
-	}
-	else if (url.startsWith(LOGIN_URL))
-	{
-		if (redirection.endsWith("?bad_form=1"))
-		{
-			emit errorReceived(tr("Bad form"));
-		}
-		else if (redirection.endsWith(QString("/wrong-password")))
-		{
-			emit errorReceived(tr("Login '%1' doesn't exist").arg(m_login));
-		}
-		else if (redirection.endsWith(QString("/wrong-password?username=%1").arg(m_login)))
-		{
-			emit errorReceived(tr("Wrong password for user %1").arg(m_login));
-		}
-		else if (redirection.endsWith(".com"))
-		{
-			// redirection to user home page
-			m_logged = true;
-
-			requestMessageCenterGetViews();
-
-			emit loggedIn();
-		}
-		else
-		{
-			requestAuthToken();
-		}
-	}
-	else if (url.indexOf("/applications") > -1 && url.indexOf(QString("client_id=%1").arg(m_clientId)) > -1)
-	{
-		QRegExp reg("name=\"validate_key\" value=\"([0-9]+)\"");
-
-		if (reg.indexIn(content) > -1)
-		{
-			QString validateKey = reg.cap(1);
-
-			// TODO: ask authorization to user
-			authorizeApplication(validateKey, "", true);
-		}
-		else
-		{
-			emit errorReceived(tr("Unable to find validate_key"));
-		}
-	}
-	else if (url.indexOf("/authorize_app") > -1)
-	{
-		QRegExp reg("name=\"validate_key\" value=\"([0-9]+)\"");
-
-		if (reg.indexIn(content) > -1)
-		{
-			QString validateKey = reg.cap(1);
-
-			reg.setPattern("name=\"validate_token\" value=\"([0-9a-f]+)\"");
-
-			if (reg.indexIn(content) > -1)
-			{
-				QString validateToken = reg.cap(1);
-
-				// TODO: ask authorization to user
-				authorizeApplication(validateKey, validateToken, true);
-			}
-			else
-			{
-				emit errorReceived(tr("Unable to find validate_token"));
-			}
-		}
-		else
-		{
-			emit errorReceived(tr("Unable to find validate_key"));
-		}
-	}
-	else if (url == NOTES_URL)
-	{
-		// prepare note
-		parseSessionVariables(content);
-		parseNotesFolders(content);
-		parseNotesForm(content);
-
-		emit notePrepared();
-	}
-	else if (url == LOGOUT_URL)
-	{
-		m_logged = false;
-
-		m_sessionId.clear();
-		m_validateToken.clear();
-		m_validateKey.clear();
-
-		emit loggedOut();
-	}
-	else if (url.startsWith(SENDNOTE_URL))
-	{
-		int pos = redirection.indexOf("?success=");
-
-		if (pos > -1)
-		{
-			// mail successfully sent
-
-			// reset note form
-			m_noteForm = NoteForm();
-
-			QString id = redirection.mid(pos + 9);
-
-			emit noteSent(id);
-		}
-		else
-		{
-		}
-	}
-	else if (m_logged && redirection.isEmpty() && !content.isEmpty())
-	{
-		parseSessionVariables(content);
-
-		processNextAction();
-	}
-	else if (!redirection.isEmpty() && redirection != url)
-	{
-		redirect(redirection, url);
 	}
 	else
 	{
-		emit errorReceived(tr("Something goes wrong... URL: %1").arg(url));
-
-		qDebug() << content;
+		qDebug() << "Network error:" << reply->error() << "=" << reply->errorString();
 	}
+
+	// always delete QNetworkReply to avoid memory leaks
+	reply->deleteLater();
 }
 
 void OAuth2::onReplyError(QNetworkReply::NetworkError error)
@@ -694,6 +493,214 @@ bool OAuth2::parseSessionVariables(const QByteArray &content)
 	emit errorReceived(tr("Unable to find validate token or key"));
 
 	return false;
+}
+
+void OAuth2::processContent(const QByteArray &content, const QString &url)
+{
+	QUrl urlTemp(url);
+
+#ifdef USE_QT5
+	QUrlQuery query(urlTemp);
+#else
+	QUrl query = urlTemp;
+#endif
+
+	bool isJson = content.indexOf("{") == 0 || query.hasQueryItem("access_token") || query.hasQueryItem("grant_type") || query.hasQueryItem("url");
+
+	if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
+	{
+		QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
+
+		QString cachePath;
+
+#ifdef USE_QT5
+		cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+#else
+		cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
+#endif
+
+		QFile file(QString("%1/%2").arg(QDir::fromNativeSeparators(cachePath)).arg(md5));
+
+		if (file.open(QIODevice::WriteOnly))
+		{
+			file.write(content);
+		}
+
+		emit imageDownloaded(md5);
+	}
+	else if (isJson)
+	{
+		if (url.startsWith(DIFI_URL))
+		{
+			// received DiFi content
+			processDiFi(content);
+		}
+		else if (url.startsWith(UPDATE_URL))
+		{
+			// received software update
+			processNewVersions(content);
+		}
+		else
+		{
+			// received DA API content
+			processJson(content, urlTemp.path());
+		}
+	}
+	else if (url.startsWith(OAUTH2LOGIN_URL))
+	{
+		if (content.indexOf("The username or password you entered was incorrect.") > -1)
+		{
+			// wrong login or password
+			emit errorReceived(tr("Login '%1' or password is incorrect").arg(m_login));
+		}
+		else
+		{
+			// <span class="field_error" rel="password">
+			emit errorReceived(tr("Unknown error for login '%1'").arg(m_login));
+		}
+	}
+	else if (url.indexOf("/applications") > -1 && url.indexOf(QString("client_id=%1").arg(m_clientId)) > -1)
+	{
+		QRegExp reg("name=\"validate_key\" value=\"([0-9]+)\"");
+
+		if (reg.indexIn(content) > -1)
+		{
+			QString validateKey = reg.cap(1);
+
+			// TODO: ask authorization to user
+			authorizeApplication(validateKey, "", true);
+		}
+		else
+		{
+			emit errorReceived(tr("Unable to find validate_key"));
+		}
+	}
+	else if (url.indexOf("/authorize_app") > -1)
+	{
+		QRegExp reg("name=\"validate_key\" value=\"([0-9]+)\"");
+
+		if (reg.indexIn(content) > -1)
+		{
+			QString validateKey = reg.cap(1);
+
+			reg.setPattern("name=\"validate_token\" value=\"([0-9a-f]+)\"");
+
+			if (reg.indexIn(content) > -1)
+			{
+				QString validateToken = reg.cap(1);
+
+				// TODO: ask authorization to user
+				authorizeApplication(validateKey, validateToken, true);
+			}
+			else
+			{
+				emit errorReceived(tr("Unable to find validate_token"));
+			}
+		}
+		else
+		{
+			emit errorReceived(tr("Unable to find validate_key"));
+		}
+	}
+	else if (url == NOTES_URL)
+	{
+		// prepare note
+		parseSessionVariables(content);
+		parseNotesFolders(content);
+		parseNotesForm(content);
+
+		emit notePrepared();
+	}
+	else if (m_logged)
+	{
+		parseSessionVariables(content);
+
+		processNextAction();
+	}
+	else
+	{
+		emit errorReceived(tr("Something goes wrong... URL: %1").arg(url));
+
+		qDebug() << content;
+	}
+}
+
+void OAuth2::processRedirection(const QString &redirection, const QString &url)
+{
+	if (url.startsWith(AUTHORIZE_URL) && redirection.startsWith(JOIN_URL))
+	{
+		// fill OAuth2 login form
+		login();
+	}
+	else if (url.startsWith(OAUTH2LOGIN_URL) && redirection.startsWith(AUTHORIZE_URL))
+	{
+		m_logged = true;
+
+		emit loggedIn();
+
+		requestAuthorization();
+	}
+	else if (redirection.startsWith(REDIRECT_APP))
+	{
+#ifdef USE_QT5
+		QUrlQuery query(QUrl(redirection).query());
+
+		if (query.hasQueryItem("code"))
+		{
+			requestAccessToken(query.queryItemValue("code"));
+		}
+		else if (query.hasQueryItem("error"))
+		{
+			emit errorReceived(query.queryItemValue("error_description"));
+		}
+#else
+		QRegExp reg(QString("^%1\\?code=([0-9a-f]+)$").arg(REDIRECT_APP));
+
+		if (reg.indexIn(redirection) > -1)
+		{
+			requestAccessToken(reg.cap(1));
+		}
+#endif
+		else
+		{
+			emit errorReceived(tr("Unknown error while redirected to %1").arg(redirection));
+		}
+	}
+	else if (url == LOGOUT_URL)
+	{
+		m_logged = false;
+
+		logout();
+	}
+	else if (url.startsWith(SENDNOTE_URL))
+	{
+		int pos = redirection.indexOf("?success=");
+
+		if (pos > -1)
+		{
+			// mail successfully sent
+
+			// reset note form
+			m_noteForm = NoteForm();
+
+			QString id = redirection.mid(pos + 9);
+
+			// TODO: remove #new-note from id
+			emit noteSent(id);
+		}
+		else
+		{
+			emit errorReceived(tr("Error when sending note: %1").arg(redirection));
+		}
+	}
+	else if (redirection != url)
+	{
+		redirect(redirection, url);
+	}
+	else
+	{
+		emit errorReceived(tr("Something goes wrong... URL: %1 Redirection: %2").arg(url).arg(redirection));
+	}
 }
 
 bool OAuth2::parseNotesFolders(const QByteArray &content)

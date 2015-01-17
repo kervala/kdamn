@@ -27,6 +27,7 @@
 #define HTTPS_URL "https://"BASE_URL
 #define HTTP_URL "http://"BASE_URL
 #define LOGIN_URL HTTPS_URL"/users/login"
+#define OAUTH2LOGIN_URL HTTPS_URL"/join/oauth2login"
 #define LOGOUT_URL HTTPS_URL"/settings/force-logout"
 #define ROCKEDOUT_URL HTTPS_URL"/users/rockedout"
 #define NOTES_URL HTTPS_URL"/messages/notes/#1_0"
@@ -37,6 +38,9 @@
 #define DIFI_URL HTTPS_URL"/global/difi.php"
 #define REDIRECT_APP "kdamn://oauth2/login"
 #define UPDATE_URL "http://kervala.net/utils/update.php"
+#define AUTHORIZE_URL HTTPS_URL"/oauth2/authorize"
+#define JOIN_URL HTTPS_URL"/join/oauth2"
+#define SESSIONS_URL HTTPS_URL"/settings/sessions"
 
 struct NoteForm
 {
@@ -90,6 +94,7 @@ public:
 
 	bool login();
 	bool logout();
+	bool requestAuthorization(); // private
 	bool uploadToStash(const QString &filename, const QString &room);
 	bool requestImageInfo(const QString &url, const QString &room);
 	bool requestDAmnToken();
@@ -175,7 +180,6 @@ public slots:
 
 private:
 	// OAuth2 steps
-	bool requestAuthorization();
 	bool requestAccessToken(const QString &code = "");
 	bool requestPlacebo();
 	bool requestUserInfo();
@@ -195,6 +199,8 @@ private:
 	bool requestMessageCenter(const QString &method, const QString &args);
 
 	void redirect(const QString &url, const QString &referer);
+	void processContent(const QByteArray &content, const QString &url);
+	void processRedirection(const QString &redirection, const QString &url);
 	void processDiFi(const QByteArray &content);
 	void processJson(const QByteArray &content, const QString &path);
 	void processNewVersions(const QByteArray &content);
