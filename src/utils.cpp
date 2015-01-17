@@ -95,3 +95,18 @@ QString convertIDOToDate(const QString &date)
 
 	return valid.toString(Qt::DefaultLocaleShortDate);
 }
+
+QString base36enc(qint64 value)
+{
+	static const QString base36("0123456789abcdefghijklmnopqrstuvwxyz");
+
+	QString res;
+
+	do
+	{
+		res.prepend(base36[(int)(value % 36)]);
+	}
+	while (value /= 36);
+
+	return res;
+}

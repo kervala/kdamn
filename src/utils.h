@@ -35,4 +35,6 @@ QString decodeEntities(const QString& src);
 QString convertDateToISO(const QString &date);
 QString convertIDOToDate(const QString &date);
 
+QString base36enc(qint64 value);
+
 #endif

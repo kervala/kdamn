@@ -143,45 +143,77 @@ bool DAmn::downloadImage(DAmnImage &image)
 		s_connected = true;
 	}
 
-	image.downloaded = false;
-	image.valid = false;
+	if (image.oembed)
+	{
+		// request image info using oembed
+		OAuth2::getInstance()->requestImageInfo(image.remoteUrl);
+	}
+	else
+	{
+		image.downloaded = false;
+		image.valid = false;
 
-	QByteArray ext;
-	int pos = image.remoteUrl.lastIndexOf('.');
+		QByteArray ext;
+		int pos = image.remoteUrl.lastIndexOf('.');
 
-	if (pos == -1) return false;
+		if (pos == -1) return false;
 
-	QRegExp reg(OAuth2::getSupportedImageFormatsFilter());
+		QRegExp reg(OAuth2::getSupportedImageFormatsFilter());
 
-	image.valid = reg.indexIn(image.remoteUrl.mid(pos+1).toLatin1()) == 0;
+		image.valid = reg.indexIn(image.remoteUrl.mid(pos+1).toLatin1()) == 0;
 
-	if (!image.valid) return false;
+		if (!image.valid) return false;
 
-	QString cachePath;
+		QString cachePath;
 
 #ifdef USE_QT5
-	cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+		cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
 #else
-	cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
+		cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
 #endif
 
-	QString dir(QDir::fromNativeSeparators(cachePath));
+		QString dir(QDir::fromNativeSeparators(cachePath));
 
-	image.md5 = QCryptographicHash::hash(image.remoteUrl.toLatin1(), QCryptographicHash::Md5).toHex();
-	image.filename = QString("%1/%2").arg(dir).arg(image.md5);
-	image.localUrl = QUrl::fromLocalFile(image.filename).toString();
-	image.downloaded = QFile::exists(image.filename);
+		image.md5 = QCryptographicHash::hash(image.remoteUrl.toLatin1(), QCryptographicHash::Md5).toHex();
+		image.filename = QString("%1/%2").arg(dir).arg(image.md5);
+		image.localUrl = QUrl::fromLocalFile(image.filename).toString();
+		image.downloaded = QFile::exists(image.filename);
 
-	if (image.downloaded) return false;
+		if (image.downloaded) return false;
 
-	// create directory to be sure, there won't be any error later
-	QDir tmp;
-	tmp.mkpath(dir);
+		// create directory to be sure, there won't be any error later
+		QDir tmp;
+		tmp.mkpath(dir);
 
-	// request download of image
-	OAuth2::getInstance()->get(image.remoteUrl);
+		// request download of image
+		OAuth2::getInstance()->get(image.remoteUrl);
+	}
 
 	return true;
+}
+
+bool DAmn::getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &message)
+{
+	foreach(WaitingMessage *msg, m_waitingMessages)
+	{
+		if (!msg) continue;
+
+		DAmnImagesIterator it = msg->images.begin();
+
+		while(it != msg->images.end())
+		{
+			if (it->remoteUrl == url)
+			{
+				message = msg;
+
+				return true;
+			}
+
+			++it;
+		}
+	}
+
+	return false;
 }
 
 bool DAmn::onUpdateWaitingMessages(const QString &md5)

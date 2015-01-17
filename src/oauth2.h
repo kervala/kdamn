@@ -40,6 +40,7 @@
 #define AUTHORIZE_URL HTTPS_URL"/oauth2/authorize"
 #define JOIN_URL HTTPS_URL"/join/oauth2"
 #define SESSIONS_URL HTTPS_URL"/settings/sessions"
+#define OEMBED_URL "http://backend.deviantart.com/oembed"
 
 struct NoteForm
 {
@@ -50,8 +51,20 @@ struct NoteForm
 
 struct StashFile
 {
+	enum eStatus
+	{
+		StatusNone,
+		StatusUploading,
+		StatusUploaded
+	};
+
 	QString filename;
 	QString room;
+	eStatus status;
+
+	StashFile():status(StatusNone)
+	{
+	}
 
 	bool operator == (const StashFile &other)
 	{
@@ -95,7 +108,7 @@ public:
 	bool logout();
 	bool requestAuthorization(); // private
 	bool uploadToStash(const QString &filename, const QString &room);
-	bool requestImageInfo(const QString &url, const QString &room);
+	bool requestImageInfo(const QString &url);
 	bool requestDAmnToken();
 
 	bool prepareNote();
@@ -146,7 +159,7 @@ signals:
 	void accessTokenReceived(const QString &access, const QString &refresh);
 	void damnTokenReceived(const QString &login, const QString &damntoken);
 	void imageDownloaded(const QString &md5);
-	void imageUploaded(const QString &room, const QString &stashId);
+	void imageUploaded(const QString &room, const QString &stashUrl);
 	void notesUpdated(const QString &folderId, int offset, int count);
 	void noteUpdated(const QString &folderId, const QString &noteId);
 	void notesReceived(int count);
@@ -200,7 +213,7 @@ private:
 	void processContent(const QByteArray &content, const QString &url);
 	void processRedirection(const QString &redirection, const QString &url);
 	void processDiFi(const QByteArray &content);
-	void processJson(const QByteArray &content, const QString &path);
+	void processJson(const QByteArray &content, const QString &path, const QString &url);
 	void processNewVersions(const QByteArray &content);
 	void processNextAction();
 	bool parseSessionVariables(const QByteArray &content);

@@ -60,6 +60,11 @@ struct DAmnImage
 	QString filename;
 	bool downloaded;
 	bool valid;
+	bool oembed;
+
+	DAmnImage():downloaded(false), valid(false), oembed(false)
+	{
+	}
 
 	bool operator == (const DAmnImage &other)
 	{
@@ -135,6 +140,9 @@ public:
 	bool send(const QString &room, const QString &text);
 	bool send(const QString &room, const QStringList &lines);
 
+	bool downloadImage(DAmnImage &image);
+	bool getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &message);
+
 public slots:
 	void onConnected();
 	void onDisconnected();
@@ -168,8 +176,6 @@ signals:
 private:
 	void sendChat(const QString &room);
 	bool replaceTablumps(const QString &data, QString &html, QString &text, DAmnImages &images);
-
-	bool downloadImage(DAmnImage &image);
 
 	DAmnRoom* createRoom(const QString &room);
 	bool removeRoom(const QString &room);

@@ -336,21 +336,22 @@ QString OAuth2::getUserAgent()
 
 void OAuth2::onReply(QNetworkReply *reply)
 {
+	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
+	QString url = reply->url().toString();
+	int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+
 	if (reply->error() == QNetworkReply::NoError)
 	{
 		qobject_cast<Cookies*>(m_manager->cookieJar())->saveToDisk();
 
-		QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
-		QString url = reply->url().toString();
 		QByteArray content = reply->readAll();
-		int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
 
 		// if status code 302 (redirection), we can clear content
 		if (statusCode == 302) content.clear();
 
 #ifdef _DEBUG
 		qDebug() << "URL:" << url;
-		qDebug() << "Redirection:" << redirection;
+		if (!redirection.isEmpty()) qDebug() << "Redirection:" << redirection;
 #endif
 
 		if (!redirection.isEmpty() && content.isEmpty())
@@ -363,12 +364,12 @@ void OAuth2::onReply(QNetworkReply *reply)
 		}
 		else
 		{
-			qDebug() << "Error: both content and redirection are defined";
+			emit errorReceived(tr("Error: both content (%1) and redirection (%2) are defined").arg(url).arg(redirection));
 		}
 	}
 	else
 	{
-		qDebug() << "Network error:" << reply->error() << "=" << reply->errorString();
+		emit errorReceived(tr("Networkd error: %1 (%2) (HTTP %3)").arg(reply->errorString()).arg(reply->error()).arg(statusCode));
 	}
 
 	// always delete QNetworkReply to avoid memory leaks
@@ -456,9 +457,28 @@ void OAuth2::processNextAction()
 
 			if (!m_filesToUpload.isEmpty())
 			{
-				StashFile file = m_filesToUpload.front();
+				int index = -1;
 
-				requestStash(file.filename, file.room);
+				for(int i = 0; i < m_filesToUpload.size(); ++i)
+				{
+					if (m_filesToUpload[i].status == StashFile::StatusNone)
+					{
+						index = i;
+						break;
+					}
+				}
+
+				if (index > -1)
+				{
+					StashFile &file = m_filesToUpload.front();
+					file.status = StashFile::StatusUploading;
+
+					requestStash(file.filename, file.room);
+				}
+				else
+				{
+					qDebug() << "File not found in stash";
+				}
 			}
 
 			break;
@@ -549,7 +569,7 @@ void OAuth2::processContent(const QByteArray &content, const QString &url)
 		else
 		{
 			// received DA API content
-			processJson(content, urlTemp.path());
+			processJson(content, urlTemp.path(), url);
 		}
 	}
 	else if (url.startsWith(OAUTH2LOGIN_URL))

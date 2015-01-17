@@ -20,6 +20,8 @@
 #include "common.h"
 #include "oauth2.h"
 #include "cookies.h"
+#include "damn.h"
+#include "utils.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -31,17 +33,20 @@ bool OAuth2::uploadToStash(const QString &filename, const QString &room)
 	file.filename = filename;
 	file.room = room;
 
-	if (m_filesToUpload.indexOf(file) < 0) m_filesToUpload.push_back(file);
+	if (m_filesToUpload.indexOf(file) < 0)
+	{
+		m_filesToUpload.push_back(file);
 
-	m_actions.push_front(ActionUploadStash);
+		m_actions.push_front(ActionUploadStash);
+	}
 
 	// only check access token for the first file
 	return m_filesToUpload.size() > 0 && requestPlacebo();
 }
 
-bool OAuth2::requestImageInfo(const QString &url, const QString &room)
+bool OAuth2::requestImageInfo(const QString &url)
 {
-	return get(QString("http://backend.deviantart.com/oembed?url=%1").arg(url));
+	return get(QString("%1?url=%2").arg(OEMBED_URL).arg(url));
 }
 
 QString OAuth2::getAuthorizationUrl() const
@@ -191,7 +196,7 @@ bool OAuth2::checkUpdates()
 	return !system.isEmpty() ? get(QString("%1?system=%2&version=%3&app=%4").arg(UPDATE_URL).arg(system).arg(QApplication::applicationVersion()).arg(QApplication::applicationName())):false;
 }
 
-void OAuth2::processJson(const QByteArray &content, const QString &path)
+void OAuth2::processJson(const QByteArray &content, const QString &path, const QString &url)
 {
 	QVariantMap map;
 
@@ -309,7 +314,7 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 			requestAuthorization();
 		}
 	}
-	else if (path.endsWith("/submit"))
+	else if (path.endsWith("/stash/submit"))
 	{
 		if (status == "success")
 		{
@@ -319,11 +324,31 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 
 			if (!m_filesToUpload.isEmpty())
 			{
-				StashFile file = m_filesToUpload.front();
+				int index = -1;
 
-				m_filesToUpload.pop_front();
+				for(int i = 0; i < m_filesToUpload.size(); ++i)
+				{
+					if (m_filesToUpload[i].status == StashFile::StatusUploading)
+					{
+						index = i;
+						break;
+					}
+				}
 
-				emit imageUploaded(file.room, QString::number(stashId));
+				if (index > -1)
+				{
+					StashFile file = m_filesToUpload[index];
+
+					m_filesToUpload.removeAt(index);
+
+					QString stashUrl = QString("http://sta.sh/0%1").arg(base36enc(stashId));
+
+					emit imageUploaded(file.room, stashUrl);
+				}
+				else
+				{
+					qDebug() << "File not found in stash";
+				}
 			}
 
 			processNextAction();
@@ -333,39 +358,79 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 			qCritical() << "Error while uploading file";
 		}
 	}
-	else if (path.endsWith("/oembed"))
+	else if (path.startsWith("/oembed"))
 	{
+		static const int s_maxWidth = 150;
+
+		QString stashUrl;
+
+		int pos = url.indexOf("url=");
+
+		if (pos > -1)
+		{
+			stashUrl = url.mid(pos + 4);
+		}
+
 		QString title = map["title"].toString();
-		QString url = map["url"].toString();
+		QString imageUrl = map["url"].toString();
 		QString author = map["author_name"].toString();
-		QString thumbnail = map["thumbnail_url_150"].toString();
+		QString thumbnailUrl = map["thumbnail_url_150"].toString();
 		int width = map["width"].toInt();
 		int height = map["height"].toInt();
-/*
-		DAmnImages images;
 
-		DAmnImage image;
-		image.remoteUrl = url;
+		// compute width and height of thumbnail
+		int thumbWidth;
+		int thumbHeight;
 
-		if (DAmn::getInstance()->downloadImage(image)) images << image;
+		if (width > s_maxWidth || height > s_maxWidth)
+		{
+			if (width > height)
+			{
+				thumbWidth = 150;
+				thumbHeight = thumbWidth * height / width;
+			}
+			else
+			{
+				thumbHeight = 150;
+				thumbWidth = thumbHeight * width / height;
+			}
+		}
+		else
+		{
+			thumbWidth = width;
+			thumbHeight = height;
+		}
 
-		QString html = QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" local=\"%6\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(image.remoteUrl).arg(link).arg(width).arg(height).arg(image.localUrl);
+		WaitingMessage *message = NULL;
 
-		DAmn::getInstance()->addWaitingMessage("room", "from", html, images, MessageText);
-*/
-/*
-		StashFile file = m_filesToUpload.front();
+		if (DAmn::getInstance()->getWaitingMessageFromRemoteUrl(stashUrl, message))
+		{
+			DAmnImagesIterator it = message->images.begin();
 
-		m_filesToUpload.pop_front();
+			while(it != message->images.end())
+			{
+				if (it->remoteUrl == stashUrl && it->oembed)
+				{
+					// replace placeholder by real values
+					it->oembed = false;
+					it->remoteUrl = thumbnailUrl;
 
-		processNextAction();
+					if (DAmn::getInstance()->downloadImage(*it))
+					{
+						QString html = QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" local=\"%6\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(it->remoteUrl).arg(stashUrl).arg(thumbWidth).arg(thumbHeight).arg(it->localUrl);
 
-		emit imageInfo(file.room, QString::number(stashId));
-*/
+						// replace Stash URL by HTML code
+						message->html.replace(stashUrl, html);
+					}
+				}
+
+				++it;
+			}
+		}
 	}
 	else
 	{
-		qWarning() << "JSON data not processed" << content;
+		qWarning() << "JSON data not processed" << path << content;
 	}
 
 	if (status == "error")

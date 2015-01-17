@@ -125,6 +125,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 
 					DAmnImage image;
 					image.remoteUrl = url;
+					image.oembed = false;
 
 					if (downloadImage(image) && !images.contains(image)) images << image;
 
@@ -148,6 +149,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 
 					DAmnImage image;
 					image.remoteUrl = url;
+					image.oembed = false;
 
 					if (downloadImage(image) && !images.contains(image)) images << image;
 
@@ -233,6 +235,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 
 						DAmnImage image;
 						image.remoteUrl = url;
+						image.oembed = false;
 
 						if (downloadImage(image) && !images.contains(image)) images << image;
 
@@ -260,6 +263,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 
 					DAmnImage image;
 					image.remoteUrl = url;
+					image.oembed = false;
 
 					if (downloadImage(image) && !images.contains(image)) images << image;
 
@@ -273,7 +277,24 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 
 					if (title == "&")
 					{
-						html += QString("<a href=\"%1\">%1</a>").arg(url);
+						// check if we should use oembed
+						QRegExp reg("(http://sta.sh/([0-9a-z]+))");
+
+						if (reg.indexIn(url) > -1)
+						{
+							DAmnImage image;
+							image.remoteUrl = reg.cap(1);
+							image.oembed = true;
+
+							if (downloadImage(image) && !images.contains(image)) images << image;
+
+							// URL will be replaced by HTML code later
+							html += url;
+						}
+						else
+						{
+							html += QString("<a href=\"%1\">%1</a>").arg(url);
+						}
 					}
 					else
 					{

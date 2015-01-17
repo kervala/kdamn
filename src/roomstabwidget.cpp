@@ -33,21 +33,6 @@
 	#define new DEBUG_NEW
 #endif
 
-static QString base36enc(qint64 value)
-{
-	static const QString base36("0123456789abcdefghijklmnopqrstuvwxyz");
-
-	QString res;
-
-	do
-	{
-		res.prepend(base36[(int)(value % 36)]);
-	}
-	while (value /= 36);
-
-	return res;
-}
-
 RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTimer(NULL)
 {
 	createServerFrame();
@@ -311,14 +296,9 @@ void RoomsTabWidget::onReceiveAccessToken(const QString &access, const QString &
 	ConfigFile::getInstance()->setRefreshToken(refresh);
 }
 
-void RoomsTabWidget::onUploadImage(const QString &room, const QString &stashId)
+void RoomsTabWidget::onUploadImage(const QString &room, const QString &url)
 {
-	QString base36StashId = base36enc(stashId.toLongLong());
-
-	QString url = QString("http://sta.sh/0%1").arg(base36StashId);
-
 	DAmn::getInstance()->send(room, url);
-//	OAuth2::getInstance()->requestImageInfo(url, room);
 }
 
 void RoomsTabWidget::onReceiveNotes(int count)
