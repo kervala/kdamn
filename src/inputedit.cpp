@@ -19,6 +19,8 @@
 
 #include "common.h"
 #include "inputedit.h"
+#include "damn.h"
+#include "damnuser.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -49,6 +51,18 @@ void InputEdit::validate()
 void InputEdit::setUsers(const QStringList &users)
 {
 	m_users = users;
+
+	// remove current user to avoid autocompleting our own name
+	QString login = DAmn::getInstance()->getLogin();
+	if (login.isEmpty()) return;
+
+	DAmnUser *user = DAmn::getInstance()->getUser(login);
+	if (!user) return;
+
+	QString name = user->getName();
+	if (name.isEmpty()) return;
+
+	m_users.removeAll(name);
 }
 
 QStringList InputEdit::getLines() const

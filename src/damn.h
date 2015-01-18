@@ -110,6 +110,8 @@ public:
 	bool end();
 
 	void setLogin(const QString &login);
+	QString getLogin() const;
+
 	void setToken(const QString &token);
 
 	bool connectToServer();
@@ -144,6 +146,8 @@ public:
 	bool downloadImage(DAmnImage &image, int delay = 0); // delay in ms
 	bool getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &message);
 	bool getWaitingImageFromRemoteUrl(const QString &url, DAmnImage* &image);
+
+	DAmnUser* getUser(const QString &user);
 
 public slots:
 	void onConnected();
@@ -186,7 +190,6 @@ private:
 	QString getAvatarUrl(const QString &user, int usericon);
 
 	DAmnUser* createUser(const QString &user);
-	DAmnUser* getUser(const QString &user);
 
 	QString getRoomType(const QString &room) const;
 

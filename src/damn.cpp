@@ -75,6 +75,11 @@ void DAmn::setLogin(const QString &login)
 	m_login = login;
 }
 
+QString DAmn::getLogin() const
+{
+	return m_login;
+}
+
 void DAmn::setToken(const QString &authtoken)
 {
 	m_token = authtoken;
