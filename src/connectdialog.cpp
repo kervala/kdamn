@@ -53,7 +53,6 @@ void ConnectDialog::accept()
 	ConfigFile::getInstance()->setLogin(login);
 	ConfigFile::getInstance()->setPassword(remember ? password:"");
 	ConfigFile::getInstance()->setRememberPassword(remember);
-	ConfigFile::getInstance()->setDAmnTokenMethod(MethodOAuth2);
 
 	// reset all tokens
 	ConfigFile::getInstance()->setDAmnToken("");

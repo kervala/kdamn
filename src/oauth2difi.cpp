@@ -30,20 +30,6 @@
 	DiFi :
 	http://botdom.com/documentation/DiFi
 	https://github.com/danopia/deviantart-difi/wiki
-
-	Ccommands :
-
-	* MessageCenter
-
-		- get_folders
-		- get_views
-
-	* Notes :
-
-		- display_folder
-		- display_note (display note content)
-		- display (complately useless)
-
 */
 
 // helper to query GET DiFi methods

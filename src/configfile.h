@@ -82,12 +82,6 @@ struct ConfigRoom
 	}
 };
 
-enum DAmnTokenMethod
-{
-	MethodOAuth2,
-	MethodSite
-};
-
 typedef QList<ConfigRoom> ConfigRooms;
 typedef ConfigRooms::iterator ConfigRoomsIterator;
 
@@ -109,9 +103,6 @@ public:
 	void setRoomFocused(const QString &room, bool focused);
 	void setRoomOrder(const QString &room, int order);
 
-	QList<QNetworkCookie> getCookies() const;
-	void setCookies(const QList<QNetworkCookie> &cookies);
-
 DECLARE_QSTRING_VAR(Login, login);
 DECLARE_QSTRING_VAR(Password, password);
 DECLARE_BOOL_VAR(RememberPassword, rememberPassword);
@@ -124,7 +115,6 @@ DECLARE_INT_VAR(CheckMessagesDelay, checkMessagesDelay);
 DECLARE_BOOL_VAR(DisplayTimestamps, displayTimestamps);
 DECLARE_BOOL_VAR(EnableAnimations, enableAnimations);
 DECLARE_QSTRING_VAR(LogsDirectory, logsDirectory);
-DECLARE_TYPED_VAR(DAmnTokenMethod, DAmnTokenMethod, method);
 DECLARE_TYPED_VAR(QSize, WindowSize, size);
 DECLARE_TYPED_VAR(QPoint, WindowPosition, position);
 DECLARE_INT_VAR(Splitter, splitter);

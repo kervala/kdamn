@@ -28,9 +28,6 @@ public:
 	Cookies(QObject *parent);
 	virtual ~Cookies();
 
-	bool loadFromDisk();
-	bool saveToDisk();
-
 	void clear();
 	void dump();
 

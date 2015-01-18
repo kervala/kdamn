@@ -86,10 +86,17 @@ bool ConfigFile::get##function() const\
 
 ConfigFile* ConfigFile::s_instance = NULL;
 
-ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT),
-	m_rememberPassword(true), m_method(MethodOAuth2), m_animationFrameDelay(100), m_displayTimestamps(true), m_enableAnimations(true),
-	m_autoSaveDelay(30), m_checkMessagesDelay(60), m_modified(false), m_size(0, 0), m_position(0, 0), m_splitter(0)
+ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT)
 {
+	m_rememberPassword = true;
+	m_animationFrameDelay = 100; // in ms
+	m_autoSaveDelay = 30; // in seconds
+	m_checkMessagesDelay = 60; // in seconds
+	m_displayTimestamps = true;
+	m_enableAnimations = true; // enable animations for MNG and animated GIF
+	m_splitter = 0; // position of splitter
+	m_enableOembedThumbnail = true;
+
 	if (!s_instance) s_instance = this;
 
 	load();
@@ -143,7 +150,6 @@ bool ConfigFile::loadVersion1()
 	m_password = m_settings.value("password").toString();
 	m_rememberPassword = m_settings.value("remember_password", true).toBool();
 	m_damnToken = m_settings.value("authtoken").toString();
-	m_method = MethodOAuth2;
 
 	// load rooms
 	m_settings.beginGroup("channels");
@@ -176,7 +182,6 @@ bool ConfigFile::loadVersion2()
 	m_damnToken = m_settings.value("damntoken").toString();
 	m_accessToken = m_settings.value("accesstoken").toString();
 	m_refreshToken = m_settings.value("refreshtoken").toString();
-	m_method = m_settings.value("damntoken_method", "oauth2").toString() == "oauth2" ? MethodOAuth2:MethodSite;
 
 	m_settings.endGroup();
 
@@ -208,20 +213,6 @@ bool ConfigFile::loadVersion2()
 	foreach(const QString &room, rooms)
 	{
 		setRoomValue(room, m_settings.value(room, 0).toInt());
-	}
-
-	m_settings.endGroup();
-
-	// load cookies
-	m_settings.beginGroup("cookies");
-
-	QStringList cookies = m_settings.childKeys();
-
-	m_cookies.clear();
-
-	foreach(const QString &cookie, cookies)
-	{
-		m_cookies << QNetworkCookie::parseCookies(m_settings.value(cookie).toString().toUtf8());
 	}
 
 	m_settings.endGroup();
@@ -294,16 +285,6 @@ bool ConfigFile::save()
 		m_settings.setValue(it->name, it->value);
 
 		++it;
-	}
-
-	m_settings.endGroup();
-
-	// save cookies
-	m_settings.beginGroup("cookies");
-
-	for(int i = 0; i < m_cookies.size(); ++i)
-	{
-		m_settings.setValue(QString::number(i), QString::fromUtf8(m_cookies.at(i).toRawForm()));
 	}
 
 	m_settings.endGroup();
@@ -450,7 +431,6 @@ void ConfigFile::modified(bool modified)
 IMPLEMENT_QSTRING_VAR(Login, login);
 IMPLEMENT_QSTRING_VAR(Password, password);
 IMPLEMENT_BOOL_VAR(RememberPassword, rememberPassword);
-IMPLEMENT_TYPED_VAR(DAmnTokenMethod, DAmnTokenMethod, method);
 IMPLEMENT_QSTRING_VAR(DAmnToken, damnToken);
 IMPLEMENT_QSTRING_VAR(AccessToken, accessToken);
 IMPLEMENT_QSTRING_VAR(RefreshToken, refreshToken);
@@ -461,4 +441,4 @@ IMPLEMENT_BOOL_VAR(DisplayTimestamps, displayTimestamps);
 IMPLEMENT_BOOL_VAR(EnableAnimations, enableAnimations);
 IMPLEMENT_QSTRING_VAR(LogsDirectory, logsDirectory);
 IMPLEMENT_INT_VAR(Splitter, splitter);
-IMPLEMENT_TYPED_VAR(QList<QNetworkCookie>, Cookies, cookies);
+IMPLEMENT_BOOL_VAR(EnableOembedThumbnail, enableOembedThumbnail);

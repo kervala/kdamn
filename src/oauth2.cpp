@@ -78,9 +78,6 @@ bool OAuth2::get(const QString &url, const QString &referer)
 
 	QNetworkReply *reply = m_manager->get(req);
 
-	connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onReplyError(QNetworkReply::NetworkError)));
-	connect(reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(onSslErrors(QList<QSslError>)));
-
 	return true;
 }
 
@@ -95,9 +92,6 @@ bool OAuth2::post(const QString &url, const QByteArray &data, const QString &ref
 	if (!referer.isEmpty()) req.setRawHeader("Referer", referer.toLatin1());
 
 	QNetworkReply *reply = m_manager->post(req, data);
-
-	connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onReplyError(QNetworkReply::NetworkError)));
-	connect(reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(onSslErrors(QList<QSslError>)));
 
 	return true;
 }
@@ -342,8 +336,6 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 	if (reply->error() == QNetworkReply::NoError)
 	{
-		qobject_cast<Cookies*>(m_manager->cookieJar())->saveToDisk();
-
 		QByteArray content = reply->readAll();
 
 		// if status code 302 (redirection), we can clear content
@@ -376,37 +368,6 @@ void OAuth2::onReply(QNetworkReply *reply)
 	reply->deleteLater();
 }
 
-void OAuth2::onReplyError(QNetworkReply::NetworkError error)
-{
-	QNetworkReply *reply = qobject_cast<QNetworkReply*>(sender());
-
-	QString url;
-
-	if (reply) url = reply->url().toString();
-
-	switch(error)
-	{
-		case QNetworkReply::AuthenticationRequiredError:
-		emit errorReceived(tr("Authentication required while accessing %1").arg(url));
-		break;
-
-		case QNetworkReply::RemoteHostClosedError:
-		// silently ignore
-		break;
-
-		default:
-		emit errorReceived(tr("Network error: %1").arg(error));
-		break;
-	}
-}
-
-void OAuth2::onSslErrors(const QList<QSslError> &errors)
-{
-	foreach(const QSslError &error, errors)
-	{
-		emit errorReceived(tr("SSL errors: %1").arg(error.errorString()));
-	}
-}
 
 void OAuth2::onAuthentication(QNetworkReply *reply, QAuthenticator *auth)
 {

@@ -25,49 +25,19 @@
 	#define new DEBUG_NEW
 #endif
 
-//#define SAVE_COOKIES
-
 Cookies::Cookies(QObject *parent):QNetworkCookieJar(parent)
 {
-#ifdef SAVE_COOKIES
-	if (!loadFromDisk()) qCritical() << "Error while loading cookies";
-#endif
 }
 
 Cookies::~Cookies()
 {
-#ifdef SAVE_COOKIES
-	if (!saveToDisk()) qCritical() << "Error while saving cookies";
-#endif
-}
-
-bool Cookies::loadFromDisk()
-{
-	QList<QNetworkCookie> cookies = ConfigFile::getInstance()->getCookies();
-
-	removeExpiredCookies(cookies);
-
-	setAllCookies(cookies);
-
-	return true;
-}
-
-bool Cookies::saveToDisk()
-{
-	QList<QNetworkCookie> cookies = allCookies();
-
-	removeExpiredCookies(cookies);
-
-	ConfigFile::getInstance()->setCookies(cookies);
-
-	return true;
 }
 
 void Cookies::clear()
 {
 	QList<QNetworkCookie> cookies;
 
-	ConfigFile::getInstance()->setCookies(cookies);
+	setAllCookies(cookies);
 }
 
 void Cookies::dump()
