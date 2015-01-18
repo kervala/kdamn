@@ -415,7 +415,7 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 					it->oembed = false;
 					it->remoteUrl = thumbnailUrl;
 
-					if (DAmn::getInstance()->downloadImage(*it))
+					if (DAmn::getInstance()->downloadImage(*it, 100))
 					{
 						QString html = QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" local=\"%6\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(it->remoteUrl).arg(stashUrl).arg(thumbWidth).arg(thumbHeight).arg(it->localUrl);
 

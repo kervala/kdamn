@@ -131,7 +131,7 @@ void DAmn::onReadChannelFinished()
 	emit errorReceived(tr("Read channel finished"));
 }
 
-bool DAmn::downloadImage(DAmnImage &image)
+bool DAmn::downloadImage(DAmnImage &image, int delay)
 {
 	if (!OAuth2::getInstance()) return false;
 
@@ -139,57 +139,76 @@ bool DAmn::downloadImage(DAmnImage &image)
 
 	if (!s_connected)
 	{
-		connect(OAuth2::getInstance(), SIGNAL(imageDownloaded(QString)), this, SLOT(onUpdateWaitingMessages(QString)));
+		connect(OAuth2::getInstance(), SIGNAL(imageDownloaded(QString, bool)), this, SLOT(onUpdateWaitingMessages(QString, bool)));
 		s_connected = true;
 	}
 
 	if (image.oembed)
 	{
 		// request image info using oembed
-		OAuth2::getInstance()->requestImageInfo(image.remoteUrl);
+		return OAuth2::getInstance()->requestImageInfo(image.remoteUrl);
 	}
-	else
-	{
-		image.downloaded = false;
-		image.valid = false;
 
-		QByteArray ext;
-		int pos = image.remoteUrl.lastIndexOf('.');
+	image.downloaded = false;
+	image.valid = false;
+	++image.retries;
 
-		if (pos == -1) return false;
+	QByteArray ext;
+	int pos = image.remoteUrl.lastIndexOf('.');
 
-		QRegExp reg(OAuth2::getSupportedImageFormatsFilter());
+	if (pos == -1) return false;
 
-		image.valid = reg.indexIn(image.remoteUrl.mid(pos+1).toLatin1()) == 0;
+	QRegExp reg(OAuth2::getSupportedImageFormatsFilter());
 
-		if (!image.valid) return false;
+	image.valid = reg.indexIn(image.remoteUrl.mid(pos+1).toLatin1()) == 0;
 
-		QString cachePath;
+	if (!image.valid) return false;
+
+	QString cachePath;
 
 #ifdef USE_QT5
-		cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+	cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
 #else
-		cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
+	cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
 #endif
 
-		QString dir(QDir::fromNativeSeparators(cachePath));
+	QString dir(QDir::fromNativeSeparators(cachePath));
 
-		image.md5 = QCryptographicHash::hash(image.remoteUrl.toLatin1(), QCryptographicHash::Md5).toHex();
-		image.filename = QString("%1/%2").arg(dir).arg(image.md5);
-		image.localUrl = QUrl::fromLocalFile(image.filename).toString();
-		image.downloaded = QFile::exists(image.filename);
+	image.md5 = QCryptographicHash::hash(image.remoteUrl.toLatin1(), QCryptographicHash::Md5).toHex();
+	image.filename = QString("%1/%2").arg(dir).arg(image.md5);
+	image.localUrl = QUrl::fromLocalFile(image.filename).toString();
+	image.downloaded = QFile::exists(image.filename);
 
-		if (image.downloaded) return false;
+	if (image.downloaded) return false;
 
-		// create directory to be sure, there won't be any error later
-		QDir tmp;
-		tmp.mkpath(dir);
+	// create directory to be sure, there won't be any error later
+	QDir tmp;
+	tmp.mkpath(dir);
 
-		// request download of image
-		OAuth2::getInstance()->get(image.remoteUrl);
+	// request download of image
+	if (!delay)
+	{
+		return OAuth2::getInstance()->get(image.remoteUrl);
 	}
 
+	m_delayedImages << image.remoteUrl;
+
+	QTimer::singleShot(delay, this, SLOT(onDownloadImageDelayed()));
+
 	return true;
+}
+
+void DAmn::onDownloadImageDelayed()
+{
+	if (m_delayedImages.isEmpty()) return;
+
+	// take first URL from list
+	QString url = m_delayedImages.front();
+
+	// remoe URL from list
+	m_delayedImages.pop_front();
+
+	OAuth2::getInstance()->get(url);
 }
 
 bool DAmn::getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &message)

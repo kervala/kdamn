@@ -140,7 +140,7 @@ public:
 	bool send(const QString &room, const QString &text);
 	bool send(const QString &room, const QStringList &lines);
 
-	bool downloadImage(DAmnImage &image);
+	bool downloadImage(DAmnImage &image, int delay = 0); // delay in ms
 	bool getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &message);
 
 public slots:
@@ -155,7 +155,8 @@ public slots:
 
 	void onError(QAbstractSocket::SocketError error);
 
-	bool onUpdateWaitingMessages(const QString &md5);
+	bool onUpdateWaitingMessages(const QString &md5, bool found);
+	void onDownloadImageDelayed();
 
 signals:
 	void authenticationFailedWrongLogin();
@@ -237,6 +238,8 @@ private:
 	QDateTime m_lastMessage;
 
 	EDAmnError m_lastError;
+
+	QStringList m_delayedImages;
 
 	static DAmn *s_instance;
 };
