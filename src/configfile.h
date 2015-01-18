@@ -118,6 +118,7 @@ DECLARE_QSTRING_VAR(LogsDirectory, logsDirectory);
 DECLARE_TYPED_VAR(QSize, WindowSize, size);
 DECLARE_TYPED_VAR(QPoint, WindowPosition, position);
 DECLARE_INT_VAR(Splitter, splitter);
+DECLARE_BOOL_VAR(EnableOembedThumbnail, enableOembedThumbnail);
 
 public slots:
 	bool load();

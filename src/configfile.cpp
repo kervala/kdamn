@@ -200,6 +200,7 @@ bool ConfigFile::loadVersion2()
 	m_enableAnimations = m_settings.value("enable_animations", true).toBool();
 	m_animationFrameDelay = m_settings.value("animation_frame_delay", 100).toInt();
 	m_displayTimestamps = m_settings.value("display_timestamps", true).toBool();
+	m_enableOembedThumbnail = m_settings.value("enable_oembed_thumbnail", true).toBool();
 
 	m_settings.endGroup();
 
@@ -272,6 +273,7 @@ bool ConfigFile::save()
 	m_settings.setValue("enable_animations", m_enableAnimations);
 	m_settings.setValue("animation_frame_delay", m_animationFrameDelay);
 	m_settings.setValue("display_timestamps", m_displayTimestamps);
+	m_settings.setValue("enable_oembed_thumbnail", m_enableOembedThumbnail);
 
 	m_settings.endGroup();
 
