@@ -21,6 +21,7 @@
 #include "oauth2.h"
 #include "cookies.h"
 #include "utils.h"
+#include "damn.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -361,7 +362,38 @@ void OAuth2::onReply(QNetworkReply *reply)
 	}
 	else
 	{
-		emit errorReceived(tr("Networkd error: %1 (%2) (HTTP %3)").arg(reply->errorString()).arg(reply->error()).arg(statusCode));
+		bool displayError = true;
+
+		if (statusCode == 404)
+		{
+			if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
+			{
+				DAmnImage *image = NULL;
+
+				if (DAmn::getInstance()->getWaitingImageFromRemoteUrl(url, image))
+				{
+					if (image->retries < 5 && DAmn::getInstance()->downloadImage(*image, 1000))
+					{
+						displayError = false;
+
+						qDebug() << "retry" << image->retries;
+					}
+				}
+
+				if (displayError)
+				{
+					// remove message from waiting list
+					QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
+
+					emit imageDownloaded(md5, false);
+				}
+			}
+		}
+
+		if (displayError)
+		{
+			emit errorReceived(tr("Networkd error: %1 (%2) (HTTP %3)").arg(reply->errorString()).arg(reply->error()).arg(statusCode));
+		}
 	}
 
 	// always delete QNetworkReply to avoid memory leaks
@@ -513,7 +545,7 @@ void OAuth2::processContent(const QByteArray &content, const QString &url)
 			file.write(content);
 		}
 
-		emit imageDownloaded(md5);
+		emit imageDownloaded(md5, true);
 	}
 	else if (isJson)
 	{

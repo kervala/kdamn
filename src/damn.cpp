@@ -235,9 +235,32 @@ bool DAmn::getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &m
 	return false;
 }
 
-bool DAmn::onUpdateWaitingMessages(const QString &md5)
+bool DAmn::getWaitingImageFromRemoteUrl(const QString &url, DAmnImage* &image)
 {
-	QString filename;
+	foreach(WaitingMessage *msg, m_waitingMessages)
+	{
+		if (!msg) continue;
+
+		DAmnImagesIterator it = msg->images.begin();
+
+		while(it != msg->images.end())
+		{
+			if (it->remoteUrl == url)
+			{
+				image = &*it;
+
+				return true;
+			}
+
+			++it;
+		}
+	}
+
+	return false;
+}
+
+bool DAmn::onUpdateWaitingMessages(const QString &md5, bool found)
+{
 	QStringList rooms;
 
 	foreach(WaitingMessage *msg, m_waitingMessages)
@@ -259,7 +282,12 @@ bool DAmn::onUpdateWaitingMessages(const QString &md5)
 				if (!it->downloaded)
 				{
 					it->downloaded = true;
-					filename = it->localUrl;
+
+					if (!found)
+					{
+						// TODO: replace by an error icon
+						msg->html.replace(it->localUrl, "");
+					}
 				}
 
 				if (!rooms.contains(msg->room)) rooms << msg->room;

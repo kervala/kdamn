@@ -158,7 +158,7 @@ signals:
 	void errorReceived(const QString &error);
 	void accessTokenReceived(const QString &access, const QString &refresh);
 	void damnTokenReceived(const QString &login, const QString &damntoken);
-	void imageDownloaded(const QString &md5);
+	void imageDownloaded(const QString &md5, bool found);
 	void imageUploaded(const QString &room, const QString &stashUrl);
 	void notesUpdated(const QString &folderId, int offset, int count);
 	void noteUpdated(const QString &folderId, const QString &noteId);

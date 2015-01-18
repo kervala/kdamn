@@ -61,8 +61,9 @@ struct DAmnImage
 	bool downloaded;
 	bool valid;
 	bool oembed;
+	int retries;
 
-	DAmnImage():downloaded(false), valid(false), oembed(false)
+	DAmnImage():downloaded(false), valid(false), oembed(false), retries(0)
 	{
 	}
 
@@ -142,6 +143,7 @@ public:
 
 	bool downloadImage(DAmnImage &image, int delay = 0); // delay in ms
 	bool getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &message);
+	bool getWaitingImageFromRemoteUrl(const QString &url, DAmnImage* &image);
 
 public slots:
 	void onConnected();
