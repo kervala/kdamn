@@ -401,6 +401,8 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 			thumbHeight = height;
 		}
 
+		QMap<QString, bool> md5s;
+
 		WaitingMessage *message = NULL;
 
 		if (DAmn::getInstance()->getWaitingMessageFromRemoteUrl(stashUrl, message))
@@ -415,18 +417,35 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 					it->oembed = false;
 					it->remoteUrl = thumbnailUrl;
 
-					if (DAmn::getInstance()->downloadImage(*it, 100))
-					{
-						QString html = QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" local=\"%6\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(it->remoteUrl).arg(stashUrl).arg(thumbWidth).arg(thumbHeight).arg(it->localUrl);
+					bool res = DAmn::getInstance()->downloadImage(*it, 100);
 
-						// replace Stash URL by HTML code
-						message->html.replace(stashUrl, html);
+					// format HTML code
+					QString html("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" local=\"%6\" width=\"%4\" height=\"%5\"/></a>");
+
+					// replace Stash URL by HTML code
+					message->html.replace(stashUrl, html.arg(title).arg(it->remoteUrl).arg(stashUrl).arg(thumbWidth).arg(thumbHeight).arg(it->localUrl));
+
+					if (!res)
+					{
+						// already exists or network problem
+						md5s[it->md5] = it->downloaded;
 					}
 				}
 
 				++it;
 			}
 		}
+
+		QMap<QString, bool>::ConstIterator it = md5s.constBegin(), iend = md5s.constEnd();
+
+		while(it != iend)
+		{
+			// update waiting list
+			emit imageDownloaded(it.key(), it.value());
+
+			++it;
+		}
+
 	}
 	else
 	{

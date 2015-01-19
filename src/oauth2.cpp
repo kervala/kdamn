@@ -385,7 +385,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 					// remove message from waiting list
 					QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
 
-					emit imageDownloaded(md5, false);
+					emit imageDownloaded(md5, image && image->downloaded);
 				}
 			}
 		}
