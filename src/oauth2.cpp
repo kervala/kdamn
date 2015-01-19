@@ -375,8 +375,6 @@ void OAuth2::onReply(QNetworkReply *reply)
 					if (image->retries < 5 && DAmn::getInstance()->downloadImage(*image, 1000))
 					{
 						displayError = false;
-
-						qDebug() << "retry" << image->retries;
 					}
 				}
 
@@ -392,7 +390,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 		if (displayError)
 		{
-			emit errorReceived(tr("Networkd error: %1 (%2) (HTTP %3)").arg(reply->errorString()).arg(reply->error()).arg(statusCode));
+			emit errorReceived(tr("Network error: %1 (%2) (HTTP %3)").arg(reply->errorString()).arg(reply->error()).arg(statusCode));
 		}
 	}
 
