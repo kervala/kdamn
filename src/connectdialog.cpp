@@ -56,8 +56,6 @@ void ConnectDialog::accept()
 
 	// reset all tokens
 	ConfigFile::getInstance()->setDAmnToken("");
-	ConfigFile::getInstance()->setAccessToken("");
-	ConfigFile::getInstance()->setRefreshToken("");
 
 	QDialog::accept();
 }

@@ -102,11 +102,10 @@ public:
 	void setLogin(const QString &login) { m_login = login; }
 	void setPassword(const QString &password) { m_password = password; }
 	void setDAmnToken(const QString &token) { m_damnToken = token; }
-	void setAccessToken(const QString &access, const QString &refresh) { m_accessToken = access; m_refreshToken = refresh; }
 
 	bool login();
 	bool logout();
-	bool requestAuthorization(); // private
+	bool requestAuthorization();
 	bool uploadToStash(const QString &filename, const QString &room);
 	bool requestImageInfo(const QString &url);
 	bool requestDAmnToken();

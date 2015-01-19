@@ -56,7 +56,6 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 	connect(oauth, SIGNAL(loggedIn()), this, SLOT(onLoggedIn()));
 	connect(oauth, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
 	connect(oauth, SIGNAL(damnTokenReceived(QString, QString)), this, SLOT(onReceiveDAmnToken(QString, QString)));
-	connect(oauth, SIGNAL(accessTokenReceived(QString, QString)), this, SLOT(onReceiveAccessToken(QString, QString)));
 	connect(oauth, SIGNAL(imageUploaded(QString, QString)), this, SLOT(onUploadImage(QString, QString)));
 	connect(oauth, SIGNAL(notesReceived(int)), this, SLOT(onReceiveNotes(int)));
 	connect(oauth, SIGNAL(notesUpdated(QString, int, int)), this, SLOT(onUpdateNotes(QString, int, int)));
@@ -288,12 +287,6 @@ void RoomsTabWidget::onReceiveDAmnToken(const QString &login, const QString &aut
 	DAmn::getInstance()->setToken(authtoken);
 
 	DAmn::getInstance()->connectToServer();
-}
-
-void RoomsTabWidget::onReceiveAccessToken(const QString &access, const QString &refresh)
-{
-	ConfigFile::getInstance()->setAccessToken(access);
-	ConfigFile::getInstance()->setRefreshToken(refresh);
 }
 
 void RoomsTabWidget::onUploadImage(const QString &room, const QString &url)
@@ -601,13 +594,10 @@ void RoomsTabWidget::login()
 	QString log = ConfigFile::getInstance()->getLogin();
 	QString password = ConfigFile::getInstance()->getPassword();
 	QString damnToken = ConfigFile::getInstance()->getDAmnToken();
-	QString accessToken = ConfigFile::getInstance()->getAccessToken();
-	QString refreshToken = ConfigFile::getInstance()->getRefreshToken();
 
 	OAuth2::getInstance()->setLogin(log);
 	OAuth2::getInstance()->setPassword(password);
 	OAuth2::getInstance()->setDAmnToken(damnToken);
-	OAuth2::getInstance()->setAccessToken(accessToken, refreshToken);
 
 	DAmn::getInstance()->setLogin(log);
 	DAmn::getInstance()->setToken(damnToken);

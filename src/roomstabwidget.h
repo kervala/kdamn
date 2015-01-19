@@ -73,7 +73,6 @@ public slots:
 	void onLoggedIn();
 	void onReceiveFolders();
 	void onReceiveDAmnToken(const QString &login, const QString &authtoken);
-	void onReceiveAccessToken(const QString &access, const QString &refresh);
 	void onUploadImage(const QString &room, const QString &url);
 	void onReceiveNotes(int count);
 	void onUpdateNotes(const QString &folderId, int offset, int count);
