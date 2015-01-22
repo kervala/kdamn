@@ -155,8 +155,6 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 
 	QNetworkReply *reply = m_manager->post(req, multiPart);
 
-	connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(onReplyError(QNetworkReply::NetworkError)));
-	connect(reply, SIGNAL(sslErrors(QList<QSslError>)), this, SLOT(onSslErrors(QList<QSslError>)));
 	connect(reply, SIGNAL(uploadProgress(qint64, qint64)), this, SIGNAL(uploadProgress(qint64, qint64)));
 	connect(reply, SIGNAL(finished()), this, SLOT(onUploadFinished()));
 
@@ -188,7 +186,7 @@ bool OAuth2::checkUpdates()
 	return !system.isEmpty() ? get(QString("%1?system=%2&version=%3&app=%4").arg(UPDATE_URL).arg(system).arg(QApplication::applicationVersion()).arg(QApplication::applicationName())):false;
 }
 
-void OAuth2::processJson(const QByteArray &content, const QString &path, const QString &url)
+void OAuth2::processJson(const QByteArray &content, const QString &path)
 {
 	QVariantMap map;
 
