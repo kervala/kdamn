@@ -232,10 +232,7 @@ void MainWindow::onUploadFiles()
 	
 	if (roomsWidget->getCurrentRoomFrame()) room = roomsWidget->getCurrentRoomFrame()->getRoom();
 
-	foreach(const QString &filename, filenames)
-	{
-		OAuth2::getInstance()->uploadToStash(filename, room);
-	}
+	OAuth2::getInstance()->uploadToStash(filenames, room);
 }
 
 void MainWindow::onUploadScreenshot()
@@ -307,7 +304,10 @@ void MainWindow::onUploadScreenshot()
 	
 	if (roomsWidget->getCurrentRoomFrame()) room = roomsWidget->getCurrentRoomFrame()->getRoom();
 
-	OAuth2::getInstance()->uploadToStash(filename, room);
+	QStringList filenames;
+	filenames << filename;
+
+	OAuth2::getInstance()->uploadToStash(filenames, room);
 }
 
 void MainWindow::onDisplayNotes()
@@ -407,6 +407,7 @@ void MainWindow::onProgress(qint64 readBytes, qint64 totalBytes)
 	}
 	else
 	{
+		progress->show();
 		progress->setValue(readBytes);
 	}
 #else

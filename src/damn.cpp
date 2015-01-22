@@ -45,6 +45,10 @@ DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_lastError(OK)
 	connect(m_socket, SIGNAL(bytesWritten(qint64)), this, SLOT(onWritten(qint64)));
 
 	connect(m_socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(onError(QAbstractSocket::SocketError)));
+
+	OAuth2 *oauth = new OAuth2(this);
+
+	connect(oauth, SIGNAL(imageDownloaded(QString, bool)), this, SLOT(onUpdateWaitingMessages(QString, bool)));
 }
 
 DAmn::~DAmn()
@@ -140,19 +144,7 @@ bool DAmn::downloadImage(DAmnImage &image, int delay)
 {
 	if (!OAuth2::getInstance()) return false;
 
-	static bool s_connected = false;
-
-	if (!s_connected)
-	{
-		connect(OAuth2::getInstance(), SIGNAL(imageDownloaded(QString, bool)), this, SLOT(onUpdateWaitingMessages(QString, bool)));
-		s_connected = true;
-	}
-
-	if (image.oembed)
-	{
-		// request image info using oembed
-		return OAuth2::getInstance()->requestImageInfo(image.remoteUrl);
-	}
+	if (image.oembed) return false;
 
 	image.downloaded = false;
 	image.valid = false;

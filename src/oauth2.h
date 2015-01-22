@@ -92,7 +92,6 @@ public:
 		ActionRequestAccessToken,
 		ActionRequestDAmnToken,
 		ActionRequestAuthorization,
-		ActionUploadStash,
 		ActionRequestPlacebo
 	};
 
@@ -106,8 +105,7 @@ public:
 	bool login();
 	bool logout();
 	bool requestAuthorization();
-	bool uploadToStash(const QString &filename, const QString &room);
-	bool requestImageInfo(const QString &url);
+	bool uploadToStash(const QStringList &filenames, const QString &room);
 	bool requestDAmnToken();
 
 	bool prepareNote();
@@ -213,6 +211,8 @@ private:
 	void processJson(const QByteArray &content, const QString &path, const QString &url);
 	void processNewVersions(const QByteArray &content);
 	void processNextAction();
+	bool processNextUpload();
+
 	bool parseSessionVariables(const QByteArray &content);
 	bool parseNotesFolders(const QByteArray &content);
 	bool parseNotesForm(const QByteArray &content);

@@ -51,7 +51,7 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 //	connect(damn, SIGNAL(authenticationFailedWrongLogin()), this, SLOT(onRequestDAmnToken()));
 	connect(damn, SIGNAL(authenticationFailedWrongToken()), this, SLOT(onRequestDAmnToken()));
 
-	OAuth2 *oauth = new OAuth2(this);
+	OAuth2 *oauth = OAuth2::getInstance();
 	connect(oauth, SIGNAL(foldersReceived()), this, SLOT(onReceiveFolders()));
 	connect(oauth, SIGNAL(loggedIn()), this, SLOT(onLoggedIn()));
 	connect(oauth, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));

@@ -27,17 +27,18 @@
 	#define new DEBUG_NEW
 #endif
 
-bool OAuth2::uploadToStash(const QString &filename, const QString &room)
+bool OAuth2::uploadToStash(const QStringList &filenames, const QString &room)
 {
-	StashFile file;
-	file.filename = filename;
-	file.room = room;
-
-	if (m_filesToUpload.indexOf(file) < 0)
+	foreach(const QString &filename, filenames)
 	{
-		m_filesToUpload.push_back(file);
+		StashFile file;
+		file.filename = filename;
+		file.room = room;
 
-		m_actions.push_front(ActionUploadStash);
+		if (m_filesToUpload.indexOf(file) < 0)
+		{
+			m_filesToUpload.push_back(file);
+		}
 	}
 
 	// only check access token for the first file
@@ -238,7 +239,7 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 	{
 		if (status == "success")
 		{
-			processNextAction();
+			processNextUpload();
 		}
 		else if (error == "expired_token" || error == "invalid_token")
 		{
@@ -351,7 +352,7 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 				}
 			}
 
-			processNextAction();
+			processNextUpload();
 		}
 		else
 		{

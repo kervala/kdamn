@@ -123,10 +123,14 @@ void ChatWidget::dropEvent(QDropEvent *event)
 
 	if (mimeData->hasUrls())
 	{
+		QStringList filenames;
+
 		foreach(const QUrl &url, mimeData->urls())
 		{
-			if (!OAuth2::getInstance()->uploadToStash(url.toLocalFile(), m_room)) break;
+			filenames << url.toLocalFile();
 		}
+
+		OAuth2::getInstance()->uploadToStash(filenames, m_room);
 
 		event->acceptProposedAction();
 	}
