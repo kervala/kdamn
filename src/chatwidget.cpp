@@ -239,8 +239,8 @@ bool ChatWidget::addAnimation(const QString& url, const QString &file)
 
 	connect(movie, SIGNAL(frameChanged(int)), this, SLOT(animate(int)));
 
-	// start only when in foreground
-	if (m_focus) movie->start();
+	// always start animation (we want at least the 1st frame)
+	movie->start();
 
 	return true;
 }
@@ -322,10 +322,11 @@ void ChatWidget::closeLogs()
 void ChatWidget::animate(int frame)
 {
 	// only enable animations if chosen
-	if (!ConfigFile::getInstance()->getEnableAnimations() && frame > 0) return;
+	if (frame > 0 && (!m_focus || !ConfigFile::getInstance()->getEnableAnimations())) return;
 
 	if (QMovie* movie = qobject_cast<QMovie*>(sender()))
 	{
+		// update images in document
 		document()->addResource(QTextDocument::ImageResource, m_urls.value(movie), movie->currentPixmap());
 
 		QDateTime current = QDateTime::currentDateTime();
