@@ -329,75 +329,153 @@ QString OAuth2::getUserAgent()
 	return s_userAgent;
 }
 
+bool OAuth2::processImage(const QString &url, const QByteArray &content)
+{
+	DAmnImage *image = NULL;
+
+	bool downloaded = false;
+	bool error = true;
+	QString md5;
+
+	if (DAmn::getInstance()->getWaitingImageFromRemoteUrl(url, image))
+	{
+		// MD5 should be correct if image was found
+		md5 = image->md5;
+
+		if (md5.isEmpty())
+		{
+			qDebug() << "Error: strange case where MD5 is empty";
+		}
+		else if (!content.isEmpty())
+		{
+			QString cachePath;
+
+#ifdef USE_QT5
+			cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+#else
+			cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
+#endif
+
+			QFile file(QString("%1/%2").arg(QDir::fromNativeSeparators(cachePath)).arg(md5));
+
+			if (file.open(QIODevice::WriteOnly))
+			{
+				file.write(content);
+
+				downloaded = true;
+				error = false;
+			}
+		}
+		else
+		{
+			// only retry 5 times
+			if (image->retries < 5)
+			{
+				error = false;
+
+				// retry to download it after a delay of 1 second
+				if (!DAmn::getInstance()->downloadImage(*image, 1000))
+				{
+					if (image->downloaded)
+					{
+						// already downloaded
+						downloaded = true;
+					}
+					else
+					{
+						qDebug() << "Error: strange case where downloadImage returned false and image not already downloaded";
+					}
+				}
+				else
+				{
+					// image will be downloaded again
+				}
+			}
+		}
+	}
+
+	if (downloaded)
+	{
+		emit imageDownloaded(md5, true);
+	}
+
+	// image not found after 5 retries or unknown error
+	if (error)
+	{
+		// remove message from waiting list
+		if (md5.isEmpty()) md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
+
+		emit imageDownloaded(md5, false);
+
+		return false;
+	}
+
+	return true;
+}
+
 void OAuth2::onReply(QNetworkReply *reply)
 {
 	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
 	QString url = reply->url().toString();
 	int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
+	QByteArray content = reply->readAll();
+	QNetworkReply::NetworkError errorCode = reply->error();
+	QString errorString = reply->errorString();
 
-	if (reply->error() == QNetworkReply::NoError)
-	{
-		QByteArray content = reply->readAll();
-
-		// if status code 302 (redirection), we can clear content
-		if (statusCode == 302) content.clear();
+	// always delete QNetworkReply to avoid memory leaks
+	reply->deleteLater();
+	reply = NULL;
 
 #ifdef _DEBUG
-		qDebug() << "URL:" << url;
-		if (!redirection.isEmpty()) qDebug() << "Redirection:" << redirection;
+	qDebug() << "URL:" << url;
+	if (!redirection.isEmpty()) qDebug() << "Redirection:" << redirection;
+	if (errorCode != QNetworkReply::NoError) qDebug() << "HTTP" << statusCode << "error" << errorCode << errorString;
 #endif
 
-		if (!redirection.isEmpty() && content.isEmpty())
+	// if status code 302 (redirection) or 404 (not found), we can clear content
+	if (statusCode == 302 || statusCode == 404) content.clear();
+
+	if (content.isEmpty())
+	{
+		if (!redirection.isEmpty())
 		{
+			// redirection and no content
 			processRedirection(redirection, url);
 		}
-		else if (redirection.isEmpty() && !content.isEmpty())
+		else if (errorCode != QNetworkReply::NoError)
 		{
-			processContent(content, url);
+			bool displayError = true;
+
+			if (statusCode == 404)
+			{
+				if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
+				{
+					displayError = !processImage(url, content);
+				}
+			}
+
+			if (displayError)
+			{
+				emit errorReceived(tr("Network error: %1 (%2) (HTTP %3)").arg(errorString).arg(errorCode).arg(statusCode));
+			}
 		}
 		else
 		{
-			emit errorReceived(tr("Error: both content (%1) and redirection (%2) are defined").arg(url).arg(redirection));
 		}
 	}
 	else
 	{
-		bool displayError = true;
-
-		if (statusCode == 404)
+		if (!redirection.isEmpty())
 		{
-			if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
-			{
-				DAmnImage *image = NULL;
-
-				if (DAmn::getInstance()->getWaitingImageFromRemoteUrl(url, image))
-				{
-					if (image->retries < 5 && DAmn::getInstance()->downloadImage(*image, 1000))
-					{
-						displayError = false;
-					}
-				}
-
-				if (displayError)
-				{
-					// remove message from waiting list
-					QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
-
-					emit imageDownloaded(md5, image && image->downloaded);
-				}
-			}
+			emit errorReceived(tr("Error: both content (%1) and redirection (%2) are defined").arg(url).arg(redirection));
 		}
-
-		if (displayError)
+		else
 		{
-			emit errorReceived(tr("Network error: %1 (%2) (HTTP %3)").arg(reply->errorString()).arg(reply->error()).arg(statusCode));
+			// content and no redirection (ignore errors because content can be parsed)
+			processContent(content, url);
 		}
 	}
-
-	// always delete QNetworkReply to avoid memory leaks
-	reply->deleteLater();
 }
-
 
 void OAuth2::onAuthentication(QNetworkReply *reply, QAuthenticator *auth)
 {
@@ -444,40 +522,45 @@ void OAuth2::processNextAction()
 			requestDAmnToken();
 			break;
 
-			case ActionUploadStash:
-
-			if (!m_filesToUpload.isEmpty())
-			{
-				int index = -1;
-
-				for(int i = 0; i < m_filesToUpload.size(); ++i)
-				{
-					if (m_filesToUpload[i].status == StashFile::StatusNone)
-					{
-						index = i;
-						break;
-					}
-				}
-
-				if (index > -1)
-				{
-					StashFile &file = m_filesToUpload.front();
-					file.status = StashFile::StatusUploading;
-
-					requestStash(file.filename, file.room);
-				}
-				else
-				{
-					qDebug() << "File not found in stash";
-				}
-			}
-
-			break;
-
 			default:
 			break;
 		}
 	}
+}
+
+bool OAuth2::processNextUpload()
+{
+	if (m_filesToUpload.isEmpty()) return false;
+
+	int index = -1;
+
+	for(int i = 0; i < m_filesToUpload.size(); ++i)
+	{
+		if (m_filesToUpload[i].status == StashFile::StatusNone && index < 0)
+		{
+			index = i;
+			break;
+		}
+
+		if (m_filesToUpload[i].status == StashFile::StatusUploading)
+		{
+			// a file is currently uploading
+			return false;
+		}
+	}
+
+	if (index > -1)
+	{
+		StashFile &file = m_filesToUpload.front();
+		file.status = StashFile::StatusUploading;
+
+		requestStash(file.filename, file.room);
+
+		return true;
+	}
+
+	// all files are currently uploading
+	return false;
 }
 
 bool OAuth2::parseSessionVariables(const QByteArray &content)
@@ -526,24 +609,7 @@ void OAuth2::processContent(const QByteArray &content, const QString &url)
 
 	if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
 	{
-		QString md5 = QCryptographicHash::hash(url.toLatin1(), QCryptographicHash::Md5).toHex();
-
-		QString cachePath;
-
-#ifdef USE_QT5
-		cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-#else
-		cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
-#endif
-
-		QFile file(QString("%1/%2").arg(QDir::fromNativeSeparators(cachePath)).arg(md5));
-
-		if (file.open(QIODevice::WriteOnly))
-		{
-			file.write(content);
-		}
-
-		emit imageDownloaded(md5, true);
+		processImage(url, content);
 	}
 	else if (isJson)
 	{
@@ -557,10 +623,15 @@ void OAuth2::processContent(const QByteArray &content, const QString &url)
 			// received software update
 			processNewVersions(content);
 		}
+		else if (url.contains("oembed"))
+		{
+			// received oEmbed content
+			processOembed(content, url);
+		}
 		else
 		{
 			// received DA API content
-			processJson(content, urlTemp.path(), url);
+			processJson(content, urlTemp.path());
 		}
 	}
 	else if (url.startsWith(OAUTH2LOGIN_URL))

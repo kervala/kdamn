@@ -61,6 +61,7 @@ struct DAmnImage
 	bool downloaded;
 	bool valid;
 	bool oembed;
+	QString oembedSite;
 	int retries;
 
 	DAmnImage():downloaded(false), valid(false), oembed(false), retries(0)

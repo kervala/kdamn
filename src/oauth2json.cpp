@@ -20,7 +20,6 @@
 #include "common.h"
 #include "oauth2.h"
 #include "cookies.h"
-#include "damn.h"
 #include "utils.h"
 
 #ifdef DEBUG_NEW
@@ -43,11 +42,6 @@ bool OAuth2::uploadToStash(const QStringList &filenames, const QString &room)
 
 	// only check access token for the first file
 	return m_filesToUpload.size() > 0 && requestPlacebo();
-}
-
-bool OAuth2::requestImageInfo(const QString &url)
-{
-	return get(QString("%1?url=%2").arg(OEMBED_URL).arg(url));
 }
 
 QString OAuth2::getAuthorizationUrl() const
@@ -358,95 +352,6 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 		{
 			qCritical() << "Error while uploading file";
 		}
-	}
-	else if (path.startsWith("/oembed"))
-	{
-		static const int s_maxWidth = 150;
-
-		QString stashUrl;
-
-		int pos = url.indexOf("url=");
-
-		if (pos > -1)
-		{
-			stashUrl = url.mid(pos + 4);
-		}
-
-		QString title = map["title"].toString();
-		QString imageUrl = map["url"].toString();
-		QString author = map["author_name"].toString();
-		QString thumbnailUrl = map["thumbnail_url_150"].toString();
-		int width = map["width"].toInt();
-		int height = map["height"].toInt();
-
-		// compute width and height of thumbnail
-		int thumbWidth;
-		int thumbHeight;
-
-		if (width > s_maxWidth || height > s_maxWidth)
-		{
-			if (width > height)
-			{
-				thumbWidth = 150;
-				thumbHeight = thumbWidth * height / width;
-			}
-			else
-			{
-				thumbHeight = 150;
-				thumbWidth = thumbHeight * width / height;
-			}
-		}
-		else
-		{
-			thumbWidth = width;
-			thumbHeight = height;
-		}
-
-		QMap<QString, bool> md5s;
-
-		WaitingMessage *message = NULL;
-
-		if (DAmn::getInstance()->getWaitingMessageFromRemoteUrl(stashUrl, message))
-		{
-			DAmnImagesIterator it = message->images.begin();
-
-			while(it != message->images.end())
-			{
-				if (it->remoteUrl == stashUrl && it->oembed)
-				{
-					// replace placeholder by real values
-					it->oembed = false;
-					it->remoteUrl = thumbnailUrl;
-
-					bool res = DAmn::getInstance()->downloadImage(*it, 100);
-
-					// format HTML code
-					QString html("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" local=\"%6\" width=\"%4\" height=\"%5\"/></a>");
-
-					// replace Stash URL by HTML code
-					message->html.replace(stashUrl, html.arg(title).arg(it->remoteUrl).arg(stashUrl).arg(thumbWidth).arg(thumbHeight).arg(it->localUrl));
-
-					if (!res)
-					{
-						// already exists or network problem
-						md5s[it->md5] = it->downloaded;
-					}
-				}
-
-				++it;
-			}
-		}
-
-		QMap<QString, bool>::ConstIterator it = md5s.constBegin(), iend = md5s.constEnd();
-
-		while(it != iend)
-		{
-			// update waiting list
-			emit imageDownloaded(it.key(), it.value());
-
-			++it;
-		}
-
 	}
 	else
 	{

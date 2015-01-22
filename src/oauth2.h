@@ -40,7 +40,6 @@
 #define AUTHORIZE_URL HTTPS_URL"/oauth2/authorize"
 #define JOIN_URL HTTPS_URL"/join/oauth2"
 #define SESSIONS_URL HTTPS_URL"/settings/sessions"
-#define OEMBED_URL "http://backend.deviantart.com/oembed"
 
 struct NoteForm
 {
@@ -149,6 +148,12 @@ public:
 
 	Folder getFolder(const QString &id) const;
 
+	// oEmbed
+	bool isOembedUrl(const QString &url, QString *site = NULL) const;
+	bool requestOembed(const QString &url, const QString &site = "");
+	bool formatOembed(QString &url) const; // URL => <!-- URL -->
+	bool unformatOembed(QString &url) const; // <!-- URL --> => URL
+
 signals:
 	void loggedIn();
 	void loggedOut();
@@ -208,8 +213,10 @@ private:
 	void processContent(const QByteArray &content, const QString &url);
 	void processRedirection(const QString &redirection, const QString &url);
 	void processDiFi(const QByteArray &content);
-	void processJson(const QByteArray &content, const QString &path, const QString &url);
+	void processJson(const QByteArray &content, const QString &path);
+	bool processOembed(const QByteArray &content, const QString &url);
 	void processNewVersions(const QByteArray &content);
+	bool processImage(const QString &url, const QByteArray &content);
 	void processNextAction();
 	bool processNextUpload();
 
@@ -238,7 +245,6 @@ private:
 	bool parseNotesSaveDraft(const QVariantMap &response);
 	bool parseNotesStar(const QVariantMap &response);
 	bool parseNotesUnstar(const QVariantMap &response);
-
 
 	QNetworkAccessManager *m_manager;
 	QString m_login;

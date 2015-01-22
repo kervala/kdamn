@@ -277,16 +277,26 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 
 					if (title == "&")
 					{
-						// check if we should use oembed
-						QRegExp reg("(http://sta.sh/([0-9a-z]+))");
+						QString oembedSite;
 
-						if (reg.indexIn(url) > -1)
+						// check if we should use oembed
+						if (OAuth2::getInstance()->isOembedUrl(url, &oembedSite))
 						{
 							DAmnImage image;
-							image.remoteUrl = reg.cap(1);
+							image.remoteUrl = url;
 							image.oembed = true;
+							image.oembedSite = oembedSite;
 
-							if (downloadImage(image) && !images.contains(image)) images << image;
+							// to check if duplicated
+							image.md5 = url;
+
+							// request image info using oembed
+							if (OAuth2::getInstance()->requestOembed(image.remoteUrl))
+							{
+								// TODO: display error
+							}
+
+							if (!images.contains(image)) images << image;
 
 							// URL will be replaced by HTML code later
 							html += url;
