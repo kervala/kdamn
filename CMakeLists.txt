@@ -45,13 +45,11 @@ SETUP_EXTERNAL()
 GEN_CONFIG_H()
 GEN_REVISION_H()
 
-USE_QT_MODULES(Gui Network Script Svg QT5 Widgets WinExtras)
+USE_QT_MODULES(Gui Network Svg QT4 Script QT5 Widgets WinExtras)
 
 IF(UNIX AND NOT APPLE)
   FIND_PACKAGE(X11)
 ENDIF()
-
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 IF(X11_FOUND)
   INCLUDE_DIRECTORIES(${X11_INCLUDE_DIR})
@@ -60,7 +58,7 @@ ENDIF()
 FILE(GLOB HEADER src/*.h)
 FILE(GLOB SRC src/*.cpp)
 FILE(GLOB UI ui/*.ui)
-FILE(GLOB RES res/*.qrc res/*.icns res/*.ico res/*.icns)
+FILE(GLOB RES res/*.qrc res/*.icns res/*.ico)
 FILE(GLOB TS translations/*.ts)
 
 SET_TARGET_GUI_EXECUTABLE(${TARGET} ${SRC} ${RES} ${UI} ${HEADER} ${TS})
