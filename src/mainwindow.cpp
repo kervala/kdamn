@@ -155,8 +155,7 @@ void MainWindow::onCheckUpdates()
 
 void MainWindow::onAbout()
 {
-	QMessageBox::about(this, tr("About %1 %2 by %3").arg(PRODUCT).arg(VERSION).arg(AUTHOR),
-		QString("%1<br><br>%2").arg(tr(DESCRIPTION)).arg(tr("deviantART SVG icon by <a href=\"http://abluescarab.deviantart.com\">Alana Gilston</a>")));
+	QMessageBox::about(this, tr("About %1 %2 by %3").arg(PRODUCT).arg(VERSION).arg(AUTHOR), DESCRIPTION);
 }
 
 void MainWindow::onAboutQt()
