@@ -22,6 +22,7 @@
 #include "cookies.h"
 #include "utils.h"
 #include "damn.h"
+#include "oembed.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -36,6 +37,8 @@ OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0),
 
 	m_clientId = 474;
 	m_clientSecret = "6a8b3dacb0d41c5d177d6f189df772d1";
+
+	new OEmbed(this);
 }
 
 OAuth2::~OAuth2()
@@ -457,6 +460,13 @@ void OAuth2::onReply(QNetworkReply *reply)
 			if (displayError)
 			{
 				emit errorReceived(tr("Network error: %1 (%2) (HTTP %3)").arg(errorString).arg(errorCode).arg(statusCode));
+
+				QString dataUrl;
+
+				if (OEmbed::getInstance()->getContentUrl(url, dataUrl))
+				{
+					emit imageDownloaded(dataUrl, false);
+				}
 			}
 		}
 		else
@@ -626,7 +636,7 @@ void OAuth2::processContent(const QByteArray &content, const QString &url)
 		else if (url.contains("oembed"))
 		{
 			// received oEmbed content
-			processOembed(content, url);
+			OEmbed::getInstance()->processContent(content, url);
 		}
 		else
 		{

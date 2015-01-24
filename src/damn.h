@@ -146,6 +146,7 @@ public:
 
 	bool downloadImage(DAmnImage &image, int delay = 0); // delay in ms
 	bool getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &message);
+	bool getWaitingMessageFromPartialRemoteUrl(const QString &url, WaitingMessage* &message);
 	bool getWaitingImageFromRemoteUrl(const QString &url, DAmnImage* &image);
 
 	DAmnUser* getUser(const QString &user);

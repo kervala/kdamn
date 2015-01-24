@@ -20,6 +20,7 @@
 #include "common.h"
 #include "damn.h"
 #include "oauth2.h"
+#include "oembed.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -280,7 +281,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 						QString oembedSite;
 
 						// check if we should use oembed
-						if (OAuth2::getInstance()->isOembedUrl(url, &oembedSite))
+						if (OEmbed::getInstance()->isUrlSupported(url, &oembedSite))
 						{
 							DAmnImage image;
 							image.remoteUrl = url;
@@ -291,17 +292,23 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 							image.md5 = url;
 
 							// request image info using oembed
-							if (OAuth2::getInstance()->requestOembed(image.remoteUrl))
+							if (OEmbed::getInstance()->request(image.remoteUrl, oembedSite))
 							{
-								// TODO: display error
+								OEmbed::getInstance()->commentUrl(url, url);
+
+								// URL will be replaced by HTML code later
+								html += url;
+
+								if (!images.contains(image)) images << image;
 							}
-
-							if (!images.contains(image)) images << image;
-
-							// URL will be replaced by HTML code later
-							html += url;
+							else
+							{
+								// to process normally
+								oembedSite.clear();
+							}
 						}
-						else
+
+						if (oembedSite.isEmpty())
 						{
 							html += QString("<a href=\"%1\">%1</a>").arg(url);
 						}

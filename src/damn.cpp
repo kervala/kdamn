@@ -22,6 +22,7 @@
 #include "damnroom.h"
 #include "damnuser.h"
 #include "oauth2.h"
+#include "oembed.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -232,6 +233,30 @@ bool DAmn::getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &m
 	return false;
 }
 
+bool DAmn::getWaitingMessageFromPartialRemoteUrl(const QString &url, WaitingMessage* &message)
+{
+	foreach(WaitingMessage *msg, m_waitingMessages)
+	{
+		if (!msg) continue;
+
+		DAmnImagesIterator it = msg->images.begin();
+
+		while(it != msg->images.end())
+		{
+			if (it->remoteUrl.startsWith(url))
+			{
+				message = msg;
+
+				return true;
+			}
+
+			++it;
+		}
+	}
+
+	return false;
+}
+
 bool DAmn::getWaitingImageFromRemoteUrl(const QString &url, DAmnImage* &image)
 {
 	foreach(WaitingMessage *msg, m_waitingMessages)
@@ -282,8 +307,7 @@ bool DAmn::onUpdateWaitingMessages(const QString &md5, bool found)
 
 					if (!found)
 					{
-						// TODO: replace by an error icon
-						msg->html.replace(it->localUrl, "");
+						OEmbed::getInstance()->replaceCommentedUrlByLink(msg->html, it->remoteUrl);
 					}
 				}
 

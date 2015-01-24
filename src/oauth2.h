@@ -148,12 +148,6 @@ public:
 
 	Folder getFolder(const QString &id) const;
 
-	// oEmbed
-	bool isOembedUrl(const QString &url, QString *site = NULL) const;
-	bool requestOembed(const QString &url, const QString &site = "");
-	bool formatOembed(QString &url) const; // URL => <!-- URL -->
-	bool unformatOembed(QString &url) const; // <!-- URL --> => URL
-
 signals:
 	void loggedIn();
 	void loggedOut();
@@ -214,7 +208,6 @@ private:
 	void processRedirection(const QString &redirection, const QString &url);
 	void processDiFi(const QByteArray &content);
 	void processJson(const QByteArray &content, const QString &path);
-	bool processOembed(const QByteArray &content, const QString &url);
 	void processNewVersions(const QByteArray &content);
 	bool processImage(const QString &url, const QByteArray &content);
 	void processNextAction();
