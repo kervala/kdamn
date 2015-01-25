@@ -17,7 +17,7 @@ move *.exe ..
 
 cd ..
 
-pause
+rem pause
 
 call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64
 
@@ -36,7 +36,7 @@ move *.exe ..
 
 cd ..
 
-pause
+rem pause
 
 %UPLOADER% kdamn 0.9  kdamn-*.exe
 
