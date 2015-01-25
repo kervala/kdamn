@@ -33,10 +33,6 @@
 #include "configfile.h"
 #include "updatedialog.h"
 
-#ifdef HAVE_CONFIG_H
-	#include "config.h"
-#endif
-
 #ifdef Q_OS_WIN32
 #include <QtWinExtras/QWinTaskbarProgress>
 #include <QtWinExtras/QWinTaskbarButton>

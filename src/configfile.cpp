@@ -20,10 +20,6 @@
 #include "common.h"
 #include "configfile.h"
 
-#ifdef HAVE_CONFIG_H
-	#include "config.h"
-#endif
-
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
 #endif
@@ -86,7 +82,7 @@ bool ConfigFile::get##function() const\
 
 ConfigFile* ConfigFile::s_instance = NULL;
 
-ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::IniFormat, QSettings::UserScope, AUTHOR, PRODUCT)
+ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::IniFormat, QSettings::UserScope, QApplication::organizationName(), QApplication::applicationName())
 {
 	m_rememberPassword = true;
 	m_animationFrameDelay = 100; // in ms

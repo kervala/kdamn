@@ -21,11 +21,6 @@
 #include "connectdialog.h"
 #include "moc_connectdialog.cpp"
 #include "configfile.h"
-#include "cookies.h"
-
-#ifdef HAVE_CONFIG_H
-	#include "config.h"
-#endif
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW

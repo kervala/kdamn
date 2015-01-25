@@ -20,10 +20,7 @@
 #include "common.h"
 #include "damn.h"
 #include "utils.h"
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
+#include "configfile.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -38,7 +35,7 @@ bool DAmn::client()
 {
 	begin();
 	writeLine("dAmnClient 0.3");
-	writeLine(QString("agent=%1 %2").arg(PRODUCT).arg(VERSION));
+	writeLine(QString("agent=%1 %2").arg(QApplication::applicationName()).arg(QApplication::applicationVersion()));
 	return end();
 }
 
