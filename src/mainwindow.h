@@ -65,6 +65,7 @@ public slots:
 	// signals from OAuth2
 	void onLoggedOut();
 	void onNewVersion(const QString &url, const QString &date, uint size, const QString &version);
+	void onNoNewVersion();
 	void onProgress(qint64 readBytes, qint64 totalBytes);
 
 protected:
@@ -75,6 +76,7 @@ protected:
 	bool event(QEvent *e);
 
 	QWinTaskbarButton *m_button;
+	bool m_manualCheckUpdates;
 };
 
 #endif

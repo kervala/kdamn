@@ -160,6 +160,7 @@ signals:
 	void noteUpdated(const QString &folderId, const QString &noteId);
 	void notesReceived(int count);
 	void newVersionDetected(const QString &url, const QString &date, uint size, const QString &version);
+	void noNewVersionDetected();
 	void uploadProgress(qint64 readBytes, qint64 totalBytes);
 	void noteSent(const QString &id);
 	void notePrepared();

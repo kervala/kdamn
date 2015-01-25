@@ -390,4 +390,8 @@ void OAuth2::processNewVersions(const QByteArray &content)
 
 		emit newVersionDetected(url, date, size, version);
 	}
+	else
+	{
+		emit noNewVersionDetected();
+	}
 }

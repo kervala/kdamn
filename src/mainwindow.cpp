@@ -46,7 +46,7 @@
 	#define new DEBUG_NEW
 #endif
 
-MainWindow::MainWindow():QMainWindow()
+MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false)
 {
 	setupUi(this);
 
@@ -91,13 +91,14 @@ MainWindow::MainWindow():QMainWindow()
 
 	connect(OAuth2::getInstance(), SIGNAL(loggedOut()), this, SLOT(onLoggedOut()));
 	connect(OAuth2::getInstance(), SIGNAL(newVersionDetected(QString, QString, uint, QString)), this, SLOT(onNewVersion(QString, QString, uint, QString)));
+	connect(OAuth2::getInstance(), SIGNAL(noNewVersionDetected()), this, SLOT(onNoNewVersion()));
 	connect(OAuth2::getInstance(), SIGNAL(uploadProgress(qint64, qint64)), this, SLOT(onProgress(qint64, qint64)));
 
 	// auto connect to chat server
 	autoConnect();
 
 	// check for a new version
-	onCheckUpdates();
+	OAuth2::getInstance()->checkUpdates();
 }
 
 MainWindow::~MainWindow()
@@ -150,6 +151,8 @@ void MainWindow::onLogs()
 
 void MainWindow::onCheckUpdates()
 {
+	m_manualCheckUpdates = true;
+
 	OAuth2::getInstance()->checkUpdates();
 }
 
@@ -386,6 +389,18 @@ void MainWindow::onNewVersion(const QString &url, const QString &date, uint size
 		// if user clicked on Install, close kdAmn
 		close();
 	}
+}
+
+void MainWindow::onNoNewVersion()
+{
+	// silent result if launched at start
+	if (!m_manualCheckUpdates) return;
+
+	QMessageBox::information(this,
+		tr("No update found"),
+		tr("You already have the last %1 version (%2).").arg(QApplication::applicationName()).arg(QApplication::applicationVersion()));
+
+	m_manualCheckUpdates = false;
 }
 
 void MainWindow::onProgress(qint64 readBytes, qint64 totalBytes)
