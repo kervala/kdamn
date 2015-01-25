@@ -256,10 +256,10 @@ bool OEmbed::processContent(const QByteArray &content, const QString &url)
 
 				if (!u.isEmpty())
 				{
-					data.thumbUrl = u;
-
 					width = map["width"].toInt();
 					height = map["height"].toInt();
+
+					if (width && height) data.thumbUrl = u;
 				}
 
 				// compute width and height of thumbnail
