@@ -158,7 +158,14 @@ void MainWindow::onCheckUpdates()
 
 void MainWindow::onAbout()
 {
-	QMessageBox::about(this, tr("About %1 %2 by %3").arg(PRODUCT).arg(VERSION).arg(AUTHOR), DESCRIPTION);
+	QMessageBox::about(this,
+		tr("About %1").arg(QApplication::applicationName()),
+		QString("%1 %2<br>").arg(QApplication::applicationName()).arg(QApplication::applicationVersion())+
+		tr("deviantART Messaging Network (dAmn) chat client")+
+		QString("<br><br>")+
+		tr("Author: %1").arg("<a href=\"http://kervala.deviantart.com\">Kervala</a><br>")+
+		tr("Homepage: %1").arg("<a href=\"http://kervala.deviantart.com/art/kdAmn-387332272\">DeviantArt</a><br>")+
+		tr("Support: %1").arg("<a href=\"http://dev.kervala.net/projects/kdamn\">http://dev.kervala.net/projects/kdamn</a>"));
 }
 
 void MainWindow::onAboutQt()
