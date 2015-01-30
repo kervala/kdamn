@@ -48,14 +48,18 @@ public slots:
 	void clearHistory();
 
 protected:
+	typedef QMap<QString, QString> UsersMap;
+
 	void keyPressEvent(QKeyEvent *event);
 	void contextMenuEvent(QContextMenuEvent *e);
 	bool event(QEvent *e);
+	bool findWordBefore(const QString &text, int position, QString &word, int &beginningPosition, int &endPosition) const;
+	bool cycleUser(const QString &user, QString &res) const;
 
 	QStringList m_history;
 	int m_index;
 	QString m_current;
-	QStringList m_users;
+	UsersMap m_users;
 };
 
 #endif

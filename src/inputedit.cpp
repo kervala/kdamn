@@ -50,7 +50,13 @@ void InputEdit::validate()
 
 void InputEdit::setUsers(const QStringList &users)
 {
-	m_users = users;
+	m_users.clear();
+
+	foreach(const QString &user, users)
+	{
+		// key is lower case version of user name
+		m_users[user.toLower()] = user;
+	}
 
 	// remove current user to avoid autocompleting our own name
 	QString login = DAmn::getInstance()->getLogin();
@@ -62,7 +68,7 @@ void InputEdit::setUsers(const QStringList &users)
 	QString name = user->getName();
 	if (name.isEmpty()) return;
 
-	m_users.removeAll(name);
+	m_users.remove(name.toLower());
 }
 
 QStringList InputEdit::getLines() const
@@ -82,43 +88,59 @@ QStringList InputEdit::getLines() const
 
 void InputEdit::keyPressEvent(QKeyEvent *e)
 {
-	if (e->key() == Qt::Key_Up)
-	{
-		historyUp();
-	}
-	else if (e->key() == Qt::Key_Down)
-	{
-		historyDown();
-	}
-	else if (e->key() == Qt::Key_Tab)
-	{
-		QString str = text();
+	bool found = false;
 
-		if (!str.isEmpty())
+	if (e->modifiers() == Qt::NoModifier)
+	{
+		if (e->key() == Qt::Key_Up)
 		{
-			QRegExp reg("^/([a-z]+)");
+			historyUp();
 
-			int pos = reg.indexIn(str);
+			found = true;
+		}
+		else if (e->key() == Qt::Key_Down)
+		{
+			historyDown();
 
-			if (pos == 0 && cursorPosition() <= reg.matchedLength())
+			found = true;
+		}
+		else if (e->key() == Qt::Key_Tab)
+		{
+			QString str = text();
+
+			if (!str.isEmpty())
 			{
-				completeCommand();
-			}
-			else
-			{
-				completeName();
+				QRegExp reg("^/([a-z]+)");
+
+				int pos = reg.indexIn(str);
+
+				if (pos == 0 && cursorPosition() <= reg.matchedLength())
+				{
+					completeCommand();
+				}
+				else
+				{
+					completeName();
+				}
+
+				found = true;
 			}
 		}
+		else if (e->key() == Qt::Key_PageUp)
+		{
+			emit pageUp();
+
+			found = true;
+		}
+		else if (e->key() == Qt::Key_PageDown)
+		{
+			emit pageDown();
+
+			found = true;
+		}
 	}
-	else if (e->key() == Qt::Key_PageUp)
-	{
-		emit pageUp();
-	}
-	else if (e->key() == Qt::Key_PageDown)
-	{
-		emit pageDown();
-	}
-	else
+
+	if (!found)
 	{
 		if (m_index > -1 && text() != m_history[m_index]) m_index = -1;
 
@@ -129,7 +151,7 @@ void InputEdit::keyPressEvent(QKeyEvent *e)
 
 void InputEdit::contextMenuEvent(QContextMenuEvent *e)
 {
-    QMenu *menu = createStandardContextMenu();
+	QMenu *menu = createStandardContextMenu();
 
 	if (!menu) return;
 
@@ -142,7 +164,7 @@ void InputEdit::contextMenuEvent(QContextMenuEvent *e)
 		menu->addSeparator();
 
 		QMenu *historyMenu = menu->addMenu(tr("History"));
-	
+
 		for(int i = 0; i < m_history.size(); ++i)
 		{
 			QString history = m_history[i];
@@ -225,58 +247,138 @@ void InputEdit::historyDown()
 
 void InputEdit::completeName()
 {
-	const QRegExp reg("[^a-zA-Z0-9-]");
-
 	// whole string
 	QString str = text();
 
-	// beginning of username
-	int pos1 = 0;
+	// beginning and end of username
+	int beginning, end;
 
-	// end of username
-	int pos2 = str.indexOf(reg, cursorPosition());
+	QString word;
+	
+	if (!findWordBefore(str, cursorPosition(), word, beginning, end)) return;
+
+	// look in users list
+	QString user;
+
+	// found at least one user that matchs word
+	if (!cycleUser(word, user)) return;
 
 	// text before and after username
-	QString pre, post;
+	QString pre = str.left(beginning);
+	QString post = str.mid(end+1);
 
-	// separator after username
-	QString sep = " ";
-	
-	if (pos2 == -1)
+	QString nextText;
+
+	if (beginning == 0 && (post.isEmpty() || post == ": " || post == ":"))
 	{
-		// no separator after username, take end of line
-		pos2 = str.length();
+		QString sep(": ");
+		setText(user + sep);
+		setCursorPosition(user.length() + sep.length());
 	}
 	else
 	{
-		sep = str[pos2];
-		post = str.mid(pos2+1);
+		setText(pre + user + post);
+		setCursorPosition(beginning + user.length());
 	}
+}
 
-	pos1 = str.lastIndexOf(reg, pos2-1)+1;
+bool InputEdit::findWordBefore(const QString &text, int position, QString &word, int &beginningPosition, int &endPosition) const
+{
+	// regular expression to detect a separator
+	const QRegExp specialReg("[^a-zA-Z0-9\\-]");
+	const QRegExp alphaReg("[a-zA-Z0-9\\-]");
 
-	pre = str.left(pos1);
-
-	int len = pos2-pos1;
-
-	if (len > 0)
+	// if position is at the end or character at position is a special character
+	if (position >= text.length() || specialReg.exactMatch(text[position]))
 	{
-		QString prefix = str.mid(pos1, len).toLower();
+		// look for last alpha character before position
+		endPosition = text.lastIndexOf(alphaReg, position);
 
-		foreach(const QString &user, m_users)
-		{
-			if (user.toLower().startsWith(prefix))
-			{
-				if (pos1 == 0 && post.isEmpty()) sep = ":" + sep;
-				
-				setText(pre + user + sep + post);
-
-				setCursorPosition(pos1 + user.length() + sep.length());
-
-				break;
-			}
-		}
+		// no alpha characters in text
+		if (endPosition == -1) return false;
 	}
+	else
+	{
+		// look for separator after position
+		endPosition = text.indexOf(specialReg, position + 1);
+
+		// end not found, take string to the end
+		if (endPosition == -1)
+		{
+			endPosition = text.length();
+		}
+
+		--endPosition;
+	}
+
+	beginningPosition = text.lastIndexOf(specialReg, endPosition);
+
+	// beginning not found
+	if (beginningPosition == -1)
+	{
+		// take string from the beginning
+		beginningPosition = 0;
+	}
+	else
+	{
+		// take first alpha character
+		++beginningPosition;
+	}
+
+	// compute size of word
+	int size = endPosition - beginningPosition + 1;
+
+	// return word
+	word = text.mid(beginningPosition, size);
+
+	return true;
+}
+
+bool InputEdit::cycleUser(const QString &user, QString &res) const
+{
+	QString lowerUser = user.toLower();
+
+	UsersMap::const_iterator it = m_users.cbegin();
+	UsersMap::const_iterator iend = m_users.cend();
+
+	// compare string with user names
+	while(it != iend)
+	{
+		// at least partial match
+		if (it.key().startsWith(lowerUser))
+		{
+			if (it.key() != lowerUser)
+			{
+				// partial match, return full user name
+				res = it.value();
+			}
+			else
+			{
+				// exact match
+				++it;
+
+				if (it == m_users.end())
+				{
+					// end of users list, return the first one
+					res = m_users.first();
+
+					// if user name is exactly the same
+					if (res == it.value()) return false;
+				}
+				else
+				{
+					// return the next one
+					res = it.value();
+				}
+			}
+
+			return true;
+		}
+
+		++it;
+	}
+
+	return false;
 }
 
 void InputEdit::completeCommand()
