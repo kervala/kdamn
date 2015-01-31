@@ -248,9 +248,11 @@ bool DAmn::parsePing(const QStringList &lines)
 
 bool DAmn::parseText(const QString &room, const QString &from, EMessageType type, const QStringList &lines, int &i, QString &html, QString &text)
 {
+	QMutexLocker lock(&m_waitingMessagesMutex);
+
 	DAmnImages images;
 
-	if (replaceTablumps(lines[i], html, text, images) && m_waitingMessages.isEmpty())
+	if (replaceTablumps(lines[i], html, text, images) && m_waitingMessages[room].messages.isEmpty())
 	{
 		emit textReceived(room, from, type, html, true);
 	}
@@ -263,7 +265,8 @@ bool DAmn::parseText(const QString &room, const QString &from, EMessageType type
 		message->images = images;
 		message->type = type;
 
-		m_waitingMessages << message;
+		m_waitingMessages[room].room = room;
+		m_waitingMessages[room].messages << message;
 	}
 
 	emit textReceived(room, from, type, text, false);

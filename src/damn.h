@@ -86,6 +86,14 @@ struct WaitingMessage
 	EMessageType type;
 };
 
+struct WaitingMessages
+{
+	QString room;
+	QList<WaitingMessage *> messages;
+};
+
+typedef QMap<QString, WaitingMessages> WaitingMessageMap;
+
 struct Tablump
 {
 	QString id;
@@ -145,8 +153,7 @@ public:
 	bool send(const QString &room, const QStringList &lines);
 
 	bool downloadImage(DAmnImage &image, int delay = 0); // delay in ms
-	bool getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &message);
-	bool getWaitingMessageFromPartialRemoteUrl(const QString &url, WaitingMessage* &message);
+	bool getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &message, bool partial = false);
 	bool getWaitingImageFromRemoteUrl(const QString &url, DAmnImage* &image);
 
 	DAmnUser* getUser(const QString &user);
@@ -225,6 +232,8 @@ private:
 	bool parseSet(const QStringList &lines);
 	bool parseDisconnect(const QStringList &lines);
 
+	void clearWaitingMessages();
+
 	QTcpSocket *m_socket;
 	QString m_login;
 	QString m_token;
@@ -236,7 +245,8 @@ private:
 	QList<DAmnUser*> m_users;
 	QList<DAmnRoom*> m_rooms;
 
-	QList<WaitingMessage*> m_waitingMessages;
+	WaitingMessageMap m_waitingMessages;
+	QMutex m_waitingMessagesMutex;
 
 	QMap<QString, int> m_stats;
 

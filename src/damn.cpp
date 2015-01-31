@@ -54,11 +54,30 @@ DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_lastError(OK)
 
 DAmn::~DAmn()
 {
-	foreach(WaitingMessage *msg, m_waitingMessages) delete msg;
+	clearWaitingMessages();
+
 	foreach(DAmnRoom *room, m_rooms) delete room;
 	foreach(DAmnUser *user, m_users) delete user;
 
 	s_instance = NULL;
+}
+
+void DAmn::clearWaitingMessages()
+{
+	QMutexLocker lock(&m_waitingMessagesMutex);
+
+	WaitingMessageMap::iterator it = m_waitingMessages.begin(), iend = m_waitingMessages.end();
+
+	while(it != iend)
+	{
+		foreach(WaitingMessage *m, it->messages) delete m;
+
+		it->messages.clear();
+
+		++it;
+	}
+
+	m_waitingMessages.clear();
 }
 
 bool DAmn::connectToServer()
@@ -209,48 +228,29 @@ void DAmn::onDownloadImageDelayed()
 	OAuth2::getInstance()->get(url);
 }
 
-bool DAmn::getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &message)
+bool DAmn::getWaitingMessageFromRemoteUrl(const QString &url, WaitingMessage* &message, bool partial)
 {
-	foreach(WaitingMessage *msg, m_waitingMessages)
+	QMutexLocker lock(&m_waitingMessagesMutex);
+
+	foreach(const WaitingMessages &msgs, m_waitingMessages)
 	{
-		if (!msg) continue;
-
-		DAmnImagesIterator it = msg->images.begin();
-
-		while(it != msg->images.end())
+		foreach(WaitingMessage *msg, msgs.messages)
 		{
-			if (it->remoteUrl == url)
+			if (!msg) continue;
+
+			DAmnImagesIterator it = msg->images.begin();
+
+			while(it != msg->images.end())
 			{
-				message = msg;
+				if ((!partial && it->remoteUrl == url) || (partial && it->remoteUrl.startsWith(url)))
+				{
+					message = msg;
 
-				return true;
+					return true;
+				}
+
+				++it;
 			}
-
-			++it;
-		}
-	}
-
-	return false;
-}
-
-bool DAmn::getWaitingMessageFromPartialRemoteUrl(const QString &url, WaitingMessage* &message)
-{
-	foreach(WaitingMessage *msg, m_waitingMessages)
-	{
-		if (!msg) continue;
-
-		DAmnImagesIterator it = msg->images.begin();
-
-		while(it != msg->images.end())
-		{
-			if (it->remoteUrl.startsWith(url))
-			{
-				message = msg;
-
-				return true;
-			}
-
-			++it;
 		}
 	}
 
@@ -259,22 +259,27 @@ bool DAmn::getWaitingMessageFromPartialRemoteUrl(const QString &url, WaitingMess
 
 bool DAmn::getWaitingImageFromRemoteUrl(const QString &url, DAmnImage* &image)
 {
-	foreach(WaitingMessage *msg, m_waitingMessages)
+	QMutexLocker lock(&m_waitingMessagesMutex);
+
+	foreach(const WaitingMessages &msgs, m_waitingMessages)
 	{
-		if (!msg) continue;
-
-		DAmnImagesIterator it = msg->images.begin();
-
-		while(it != msg->images.end())
+		foreach(WaitingMessage *msg, msgs.messages)
 		{
-			if (it->remoteUrl == url)
+			if (!msg) continue;
+
+			DAmnImagesIterator it = msg->images.begin();
+
+			while(it != msg->images.end())
 			{
-				image = &*it;
+				if (it->remoteUrl == url)
+				{
+					image = &*it;
 
-				return true;
+					return true;
+				}
+
+				++it;
 			}
-
-			++it;
 		}
 	}
 
@@ -283,51 +288,60 @@ bool DAmn::getWaitingImageFromRemoteUrl(const QString &url, DAmnImage* &image)
 
 bool DAmn::onUpdateWaitingMessages(const QString &md5, bool found)
 {
+	QMutexLocker lock(&m_waitingMessagesMutex);
+
 	QStringList rooms;
 
-	foreach(WaitingMessage *msg, m_waitingMessages)
+	WaitingMessageMap::iterator itMap = m_waitingMessages.begin(), iendMap = m_waitingMessages.end();
+
+	while(itMap != iendMap)
 	{
-		if (!msg) continue;
-
-		int total = 0;
-		int downloaded = 0;
-
-		// mark downloaded all images with the same md5
-		DAmnImagesIterator it = msg->images.begin();
-
-		while(it != msg->images.end())
+		foreach(WaitingMessage *msg, itMap->messages)
 		{
-			++total;
+			if (!msg) continue;
 
-			if (md5 == it->md5)
+			int total = 0;
+			int downloaded = 0;
+
+			// mark downloaded all images with the same md5
+			DAmnImagesIterator it = msg->images.begin();
+
+			while(it != msg->images.end())
 			{
-				if (!it->downloaded)
-				{
-					it->downloaded = true;
+				++total;
 
-					if (!found)
+				if (md5 == it->md5)
+				{
+					if (!it->downloaded)
 					{
-						OEmbed::getInstance()->replaceCommentedUrlByLink(msg->html, it->remoteUrl);
+						it->downloaded = true;
+
+						if (!found)
+						{
+							OEmbed::getInstance()->replaceCommentedUrlByLink(msg->html, it->remoteUrl);
+						}
 					}
+
+					if (!rooms.contains(msg->room)) rooms << msg->room;
 				}
 
-				if (!rooms.contains(msg->room)) rooms << msg->room;
+				if (it->downloaded) ++downloaded;
+
+				++it;
 			}
 
-			if (it->downloaded) ++downloaded;
+			// check if all images have been downloaded
+			if (total == downloaded)
+			{
+				emit textReceived(msg->room, msg->from, msg->type, msg->html, true);
 
-			++it;
+				itMap->messages.removeAll(msg);
+
+				delete msg;
+			}
 		}
 
-		// check if all images have been downloaded
-		if (total == downloaded)
-		{
-			emit textReceived(msg->room, msg->from, msg->type, msg->html, true);
-
-			m_waitingMessages.removeAll(msg);
-
-			delete msg;
-		}
+		++itMap;
 	}
 
 	return true;
