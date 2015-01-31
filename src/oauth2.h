@@ -142,6 +142,7 @@ public:
 	bool checkUpdates();
 
 	bool get(const QString &url, const QString &referer = "");
+	bool getFilename(const QString &url, const QString &filename);
 	bool post(const QString &url, const QByteArray &data = QByteArray(), const QString &referer = "");
 
 	bool isLogged() const { return m_logged; }
@@ -205,10 +206,10 @@ private:
 	bool requestMessageCenter(const QString &method, const QString &args);
 
 	void redirect(const QString &url, const QString &referer);
-	void processContent(const QByteArray &content, const QString &url);
+	void processContent(const QByteArray &content, const QString &url, const QString &filename);
 	void processRedirection(const QString &redirection, const QString &url);
 	void processDiFi(const QByteArray &content);
-	void processJson(const QByteArray &content, const QString &path);
+	void processJson(const QByteArray &content, const QString &path, const QString &filename);
 	void processNewVersions(const QByteArray &content);
 	bool processImage(const QString &url, const QByteArray &content);
 	void processNextAction();

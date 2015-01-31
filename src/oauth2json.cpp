@@ -154,6 +154,7 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 	multiPart->append(imagePart);
 
 	QNetworkReply *reply = m_manager->post(req, multiPart);
+	reply->setUserData(0, new StringUserData(filename));
 
 	connect(reply, SIGNAL(uploadProgress(qint64, qint64)), this, SIGNAL(uploadProgress(qint64, qint64)));
 	connect(reply, SIGNAL(finished()), this, SLOT(onUploadFinished()));
@@ -186,7 +187,7 @@ bool OAuth2::checkUpdates()
 	return !system.isEmpty() ? get(QString("%1?system=%2&version=%3&app=%4").arg(UPDATE_URL).arg(system).arg(QApplication::applicationVersion()).arg(QApplication::applicationName())):false;
 }
 
-void OAuth2::processJson(const QByteArray &content, const QString &path)
+void OAuth2::processJson(const QByteArray &content, const QString &path, const QString &filename)
 {
 	QVariantMap map;
 
@@ -316,12 +317,22 @@ void OAuth2::processJson(const QByteArray &content, const QString &path)
 			{
 				int index = -1;
 
-				for(int i = 0; i < m_filesToUpload.size(); ++i)
+				StashFile stash;
+				stash.filename = filename;
+
+				// look for exact file
+				index = m_filesToUpload.indexOf(stash);
+
+				if (index < 0)
 				{
-					if (m_filesToUpload[i].status == StashFile::StatusUploading)
+					// take the first file in uploading state
+					for(int i = 0; i < m_filesToUpload.size(); ++i)
 					{
-						index = i;
-						break;
+						if (m_filesToUpload[i].status == StashFile::StatusUploading)
+						{
+							index = i;
+							break;
+						}
 					}
 				}
 

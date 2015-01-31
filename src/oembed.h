@@ -72,15 +72,13 @@ public:
 	bool isUrlSupported(const QString &url, QString *site = NULL) const;
 	bool request(const QString &url, const QString &site = "");
 
-	bool getContentUrl(const QString &url, QString &contentUrl) const;
-
 	bool commentUrl(QString &content, const QString &url) const; // URL => <!-- URL -->
 	bool uncommentUrl(QString &content, const QString &url) const; // <!-- URL --> => URL
 
 	bool replaceCommentedUrlByHtml(QString &content, const QString &url, const QString &html);
 	bool replaceCommentedUrlByLink(QString &content, const QString &url);
 
-	bool processContent(const QByteArray &content, const QString &url);
+	bool processContent(const QByteArray &content, const QString &url, const QString &filename);
 	bool applyData(Data &data);
 	bool buildHtml(Data &data, const QString &localUrl);
 

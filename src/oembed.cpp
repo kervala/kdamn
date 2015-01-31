@@ -118,18 +118,6 @@ bool OEmbed::isUrlSupported(const QString &url, QString *siteId) const
 	return false;
 }
 
-bool OEmbed::getContentUrl(const QString &url, QString &contentUrl) const
-{
-	QRegExp reg("url=([a-zA-Z0-9%.\\-]+)");
-
-	if (reg.indexIn(url) < 0) return false;
-
-	contentUrl = reg.cap(1);
-	contentUrl = QUrl::fromPercentEncoding(contentUrl.toUtf8());
-
-	return true;
-}
-
 bool OEmbed::request(const QString &url, const QString &siteId)
 {
 	Site site;
@@ -149,7 +137,7 @@ bool OEmbed::request(const QString &url, const QString &siteId)
 
 	QString requestUrl = QString("%1?url=%3&maxwidth=%2&maxheight=%2&format=json").arg(site.endpoint).arg(site.maxsize).arg(QString::fromUtf8(QUrl::toPercentEncoding(url)));
 
-	return OAuth2::getInstance()->get(requestUrl);
+	return OAuth2::getInstance()->getFilename(requestUrl, url);
 }
 
 bool OEmbed::commentUrl(QString &content, const QString &url) const
@@ -196,11 +184,10 @@ bool OEmbed::replaceCommentedUrlByLink(QString &content, const QString &url)
 	return true;
 }
 
-bool OEmbed::processContent(const QByteArray &content, const QString &url)
+bool OEmbed::processContent(const QByteArray &content, const QString &url, const QString &filename)
 {
 	Data data;
-
-	if (!getContentUrl(url, data.url)) return false;
+	data.url = filename;
 
 	QVariantMap map;
 
@@ -307,46 +294,6 @@ bool OEmbed::applyData(Data &data)
 		while(it != message->images.end())
 		{
 			if (it->remoteUrl == data.url && it->oembed)
-			{
-				// replace placeholder by real values
-				it->oembed = false;
-
-				if (!data.thumbUrl.isEmpty())
-				{
-					// photo or video
-					it->remoteUrl = data.thumbUrl;
-
-					bool res = DAmn::getInstance()->downloadImage(*it, 100);
-
-					if (!res)
-					{
-						// already exists or network problem
-						md5s[it->md5] = it->downloaded;
-					}
-				}
-				else
-				{
-					// other
-					md5s[it->md5] = false;
-				}
-
-				// replace commented URL by HTML code
-				if (buildHtml(data, it->localUrl))
-				{
-					replaceCommentedUrlByHtml(message->html, data.url, data.html);
-				}
-			}
-
-			++it;
-		}
-	}
-	else if (DAmn::getInstance()->getWaitingMessageFromPartialRemoteUrl(data.url, message))
-	{
-		DAmnImagesIterator it = message->images.begin();
-
-		while(it != message->images.end())
-		{
-			if (it->remoteUrl.startsWith(data.url) && it->oembed)
 			{
 				// replace placeholder by real values
 				it->oembed = false;

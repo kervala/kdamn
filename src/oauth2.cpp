@@ -85,6 +85,21 @@ bool OAuth2::get(const QString &url, const QString &referer)
 	return true;
 }
 
+bool OAuth2::getFilename(const QString &url, const QString &filename)
+{
+	init();
+
+	QNetworkRequest req;
+	req.setUrl(QUrl(url));
+
+	addUserAgent(req);
+
+	QNetworkReply *reply = m_manager->get(req);
+	reply->setUserData(0, new StringUserData(filename));
+
+	return true;
+}
+
 bool OAuth2::post(const QString &url, const QByteArray &data, const QString &referer)
 {
 	init();
@@ -424,6 +439,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 	QByteArray content = reply->readAll();
 	QNetworkReply::NetworkError errorCode = reply->error();
 	QString errorString = reply->errorString();
+	QString filename = reply->userData(0) ? ((StringUserData*)reply->userData(0))->text:"";
 
 	// always delete QNetworkReply to avoid memory leaks
 	reply->deleteLater();
@@ -461,12 +477,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 			{
 				emit errorReceived(tr("Network error: %1 (%2) (HTTP %3)").arg(errorString).arg(errorCode).arg(statusCode));
 
-				QString dataUrl;
-
-				if (OEmbed::getInstance()->getContentUrl(url, dataUrl))
-				{
-					emit imageDownloaded(dataUrl, false);
-				}
+				emit imageDownloaded(filename, false);
 			}
 		}
 		else
@@ -482,7 +493,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 		else
 		{
 			// content and no redirection (ignore errors because content can be parsed)
-			processContent(content, url);
+			processContent(content, url, filename);
 		}
 	}
 }
@@ -605,7 +616,7 @@ bool OAuth2::parseSessionVariables(const QByteArray &content)
 	return false;
 }
 
-void OAuth2::processContent(const QByteArray &content, const QString &url)
+void OAuth2::processContent(const QByteArray &content, const QString &url, const QString &filename)
 {
 	QUrl urlTemp(url);
 
@@ -636,12 +647,12 @@ void OAuth2::processContent(const QByteArray &content, const QString &url)
 		else if (url.contains("oembed"))
 		{
 			// received oEmbed content
-			OEmbed::getInstance()->processContent(content, url);
+			OEmbed::getInstance()->processContent(content, url, filename);
 		}
 		else
 		{
 			// received DA API content
-			processJson(content, urlTemp.path());
+			processJson(content, urlTemp.path(), filename);
 		}
 	}
 	else if (url.startsWith(OAUTH2LOGIN_URL))

@@ -37,4 +37,19 @@ QString convertIDOToDate(const QString &date);
 
 QString base36enc(qint64 value);
 
+// useful class to attach a string to a QObject
+class StringUserData : public QObjectUserData
+{
+public:
+	StringUserData(const QString &str):text(str)
+	{
+	}
+
+	virtual ~StringUserData()
+	{
+	}
+
+	QString text;
+};
+
 #endif
