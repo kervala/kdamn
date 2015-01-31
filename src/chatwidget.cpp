@@ -61,7 +61,35 @@ void ChatWidget::setText(const QString &user, const QString &text, bool html)
 	{
 		m_htmlReceived = true;
 
-		appendHtml(QString("<div class=\"normal\">%1<span class=\"username\">&lt;%2&gt;</span> %3</div>").arg(getTimestamp(true)).arg(user).arg(text));
+		// check if username mentioned in text
+		QString login = ConfigFile::getInstance()->getLogin().toLower();
+
+		QString formattedText = text;
+		QString style;
+
+		// don't alert if we talk to ourself
+		if (login != user.toLower())
+		{
+			QString lowerText = text.toLower();
+
+			int pos = lowerText.indexOf(login);
+			
+			if (pos > -1)
+			{
+				style = "highlight";
+			}
+		}
+		else
+		{
+			style = "myself";
+		}
+
+		if (!style.isEmpty())
+		{
+			formattedText = QString("<span class=\"%2\">%1</span>").arg(formattedText).arg(style);
+		}
+
+		appendHtml(QString("<div class=\"normal\">%1<span class=\"username\">&lt;%2&gt;</span> %3</div>").arg(getTimestamp(true)).arg(user).arg(formattedText));
 
 		startAnimations(text);
 	}
