@@ -268,18 +268,21 @@ void InputEdit::completeName()
 	QString post = str.mid(end+1);
 
 	QString nextText;
+	QString sep;
 
 	if (beginning == 0 && (post.isEmpty() || post == ": " || post == ":"))
 	{
-		QString sep(": ");
-		setText(user + sep);
-		setCursorPosition(user.length() + sep.length());
+		sep = ": ";
+		post.clear();
 	}
-	else
+	else if (post.isEmpty() || post == " ")
 	{
-		setText(pre + user + post);
-		setCursorPosition(beginning + user.length());
+		sep = " ";
+		post.clear();
 	}
+
+	setText(pre + user + sep + post);
+	setCursorPosition(beginning + user.length() + sep.length());
 }
 
 bool InputEdit::findWordBefore(const QString &text, int position, QString &word, int &beginningPosition, int &endPosition) const
@@ -354,6 +357,8 @@ bool InputEdit::cycleUser(const QString &user, QString &res) const
 			}
 			else
 			{
+				QString currentUser = it.value();
+
 				// exact match
 				++it;
 
@@ -363,7 +368,7 @@ bool InputEdit::cycleUser(const QString &user, QString &res) const
 					res = m_users.first();
 
 					// if user name is exactly the same
-					if (res == it.value()) return false;
+					if (res == currentUser) return false;
 				}
 				else
 				{
