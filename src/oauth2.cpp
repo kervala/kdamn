@@ -557,6 +557,10 @@ void OAuth2::processNextAction()
 			requestDAmnToken();
 			break;
 
+			case ActionRequestPlacebo:
+			requestPlacebo();
+			break;
+
 			default:
 			break;
 		}
