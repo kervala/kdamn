@@ -377,7 +377,7 @@ bool OEmbed::buildHtml(Data &data, const QString &localUrl)
 		else if (!data.title.isEmpty())
 		{
 			// format text with title and preview
-			data.html = QString("<a href=\"%1\">%2</a><br/>").arg(data.url).arg(data.title);
+			data.html = QString("<a href=\"%1\">%2</a>").arg(data.url).arg(data.title);
 		}
 		else
 		{
