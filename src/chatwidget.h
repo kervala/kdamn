@@ -77,6 +77,8 @@ protected:
 	QFile m_textFile;
 
 	static QString s_css;
+
+	QMutex m_contentMutex;
 };
 
 class AnimationStart : public QObject

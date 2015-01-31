@@ -153,6 +153,8 @@ QString ChatWidget::getTimestamp(bool html) const
 
 void ChatWidget::appendHtml(const QString &html)
 {
+	QMutexLocker lock(&m_contentMutex);
+
 	// reset previous formatting, to cancel wrong behavior from previous HTML tags
 	if (!textCursor().blockFormat().properties().isEmpty())
 	{
@@ -339,6 +341,9 @@ void ChatWidget::animate(int frame)
 		if (m_lastReload.msecsTo(current) > ConfigFile::getInstance()->getAnimationFrameDelay())
 		{
 			m_lastReload = current;
+
+			// to be sure, it won't happen when appending HTML
+			QMutexLocker lock(&m_contentMutex);
 
 #ifdef USE_QT5
 			QRectF r(rect());
