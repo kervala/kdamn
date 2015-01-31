@@ -97,6 +97,7 @@ public:
 	static OAuth2* getInstance() { return s_instance; }
 
 	void init();
+	void clear();
 	void setLogin(const QString &login) { m_login = login; }
 	void setPassword(const QString &password) { m_password = password; }
 	void setDAmnToken(const QString &token) { m_damnToken = token; }

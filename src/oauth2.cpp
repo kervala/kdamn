@@ -58,6 +58,22 @@ void OAuth2::init()
 	connect(m_manager, SIGNAL(proxyAuthenticationRequired(QNetworkProxy, QAuthenticator *)), SLOT(onProxyAuthentication(QNetworkProxy, QAuthenticator *)));
 }
 
+void OAuth2::clear()
+{
+	// parameters
+	m_login.clear();
+	m_password.clear();
+	m_accessToken.clear();
+	m_refreshToken.clear();
+	m_damnToken.clear();
+	m_filesToUpload.clear();
+
+	// session
+	m_sessionId.clear();
+	m_validateToken.clear();
+	m_validateKey.clear();
+}
+
 void OAuth2::addUserAgent(QNetworkRequest &req) const
 {
 	if (s_userAgent.isEmpty()) return;
@@ -188,9 +204,7 @@ bool OAuth2::logout()
 {
 	if (!m_logged)
 	{
-		m_sessionId.clear();
-		m_validateToken.clear();
-		m_validateKey.clear();
+		clear();
 
 		emit loggedOut();
 
