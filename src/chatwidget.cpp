@@ -294,13 +294,15 @@ void ChatWidget::setRoom(const QString &room)
 
 void ChatWidget::updateCss()
 {
+	QColor normalTextColor;
+
 	QString css = \
 	".timestamp { color: #999; }\n" \
 	".username { font-weight: bold; }\n" \
 	".error { color: #f00; }\n" \
-	".normal { color: #fff; }\n" \
-	".myself { color: #ccc; }\n" \
-	".highlight { color: #f88; font-weight: bold; }\n" \
+	".normal { }\n" \
+	".myself { }\n" \
+	".highlight { font-weight: bold; }\n" \
 	".system { color: #666; }\n" \
 	".hidden { display: none; }\n";
 
