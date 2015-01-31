@@ -575,31 +575,31 @@ bool OAuth2::processNextUpload()
 
 	for(int i = 0; i < m_filesToUpload.size(); ++i)
 	{
-		if (m_filesToUpload[i].status == StashFile::StatusNone && index < 0)
-		{
-			index = i;
-			break;
-		}
-
 		if (m_filesToUpload[i].status == StashFile::StatusUploading)
 		{
-			// a file is currently uploading
+			// a file is currently uploading, we'll upload it later
 			return false;
 		}
 	}
 
-	if (index > -1)
+	for(int i = 0; i < m_filesToUpload.size(); ++i)
 	{
-		StashFile &file = m_filesToUpload.front();
-		file.status = StashFile::StatusUploading;
-
-		requestStash(file.filename, file.room);
-
-		return true;
+		if (m_filesToUpload[i].status == StashFile::StatusNone)
+		{
+			index = i;
+			break;
+		}
 	}
 
-	// all files are currently uploading
-	return false;
+	// all files are currently uploading or no file to upload
+	if (index < 0) return false;
+
+	StashFile &file = m_filesToUpload.front();
+	file.status = StashFile::StatusUploading;
+
+	requestStash(file.filename, file.room);
+
+	return true;
 }
 
 bool OAuth2::parseSessionVariables(const QByteArray &content)
