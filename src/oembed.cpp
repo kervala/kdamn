@@ -241,6 +241,12 @@ bool OEmbed::processContent(const QByteArray &content, const QString &url, const
 
 				QString u = map["url"].toString();
 
+				// bug with DA because thumbnail URL is wrong
+				if (data.type == "rich" && (data.providerName == "sta.sh" || data.providerName == "DeviantArt"))
+				{
+					u.clear();
+				}
+
 				if (!u.isEmpty())
 				{
 					width = map["width"].toInt();
