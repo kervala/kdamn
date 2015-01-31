@@ -401,6 +401,7 @@ void InputEdit::completeCommand()
 		"clear",
 		"stats",
 		"raw",
+		"waiting",
 		""
 	};
 

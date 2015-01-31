@@ -255,6 +255,7 @@ bool DAmn::send(const QString &room, const QString &text)
 			if (cmd == "unban") return unban(room, msg);
 			if (cmd == "admin") return admin(room, msg);
 			if (cmd == "clear") return true;
+
 			if (cmd == "stats")
 			{
 				QMap<QString, int>::const_iterator it = m_stats.begin();
@@ -264,6 +265,34 @@ bool DAmn::send(const QString &room, const QString &text)
 					emit textReceived("", "", MessageText, QString("%1=%2").arg(it.key()).arg(it.value()), true);
 
 					++it;
+				}
+
+				return true;
+			}
+
+			if (cmd == "waiting")
+			{
+				QString room, user;
+
+				emit textReceived(room, user, MessageText, tr("Waiting messages:"), true);
+
+				QMutexLocker lock(&m_waitingMessagesMutex);
+
+				foreach(const WaitingMessages &msgs, m_waitingMessages)
+				{
+					emit textReceived(room, user, MessageText, tr("- Room %1").arg(msgs.room), true);
+
+					foreach(WaitingMessage *msg, msgs.messages)
+					{
+						QStringList images;
+
+						foreach(const DAmnImage &img, msg->images)
+						{
+							images << img.remoteUrl;
+						}
+
+						emit textReceived(room, user, MessageText, QString("  * %1").arg(images.join(", ")), true);
+					}
 				}
 
 				return true;
