@@ -22,6 +22,8 @@
 
 #include <QTextBrowser>
 
+#include "logfile.h"
+
 class ChatWidget : public QTextBrowser
 {
 	Q_OBJECT
@@ -46,6 +48,8 @@ public:
 	QString getRoom() const { return m_room; }
 	void setRoom(const QString &room);
 
+	void updateCss();
+
 public slots:
 	// when user click on a link
 	void onUrl(const QUrl &url);
@@ -55,9 +59,6 @@ public slots:
 protected:
 	void appendHtml(const QString &html);
 	void appendText(const QString &text);
-
-	void openLogs();
-	void closeLogs();
 
 	void dragEnterEvent(QDragEnterEvent *event);
 	void dragMoveEvent(QDragMoveEvent *event);
@@ -73,10 +74,8 @@ protected:
 	bool m_textReceived;
 	bool m_htmlReceived;
 
-	QFile m_htmlFile;
-	QFile m_textFile;
-
-	static QString s_css;
+	LogFile m_htmlFile;
+	LogFile m_textFile;
 
 	QMutex m_contentMutex;
 };

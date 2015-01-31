@@ -28,25 +28,17 @@
 	#define new DEBUG_NEW
 #endif
 
-QString ChatWidget::s_css = \
-	".timestamp { color: #999; }\n" \
-	".username { font-weight: bold; }\n" \
-	".error { color: #f00; }\n" \
-	".system { color: #666; }\n" \
-	".hidden { display: none; }\n";
-
 ChatWidget::ChatWidget(QWidget *parent):QTextBrowser(parent), m_focus(false), m_lastReload(QDateTime::currentDateTime()), m_textReceived(false), m_htmlReceived(false)
 {
 	connect(this, SIGNAL(anchorClicked(QUrl)), this, SLOT(onUrl(QUrl)));
 
-	document()->setDefaultStyleSheet(s_css);
+	updateCss();
 
 	setAcceptDrops(true);
 }
 
 ChatWidget::~ChatWidget()
 {
-	closeLogs();
 }
 
 void ChatWidget::setAction(const QString &user, const QString &text, bool html)
@@ -167,20 +159,12 @@ void ChatWidget::appendHtml(const QString &html)
 
 	append(html);
 
-	if (!m_htmlReceived) return;
-	
-	if (!m_htmlFile.isOpen()) openLogs();
-
-	if (m_htmlFile.isOpen()) m_htmlFile.write(html.toUtf8() + "\n");
+	if (m_htmlReceived) m_htmlFile.append(html);
 }
 
 void ChatWidget::appendText(const QString &text)
 {
-	if (!m_textReceived) return;
-
-	if (!m_textFile.isOpen()) openLogs();
-
-	if (m_textFile.isOpen()) m_textFile.write(decodeEntities(text).toUtf8() + "\n");
+	if (m_textReceived) m_textFile.append(decodeEntities(text));
 }
 
 QVariant ChatWidget::loadResource(int type, const QUrl &name)
@@ -275,54 +259,26 @@ void ChatWidget::setFocus(bool focus)
 void ChatWidget::setRoom(const QString &room)
 {
 	m_room = room;
+
+	m_htmlFile.setRoom(room);
+	m_textFile.setRoom(room);
 }
 
-void ChatWidget::openLogs()
+void ChatWidget::updateCss()
 {
-	QString filename = QString("%1/%2-%3").arg(ConfigFile::getInstance()->getLogsDirectory()).arg(m_room).arg(QDate::currentDate().toString(Qt::ISODate));
+	QString css = \
+	".timestamp { color: #999; }\n" \
+	".username { font-weight: bold; }\n" \
+	".error { color: #f00; }\n" \
+	".normal { color: #fff; }\n" \
+	".myself { color: #ccc; }\n" \
+	".highlight { color: #f88; font-weight: bold; }\n" \
+	".system { color: #666; }\n" \
+	".hidden { display: none; }\n";
 
-	m_htmlFile.setFileName(filename + ".htm");
+	document()->setDefaultStyleSheet(css);
 
-	if (m_htmlFile.open(QIODevice::Append))
-	{
-		QString header;
-		header += "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-		header += "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">\n";
-		header += "<html xmlns=\"http://www.w3.org/1999/xhtml\">\n";
-		header += "<head>\n";
-		header += "<style type=\"text/css\">\n";
-		header += s_css;
-		header += "</style>\n";
-		header += "</head>\n";
-		header += "<body>\n";
-
-		m_htmlFile.write(header.toUtf8());
-	}
-	else
-	{
-		qCritical() << "Unable to open file" << (filename + ".htm");
-	}
-
-	m_textFile.setFileName(filename + ".txt");
-
-	if (m_textFile.open(QIODevice::Append))
-	{
-	}
-	else
-	{
-		qCritical() << "Unable to open file" << (filename + ".txt");
-	}
-}
-
-void ChatWidget::closeLogs()
-{
-	if (m_htmlFile.isOpen())
-	{
-		m_htmlFile.write("</body></html>");
-		m_htmlFile.close();
-	}
-
-	if (m_textFile.isOpen()) m_textFile.close();
+	m_htmlFile.setCss(css);
 }
 
 void ChatWidget::animate(int frame)
