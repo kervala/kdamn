@@ -42,7 +42,7 @@
 	#define new DEBUG_NEW
 #endif
 
-MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false)
+MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false), m_mustLoginAfterLogout(false)
 {
 	setupUi(this);
 
@@ -118,6 +118,8 @@ void MainWindow::closeEvent(QCloseEvent *e)
 	{
 		e->ignore();
 
+		m_mustLoginAfterLogout = false;
+
 		OAuth2::getInstance()->logout();
 	}
 	else
@@ -175,7 +177,10 @@ void MainWindow::onConnect()
 
 	if (dialog.exec())
 	{
-		roomsWidget->login();
+		m_mustLoginAfterLogout = true;
+
+		DAmn::getInstance()->disconnect();
+		OAuth2::getInstance()->logout();
 	}
 }
 
@@ -370,6 +375,13 @@ void MainWindow::onLoggedOut()
 {
 	// only close window if already hidden (when close button pressed)
 	if (isHidden()) close();
+
+	if (m_mustLoginAfterLogout)
+	{
+		m_mustLoginAfterLogout = false;
+
+		roomsWidget->login();
+	}
 }
 
 void MainWindow::onNewVersion(const QString &url, const QString &date, uint size, const QString &version)

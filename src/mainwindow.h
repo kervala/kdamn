@@ -77,6 +77,7 @@ protected:
 
 	QWinTaskbarButton *m_button;
 	bool m_manualCheckUpdates;
+	bool m_mustLoginAfterLogout;
 };
 
 #endif
