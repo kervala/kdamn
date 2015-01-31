@@ -64,6 +64,8 @@ public slots:
 	void onUnbanUser();
 	void onKickUser();
 
+	void onKeyPressed(QKeyEvent *e);
+
 protected:
 	void updateSplitter();
 

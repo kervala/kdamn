@@ -64,6 +64,8 @@ RoomFrame::RoomFrame(QWidget *parent, const QString &room):TabFrame(parent), m_r
 
 	connect(inputEdit, SIGNAL(returnPressed()), SLOT(onSend()));
 	connect(usersView, SIGNAL(doubleClicked(QModelIndex)), SLOT(onUserDoubleClicked(QModelIndex)));
+
+	connect(outputBrowser, SIGNAL(keyPressed(QKeyEvent*)), this, SLOT(onKeyPressed(QKeyEvent*)));
 }
 
 RoomFrame::~RoomFrame()
@@ -237,6 +239,13 @@ void RoomFrame::onKickUser()
 	if (user.isEmpty()) return;
 
 	DAmn::getInstance()->kick(m_room, user.toLower());
+}
+
+void RoomFrame::onKeyPressed(QKeyEvent *e)
+{
+	QApplication::sendEvent(inputEdit, e);
+
+	inputEdit->setFocus();
 }
 
 bool RoomFrame::setFocus(bool focus)

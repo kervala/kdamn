@@ -309,6 +309,23 @@ void ChatWidget::updateCss()
 	m_htmlFile.setCss(css);
 }
 
+void ChatWidget::keyPressEvent(QKeyEvent *e)
+{
+	QTextBrowser::keyPressEvent(e);
+
+	// page up and down are almost the only key events used in ChatWidget
+	if (e->key() == Qt::Key_PageUp || e->key() == Qt::Key_PageDown) return;
+
+	if (!(e->modifiers() & Qt::ControlModifier) && !(e->modifiers() & Qt::AltModifier))
+	{
+		emit keyPressed(e);
+	}
+	else if (e->modifiers() == Qt::ControlModifier && (e->key() == Qt::Key_V || e->key() == Qt::Key_Insert))
+	{
+		emit keyPressed(e);
+	}
+}
+
 void ChatWidget::animate(int frame)
 {
 	// only enable animations if chosen

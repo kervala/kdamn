@@ -50,6 +50,9 @@ public:
 
 	void updateCss();
 
+signals:
+    void keyPressed(QKeyEvent *e);
+
 public slots:
 	// when user click on a link
 	void onUrl(const QUrl &url);
@@ -60,10 +63,11 @@ protected:
 	void appendHtml(const QString &html);
 	void appendText(const QString &text);
 
-	void dragEnterEvent(QDragEnterEvent *event);
-	void dragMoveEvent(QDragMoveEvent *event);
-	void dragLeaveEvent(QDragLeaveEvent *event);
-	void dropEvent(QDropEvent *event);
+	void dragEnterEvent(QDragEnterEvent *e);
+	void dragMoveEvent(QDragMoveEvent *e);
+	void dragLeaveEvent(QDragLeaveEvent *e);
+	void dropEvent(QDropEvent *e);
+	void keyPressEvent(QKeyEvent *e);
 
 	QString getTimestamp(bool html) const;
 
