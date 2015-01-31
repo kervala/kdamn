@@ -275,7 +275,7 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 			// seconds number before a session expire
 			m_expiresIn = (int)map["expires_in"].toDouble();
 			m_accessToken = map["access_token"].toString();
-			m_refreshToken = map["access_token"].toString();
+			m_refreshToken = map["refresh_token"].toString();
 
 			m_lastAccessTokenTime = QDateTime::currentDateTime();
 
