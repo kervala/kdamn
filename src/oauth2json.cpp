@@ -34,10 +34,7 @@ bool OAuth2::uploadToStash(const QStringList &filenames, const QString &room)
 		file.filename = filename;
 		file.room = room;
 
-		if (m_filesToUpload.indexOf(file) < 0)
-		{
-			m_filesToUpload.push_back(file);
-		}
+		if (!m_filesToUpload.contains(file)) m_filesToUpload.push_back(file);
 	}
 
 	// only check access token for the first file
