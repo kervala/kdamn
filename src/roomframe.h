@@ -71,6 +71,9 @@ protected:
 
 	QStringListModel *m_usersModel;
 	QString m_room;
+
+	bool m_firstTopic;
+	bool m_firstTitle;
 };
 
 #endif

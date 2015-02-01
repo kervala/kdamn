@@ -91,7 +91,14 @@ void RoomFrame::setTopic(const QString &user, const QString &topic, bool html)
 {
 	if (topic.isEmpty())
 	{
-		outputBrowser->setSystem(tr("Topic was removed by %1").arg(user), html);
+		if (m_firstTopic)
+		{
+			m_firstTopic = false;
+		}
+		else
+		{
+			outputBrowser->setSystem("", tr("Topic removed by %1").arg(user), html);
+		}
 	}
 	else
 	{
@@ -103,7 +110,14 @@ void RoomFrame::setTitle(const QString &user, const QString &title, bool html)
 {
 	if (title.isEmpty())
 	{
-		outputBrowser->setSystem(tr("Title was removed by %1").arg(user), html);
+		if (m_firstTitle)
+		{
+			m_firstTitle = false;
+		}
+		else
+		{
+			outputBrowser->setSystem("", tr("Title removed by %1").arg(user), html);
+		}
 	}
 	else
 	{
