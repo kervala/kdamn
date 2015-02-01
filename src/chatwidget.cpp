@@ -45,7 +45,7 @@ void ChatWidget::setAction(const QString &user, const QString &text, bool html)
 {
 	if (html)
 	{
-		appendHtml(QString("<div class=\"normal\">%1<span class=\"username\">%2</span> %3</div>").arg(getTimestamp(true)).arg(user).arg(text));
+		appendHtml(QString("<div class=\"normal\">%1<span class=\"emote\"><span class=\"username\">* %2</span> %3</span></div>").arg(getTimestamp(true)).arg(user).arg(text));
 
 		startAnimations(text);
 	}
