@@ -101,11 +101,18 @@ void ChatWidget::setText(const QString &user, const QString &text, bool html)
 	}
 }
 
-void ChatWidget::setSystem(const QString &text, bool html)
+void ChatWidget::setSystem(const QString &user, const QString &text, bool html)
 {
 	if (html)
 	{
-		appendHtml(QString("<div class=\"system\">%1%2</div>").arg(getTimestamp(true)).arg(text));
+		QString userFormatted;
+
+		if (!user.isEmpty())
+		{
+			userFormatted = QString("<span class=\"username\">** %1</span> ").arg(user);
+		}
+
+		appendHtml(QString("<div class=\"system\">%1%2%3</div>").arg(getTimestamp(true)).arg(userFormatted).arg(text));
 
 		startAnimations(text);
 	}

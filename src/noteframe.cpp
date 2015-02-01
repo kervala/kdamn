@@ -40,7 +40,7 @@ NoteFrame::~NoteFrame()
 {
 }
 
-void NoteFrame::setSystem(const QString &text)
+void NoteFrame::setSystem(const QString &user, const QString &text)
 {
 }
 

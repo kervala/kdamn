@@ -28,7 +28,7 @@
 	#define new DEBUG_NEW
 #endif
 
-RoomFrame::RoomFrame(QWidget *parent, const QString &room):TabFrame(parent), m_room(room)
+RoomFrame::RoomFrame(QWidget *parent, const QString &room):TabFrame(parent), m_room(room), m_firstTopic(true), m_firstTitle(true)
 {
 	setupUi(this);
 
@@ -82,9 +82,9 @@ void RoomFrame::setText(const QString &user, const QString &text, bool html)
 	outputBrowser->setText(user, text, html);
 }
 
-void RoomFrame::setSystem(const QString &text, bool html)
+void RoomFrame::setSystem(const QString &user, const QString &text, bool html)
 {
-	outputBrowser->setSystem(text, html);
+	outputBrowser->setSystem(user, text, html);
 }
 
 void RoomFrame::setTopic(const QString &user, const QString &topic, bool html)
@@ -95,7 +95,7 @@ void RoomFrame::setTopic(const QString &user, const QString &topic, bool html)
 	}
 	else
 	{
-		outputBrowser->setSystem(tr("Topic changed by %1: %2").arg(user).arg(topic), html);
+		outputBrowser->setSystem("", tr("Topic changed by %1: %2").arg(user).arg(topic), html);
 	}
 }
 
@@ -107,14 +107,14 @@ void RoomFrame::setTitle(const QString &user, const QString &title, bool html)
 	}
 	else
 	{
-		outputBrowser->setSystem(tr("Title changed by %1: %2").arg(user).arg(title), html);
+		outputBrowser->setSystem("", tr("Title changed by %1: %2").arg(user).arg(title), html);
 	}
 }
 
-void RoomFrame::setSystem(const QString &text)
+void RoomFrame::setSystem(const QString &user, const QString &text)
 {
-	outputBrowser->setSystem(text, true);
-	outputBrowser->setSystem(text, false);
+	outputBrowser->setSystem(user, text, true);
+	outputBrowser->setSystem(user, text, false);
 }
 
 void RoomFrame::setUsers(const QStringList &users)
@@ -127,7 +127,7 @@ void RoomFrame::setUsers(const QStringList &users)
 
 void RoomFrame::userJoin(const QString &user)
 {
-	setSystem(tr("%1 has joined").arg(user));
+	setSystem(user, tr("has joined"));
 
 	QStringList users = m_usersModel->stringList();
 
@@ -143,7 +143,7 @@ void RoomFrame::userJoin(const QString &user)
 
 void RoomFrame::userPart(const QString &user, const QString &reason)
 {
-	setSystem(tr("%1 has left").arg(user) + (!reason.isEmpty() ? QString(" [%1]").arg(reason):""));
+	setSystem(user, tr("has left") + (!reason.isEmpty() ? QString(" [%1]").arg(reason):""));
 
 	QStringList users = m_usersModel->stringList();
 

@@ -462,7 +462,7 @@ void RoomsTabWidget::onUserPriv(const QString &room, const QString &user, const 
 {
 	RoomFrame *frame = getRoomFrame(room);
 
-	if (frame) frame->setSystem(tr("%1 has been made a member of %2 by %3").arg(user).arg(pc).arg(by));
+	if (frame) frame->setSystem(user, tr("has been made a member of %1 by %2").arg(pc).arg(by));
 }
 
 void RoomsTabWidget::onUsers(const QString &room, const QStringList &users)
@@ -507,7 +507,7 @@ void RoomsTabWidget::setSystem(const QString &text)
 {
 	ServerFrame *frame = getServerFrame();
 
-	if (frame) frame->setSystem(text);
+	if (frame) frame->setSystem("", text);
 }
 
 void RoomsTabWidget::onRoomFocus(int index)

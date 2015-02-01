@@ -34,7 +34,7 @@ public:
 	ServerFrame(QWidget *parent);
 	virtual ~ServerFrame();
 
-	void setSystem(const QString &text);
+	void setSystem(const QString &user, const QString &text);
 	void setError(const QString &error);
 };
 

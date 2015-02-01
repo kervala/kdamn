@@ -74,7 +74,7 @@ NotesFrame::~NotesFrame()
 {
 }
 
-void NotesFrame::setSystem(const QString &text)
+void NotesFrame::setSystem(const QString &user, const QString &text)
 {
 }
 

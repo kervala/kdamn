@@ -34,7 +34,7 @@ public:
 
 	void setAction(const QString &user, const QString &text, bool html);
 	void setText(const QString &user, const QString &text, bool html);
-	void setSystem(const QString &text, bool html);
+	void setSystem(const QString &user, const QString &text, bool html);
 	void setError(const QString &text);
 
 	QVariant loadResource(int type, const QUrl &name);
