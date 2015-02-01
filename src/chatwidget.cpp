@@ -299,19 +299,55 @@ void ChatWidget::setRoom(const QString &room)
 	m_textFile.setRoom(room);
 }
 
+static QColor average(const QColor &color1, const QColor &color2, qreal coef)
+{
+	QColor c1 = color1.toHsv();
+	QColor c2 = color2.toHsv();
+
+	qreal h = -1.0;
+
+	if (c1.hsvHueF() == -1.0)
+	{
+		h = c2.hsvHueF();
+	}
+	else if (c2.hsvHueF() == -1.0)
+	{
+		h = c1.hsvHueF();
+	}
+	else
+	{
+		h = ((1.0 - coef) * c2.hsvHueF()) + (coef * c1.hsvHueF());
+	}
+
+	qreal s = ((1.0 - coef) * c2.hsvSaturationF()) + (coef * c1.hsvSaturationF());
+	qreal v = ((1.0 - coef) * c2.valueF()) + (coef * c1.valueF());
+
+	return QColor::fromHsvF(h, s, v).toRgb();
+}
+
 void ChatWidget::updateCss()
 {
-	QColor normalTextColor;
+	QColor normalTextColor = palette().windowText().color();
+	QColor normalWindowColor = palette().window().color();
+
+	QColor darkerTextColor = average(normalTextColor, normalWindowColor, 0.75);
+	QColor darkestTextColor = average(normalTextColor, normalWindowColor, 0.5);
+
+	QColor hightlightColor = average(normalTextColor, QColor(Qt::blue), 0.5);
+	QColor errorColor = average(normalTextColor, QColor(Qt::red), 0.5);
 
 	QString css = \
 	".timestamp { color: #999; }\n" \
 	".username { font-weight: bold; }\n" \
-	".error { color: #f00; }\n" \
+	".error { color: %3; }\n" \
 	".normal { }\n" \
-	".myself { }\n" \
-	".highlight { font-weight: bold; }\n" \
-	".system { color: #666; }\n" \
+	".emote { font-style: italic; }\n" \
+	".myself { color: %1; }\n" \
+	".highlight { color: %4; font-weight: bold; }\n" \
+	".system { color: %2; }\n" \
 	".hidden { display: none; }\n";
+
+	css = css.arg(darkerTextColor.name()).arg(darkestTextColor.name()).arg(errorColor.name()).arg(hightlightColor.name());
 
 	document()->setDefaultStyleSheet(css);
 
