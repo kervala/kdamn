@@ -70,7 +70,7 @@ void ChatWidget::setText(const QString &user, const QString &text, bool html)
 		// don't alert if we talk to ourself
 		if (login != user.toLower())
 		{
-			QString lowerText = text.toLower();
+			QString lowerText = text.toLower().remove(QRegExp("<[^>]*>"));
 
 			int pos = lowerText.indexOf(login);
 			
