@@ -68,6 +68,7 @@ protected:
 	void dragLeaveEvent(QDragLeaveEvent *e);
 	void dropEvent(QDropEvent *e);
 	void keyPressEvent(QKeyEvent *e);
+	void changeEvent(QEvent *e);
 
 	QString getTimestamp(bool html) const;
 

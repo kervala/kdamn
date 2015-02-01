@@ -335,6 +335,16 @@ void ChatWidget::keyPressEvent(QKeyEvent *e)
 	}
 }
 
+void ChatWidget::changeEvent(QEvent *e)
+{
+	QTextBrowser::changeEvent(e);
+
+	if (e->type() == QEvent::PaletteChange)
+	{
+		updateCss();
+	}
+}
+
 void ChatWidget::animate(int frame)
 {
 	// only enable animations if chosen
