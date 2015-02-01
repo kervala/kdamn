@@ -38,6 +38,6 @@ cd ..
 
 rem pause
 
-%UPLOADER% kdamn 0.9  kdamn-*.exe
+%UPLOADER% kdamn 1.0  kdamn-*.exe
 
 pause
