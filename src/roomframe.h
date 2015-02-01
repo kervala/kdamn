@@ -36,11 +36,11 @@ public:
 
 	void setAction(const QString &user, const QString &text, bool html);
 	void setText(const QString &user, const QString &text, bool html);
-	void setSystem(const QString &text, bool html);
+	void setSystem(const QString &user, const QString &text, bool html);
 	void setTopic(const QString &user, const QString &topic, bool html);
 	void setTitle(const QString &user, const QString &title, bool html);
 
-	void setSystem(const QString &text);
+	void setSystem(const QString &user, const QString &text);
 
 	void setUsers(const QStringList &users);
 	void userJoin(const QString &user);
