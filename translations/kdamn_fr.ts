@@ -19,39 +19,6 @@
         <translation>Mot de passe</translation>
     </message>
     <message>
-        <source>dAmn token</source>
-        <translation type="vanished">Jeton dAmn</translation>
-    </message>
-    <message>
-        <source>Method</source>
-        <translation type="vanished">Méthode</translation>
-    </message>
-    <message>
-        <source>kdAmn will be automatically authorized for
-your account and you&apos;ll be able to use all
- functionnalities such as Stash upload.</source>
-        <translation type="vanished">kdAmn sera automatiquement autorisé
- pour votre compte et vous serez capable
-d&apos;utiliser toutes les fonctionnalités comme
-l&apos;upload sur Stash.</translation>
-    </message>
-    <message>
-        <source>OAuth2 deviantART API (preferred)</source>
-        <translation type="vanished">API deviantART OAuth2 (préférée)</translation>
-    </message>
-    <message>
-        <source>kdAmn will connect to deviantART website
-like a browser and get the dAmn token from HTML.
-Stash upload won&apos;t be available.</source>
-        <translation type="vanished">kdAmn se connectera au site deviantART comme un
-navigateur et récupérera le jeton dAmn du code HTML.
-L&apos;upload sur Stash ne sera pas possible.</translation>
-    </message>
-    <message>
-        <source>deviantART website login</source>
-        <translation type="vanished">Login au site deviantART</translation>
-    </message>
-    <message>
         <location filename="../ui/connectdialog.ui" line="53"/>
         <source>Remember password</source>
         <translation>Se souvenir du mot de passe</translation>
@@ -164,14 +131,6 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
         <translation>Non implémenté : %1</translation>
     </message>
     <message>
-        <source>Unable to recognize param %1</source>
-        <translation type="obsolete">Impossible de reconnaître le paramètre %1</translation>
-    </message>
-    <message>
-        <source>Private chats not yet implemented</source>
-        <translation type="obsolete">Chats privés pas encore implémentés</translation>
-    </message>
-    <message>
         <location filename="../src/damnparsers.cpp" line="485"/>
         <location filename="../src/damnparsers.cpp" line="640"/>
         <source>Unable to recognize property: %1</source>
@@ -181,10 +140,6 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
         <location filename="../src/damnparsers.cpp" line="560"/>
         <source>Unable to parse privclass: %1</source>
         <translation>Impossible de parser la privclass : %1</translation>
-    </message>
-    <message>
-        <source>Remote host closed, trying to reconnect</source>
-        <translation type="vanished">L&apos;hôte distant a fermé la connexion, reconnexion en cours</translation>
     </message>
     <message>
         <location filename="../src/damn.cpp" line="118"/>
@@ -207,17 +162,9 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
         <translation>Erreur de socket : %1</translation>
     </message>
     <message>
-        <source>Connected</source>
-        <translation type="vanished">Connecté</translation>
-    </message>
-    <message>
         <location filename="../src/damn.cpp" line="145"/>
         <source>Disconnected</source>
         <translation>Déconnecté</translation>
-    </message>
-    <message>
-        <source>Stage changed %1</source>
-        <translation type="vanished">Changement d&apos;étape %1</translation>
     </message>
     <message>
         <location filename="../src/damn.cpp" line="155"/>
@@ -228,10 +175,6 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
         <location filename="../src/damn.cpp" line="160"/>
         <source>Read channel finished</source>
         <translation>Fin de la lecture du canal</translation>
-    </message>
-    <message>
-        <source>Buffer too large (&gt; 8192)</source>
-        <translation type="obsolete">Buffer trop large (&gt; 8192)</translation>
     </message>
     <message>
         <location filename="../src/damncommands.cpp" line="277"/>
@@ -281,10 +224,6 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
         <location filename="../ui/mainwindow.ui" line="50"/>
         <source>&amp;Server</source>
         <translation>&amp;Serveur</translation>
-    </message>
-    <message>
-        <source>Room</source>
-        <translation type="obsolete">Salon</translation>
     </message>
     <message>
         <location filename="../ui/mainwindow.ui" line="70"/>
@@ -357,33 +296,9 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
         <translation>&amp;Envoyer une note...</translation>
     </message>
     <message>
-        <source>Check new version</source>
-        <translation type="vanished">Vérifier les mises-à-jour</translation>
-    </message>
-    <message>
         <location filename="../ui/mainwindow.ui" line="184"/>
         <source>Display notes</source>
         <translation>Afficher les notes</translation>
-    </message>
-    <message>
-        <source>Display note</source>
-        <translation type="vanished">Afficher la note</translation>
-    </message>
-    <message>
-        <source>Connect</source>
-        <translation type="obsolete">Connecter</translation>
-    </message>
-    <message>
-        <source>Disconnect</source>
-        <translation type="obsolete">Déconnecter</translation>
-    </message>
-    <message>
-        <source>Join</source>
-        <translation type="obsolete">Rejoindre</translation>
-    </message>
-    <message>
-        <source>Part</source>
-        <translation type="obsolete">Quitter</translation>
     </message>
     <message>
         <location filename="../ui/mainwindow.ui" line="164"/>
@@ -408,14 +323,6 @@ L&apos;upload sur Stash ne sera pas possible.</translation>
         <location filename="../ui/mainwindow.ui" line="106"/>
         <source>E&amp;xit</source>
         <translation>&amp;Quitter</translation>
-    </message>
-    <message>
-        <source>About %1 %2 by %3</source>
-        <translation type="vanished">A propos de %1 %2 par %3</translation>
-    </message>
-    <message>
-        <source>deviantART SVG icon by &lt;a href=&quot;http://abluescarab.deviantart.com&quot;&gt;Alana Gilston&lt;/a&gt;</source>
-        <translation type="vanished">Icône SVG de deviantART par &lt;a href=&quot;http://abluescarab.deviantart.com&quot;&gt;Alana Gilston&lt;/a&gt;</translation>
     </message>
     <message>
         <location filename="../src/mainwindow.cpp" line="160"/>
@@ -470,38 +377,6 @@ Souhaitez-vous la télécharger maintenant ?</translation>
         <location filename="../src/mainwindow.cpp" line="416"/>
         <source>You already have the last %1 version (%2).</source>
         <translation>Vous avez déjà la dernière version de %1 (%2).</translation>
-    </message>
-    <message>
-        <source>Join room</source>
-        <translation type="obsolete">Rejoindre le salon</translation>
-    </message>
-    <message>
-        <source>Please enter room to join</source>
-        <translation type="obsolete">Veuillez entrer le salon à rejoindre</translation>
-    </message>
-    <message>
-        <source>Connected to server</source>
-        <translation type="obsolete">Connecté au serveur</translation>
-    </message>
-    <message>
-        <source>Topic changed by %1: %2</source>
-        <translation type="obsolete">Sujet modifié par %1 : %2</translation>
-    </message>
-    <message>
-        <source>Title changed by %1: %2</source>
-        <translation type="obsolete">Titre modifié par %1 : %2</translation>
-    </message>
-    <message>
-        <source>%1 has been made a member of %2 by %3</source>
-        <translation type="obsolete">%1 a été promu comme membre de %2 par %3</translation>
-    </message>
-    <message>
-        <source>You joined room &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="obsolete">Vous avez rejoint le salon &lt;b&gt;%1&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>You leaved room &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="obsolete">Vous avez quitté le salon &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
 </context>
 <context>
@@ -586,14 +461,6 @@ Souhaitez-vous la télécharger maintenant ?</translation>
         <translation>Aucun jeton dAmn reçu</translation>
     </message>
     <message>
-        <source>No JSON status received</source>
-        <translation type="obsolete">Aucun status JSON reçu</translation>
-    </message>
-    <message>
-        <source>No access token, please use the OAuth2 login method</source>
-        <translation type="vanished">Aucun jeton d&apos;accès, veuillez utiliser la méthode d&apos;identification OAuth2</translation>
-    </message>
-    <message>
         <location filename="../src/oauth2json.cpp" line="116"/>
         <source>Unable to read file %1</source>
         <translation>Impossible d&apos;accéder au fichier %1</translation>
@@ -602,14 +469,6 @@ Souhaitez-vous la télécharger maintenant ?</translation>
         <location filename="../src/oauth2json.cpp" line="366"/>
         <source>API error: %1</source>
         <translation>Erreur API : %1</translation>
-    </message>
-    <message>
-        <source>Bad form</source>
-        <translation type="vanished">Mauvais formulaire</translation>
-    </message>
-    <message>
-        <source>Login &apos;%1&apos; doesn&apos;t exist</source>
-        <translation type="vanished">Identifiant &apos;%1&apos; n&apos;existe pas</translation>
     </message>
     <message>
         <location filename="../src/oauth2.cpp" line="793"/>
@@ -651,10 +510,6 @@ Souhaitez-vous la télécharger maintenant ?</translation>
         <translation>Quelque chose s&apos;est mal passé... URL: %1 Redirection: %2</translation>
     </message>
     <message>
-        <source>Unable to find dAmn_Login</source>
-        <translation type="vanished">Impossible de trouver dAmn_Login</translation>
-    </message>
-    <message>
         <location filename="../src/oauth2.cpp" line="702"/>
         <location filename="../src/oauth2.cpp" line="729"/>
         <source>Unable to find validate_key</source>
@@ -674,22 +529,6 @@ Souhaitez-vous la télécharger maintenant ?</translation>
         <location filename="../src/oauth2.cpp" line="632"/>
         <source>Unable to find validate token or key</source>
         <translation>Impossible de valider le jeton ou la clé</translation>
-    </message>
-    <message>
-        <source>Authentication required while accessing %1</source>
-        <translation type="vanished">Authentification requise pour accéder à %1</translation>
-    </message>
-    <message>
-        <source>Network error: %1</source>
-        <translation type="vanished">Erreur réseau : %1</translation>
-    </message>
-    <message>
-        <source>SSL errors: %1</source>
-        <translation type="vanished">Erreur SSL : %1</translation>
-    </message>
-    <message>
-        <source>Authentication required for %1</source>
-        <translation type="vanished">Authentification requise pour %1</translation>
     </message>
     <message>
         <location filename="../src/oauth2.cpp" line="523"/>
@@ -791,30 +630,14 @@ Souhaitez-vous la télécharger maintenant ?</translation>
         <translation>a quitté le salon</translation>
     </message>
     <message>
-        <source>Topic was removed by %1</source>
-        <translation type="vanished">Sujet supprimé par %1</translation>
-    </message>
-    <message>
         <location filename="../src/roomframe.cpp" line="105"/>
         <source>Topic changed by %1: %2</source>
         <translation>Sujet modifié par %1 : %2</translation>
     </message>
     <message>
-        <source>Title was removed by %1</source>
-        <translation type="vanished">Titre supprimé par %1</translation>
-    </message>
-    <message>
         <location filename="../src/roomframe.cpp" line="124"/>
         <source>Title changed by %1: %2</source>
         <translation>Titre modifié par %1 : %2</translation>
-    </message>
-    <message>
-        <source>%1 has joined</source>
-        <translation type="vanished">%1 a rejoint le salon</translation>
-    </message>
-    <message>
-        <source>%1 has left</source>
-        <translation type="vanished">%1 a quitté le salon</translation>
     </message>
 </context>
 <context>
@@ -884,10 +707,6 @@ Souhaitez-vous la télécharger maintenant ?</translation>
         <translation>a été promu comme membre de %1 par %2</translation>
     </message>
     <message>
-        <source>has been made a member of %2 by %3</source>
-        <translation type="vanished">a été promu comme membre de %2 par %3</translation>
-    </message>
-    <message>
         <location filename="../src/roomstabwidget.cpp" line="479"/>
         <source>You joined room %1</source>
         <translation>Vous venez de rejoindre le salon %1</translation>
@@ -896,26 +715,6 @@ Souhaitez-vous la télécharger maintenant ?</translation>
         <location filename="../src/roomstabwidget.cpp" line="488"/>
         <source>You left room %1</source>
         <translation>Vous venez de quitter le salon %1</translation>
-    </message>
-    <message>
-        <source>Topic changed by %1: %2</source>
-        <translation type="obsolete">Sujet modifié par %1 : %2</translation>
-    </message>
-    <message>
-        <source>Title changed by %1: %2</source>
-        <translation type="obsolete">Titre modifié par %1 : %2</translation>
-    </message>
-    <message>
-        <source>%1 has been made a member of %2 by %3</source>
-        <translation type="vanished">%1 a été promu comme membre de %2 par %3</translation>
-    </message>
-    <message>
-        <source>You joined room &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="obsolete">Vous avez rejoint le salon &lt;b&gt;%1&lt;/b&gt;</translation>
-    </message>
-    <message>
-        <source>You leaved room &lt;b&gt;%1&lt;/b&gt;</source>
-        <translation type="obsolete">Vous avez quitté le salon &lt;b&gt;%1&lt;/b&gt;</translation>
     </message>
 </context>
 <context>
