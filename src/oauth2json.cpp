@@ -297,6 +297,7 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 			}
 			else
 			{
+				// process next action
 				processNextAction();
 			}
 		}
