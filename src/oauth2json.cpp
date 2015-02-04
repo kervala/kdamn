@@ -46,6 +46,18 @@ QString OAuth2::getAuthorizationUrl() const
 	return QString("%1?response_type=code&client_id=%2&redirect_uri=%3&scope=basic").arg(AUTHORIZE_URL).arg(m_clientId).arg(REDIRECT_APP);
 }
 
+bool OAuth2::hasAccessTokenExpired() const
+{
+	QDateTime now = QDateTime::currentDateTime();
+
+	return now > m_lastAccessTokenTime.addSecs(m_expiresIn);
+}
+
+bool OAuth2::mustUpdateAccessToken() const
+{
+	return m_accessToken.isEmpty() || hasAccessTokenExpired();
+}
+
 bool OAuth2::requestAuthorization()
 {
 	return get(getAuthorizationUrl(), OAUTH2LOGIN_URL);
@@ -73,7 +85,7 @@ bool OAuth2::requestAccessToken(const QString &code)
 
 bool OAuth2::requestPlacebo()
 {
-	if (m_accessToken.isEmpty())
+	if (mustUpdateAccessToken())
 	{
 		m_actions.push_front(ActionRequestPlacebo);
 
@@ -85,7 +97,7 @@ bool OAuth2::requestPlacebo()
 
 bool OAuth2::requestUserInfo()
 {
-	if (m_accessToken.isEmpty()) return false;
+	if (mustUpdateAccessToken()) return false;
 
 	return get(QString("%1/user/whoami?access_token=%2").arg(OAUTH2_URL).arg(m_accessToken));
 }
@@ -95,7 +107,7 @@ bool OAuth2::requestDAmnToken()
 	// don't request dAmn token if already got
 	if (!m_damnToken.isEmpty()) return true;
 
-	if (m_accessToken.isEmpty())
+	if (mustUpdateAccessToken())
 	{
 		m_actions.push_front(ActionRequestDAmnToken);
 
@@ -107,7 +119,7 @@ bool OAuth2::requestDAmnToken()
 
 bool OAuth2::requestStash(const QString &filename, const QString &room)
 {
-	if (m_accessToken.isEmpty()) return false;
+	if (mustUpdateAccessToken()) return false;
 
 	QFile file(filename);
 

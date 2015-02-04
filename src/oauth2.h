@@ -195,6 +195,9 @@ private:
 	bool requestStash(const QString &filename, const QString &room);
 	bool authorizeApplication(const QString &validateKey, const QString &validateToken, bool authorize);
 
+	bool hasAccessTokenExpired() const;
+	bool mustUpdateAccessToken() const;
+
 	// site process
 	QString getAuthorizationUrl() const;
 
