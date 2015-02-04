@@ -198,7 +198,8 @@ bool OEmbed::processContent(const QByteArray &content, const QString &url, const
 
 	if (jsonError.error != QJsonParseError::NoError)
 	{
-		data.error = jsonError.errorString();
+		// display wrong content too
+		data.error = QString("%: %2").arg(jsonError.errorString()).arg(QString::fromUtf8(content));
 	}
 
 	map = doc.toVariant().toMap();
