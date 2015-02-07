@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	QString locale = QLocale::system().name().left(2);
 
 	QString folder;
-	QDir dir(QCoreApplication::applicationDirPath());
+	QDir dir(QApplication::applicationDirPath());
 	
 #if defined(Q_OS_WIN32)
 	folder = dir.absolutePath();
@@ -84,14 +84,14 @@ int main(int argc, char *argv[])
 	QTranslator localTranslator;
 	if (localTranslator.load(QString("%1_%2").arg(TARGET).arg(locale), folder))
 	{
-		app.installTranslator(&localTranslator);
+		QApplication::installTranslator(&localTranslator);
 	}
 
 	// take the whole locale
 	QTranslator qtTranslator;
 	if (qtTranslator.load("qt_" + locale, folder))
 	{
-		app.installTranslator(&qtTranslator);
+		QApplication::installTranslator(&qtTranslator);
 	}
 
 	MainWindow mainWindow;
