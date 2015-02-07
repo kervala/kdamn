@@ -71,7 +71,14 @@ void OEmbed::init(bool local)
 #endif
 
 #ifdef USE_QT5
-	localDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+	QStandardPaths::StandardLocation location;
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
+	location = QStandardPaths::AppDataLocation;
+#else
+	location = QStandardPaths::ConfigLocation;
+#endif
+	localDir = QStandardPaths::writableLocation(location);
 #else
 	localDir = QDesktopServices::storageLocation(QDesktopServices::AppDataLocation);
 #endif
