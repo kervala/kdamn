@@ -185,8 +185,8 @@ MACRO(PCH_SET_COMPILE_COMMAND _inputcpp _compile_FLAGS)
   ENDIF()
 
   IF(MSVC)
-    GET_PDB_FULLPATH(${_PCH_current_target} PDB_FILE)
-    SET(PCH_COMMAND ${CMAKE_CXX_COMPILER} ${pchsupport_compiler_cxx_arg1} ${_compile_FLAGS} /Yc /Fp"${PCH_OUTPUT}" ${_inputcpp} /Fd"${PDB_FILE}" /c /Fo"${PCH_OUTPUT}.obj")
+    GET_INTERMEDIATE_PDB_FULLPATH(${_PCH_current_target} _PDB_FILE)
+    SET(PCH_COMMAND ${CMAKE_CXX_COMPILER} ${pchsupport_compiler_cxx_arg1} ${_compile_FLAGS} /Yc /Fp"${PCH_OUTPUT}" ${_inputcpp} /Fd"${_PDB_FILE}" /c /Fo"${PCH_OUTPUT}.obj")
 
     # Ninja PCH Support
     # http://public.kitware.com/pipermail/cmake-developers/2012-March/003653.html

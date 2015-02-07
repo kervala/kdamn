@@ -1,3 +1,4 @@
+FIX_PACKAGE_OPTIONS(MyZLIB ZLIB)
 FIND_PACKAGE_HELPER(ZLIB zlib.h RELEASE zlibstatic zlib zdll zlib1 z DEBUG zlibstaticd zlibd zdlld zlibd1 zd QUIET)
 
 IF(ZLIB_INCLUDE_DIR AND EXISTS "${ZLIB_INCLUDE_DIR}/zlib.h")

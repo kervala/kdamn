@@ -102,11 +102,6 @@ MACRO(USE_QT_MODULES)
     SET(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${QTDIR} $ENV{QTDIR})
     FIND_PACKAGE(Qt5Core QUIET)
 
-    IF("${Qt5Core_VERSION_STRING}" VERSION_GREATER "5.2.9")
-      # Depends on Positioning since Qt 5.3.0
-      LIST(APPEND QT5_MODULES Positioning)
-    ENDIF()
-
     IF(Qt5Core_FOUND)
       ADD_QT5_DEPENDENCIES()
       
@@ -245,6 +240,7 @@ MACRO(COMPILE_QT_HEADERS _TARGET)
         ENDIF()
       ENDIF()
     ENDIF()
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
   ENDIF()
 ENDMACRO()
 
@@ -342,19 +338,32 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
       IF(QT_STATIC)
         ADD_DEFINITIONS(-DQT_STATICPLUGIN)
 
-        FIND_PACKAGE(MyPNG REQUIRED)
-        FIND_PACKAGE(JPEG REQUIRED)
-
-        TARGET_LINK_LIBRARIES(${_TARGET} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
-
         FOREACH(_MODULE ${QT_MODULES_USED})
           IF(_MODULE STREQUAL "Core")
+          ENDIF()
+          IF(_MODULE STREQUAL "Network")
+            IF(WIN32)
+              FIND_PACKAGE(OpenSSL REQUIRED)
+              FIND_PACKAGE(MyZLIB REQUIRED)
+              TARGET_LINK_LIBRARIES(${_TARGET}
+                ${WINSDK_LIBRARY_DIR}/Crypt32.lib
+                ${WINSDK_LIBRARY_DIR}/WS2_32.Lib
+                ${OPENSSL_LIBRARIES}
+                ${ZLIB_LIBRARIES})
+            ENDIF()
+          ENDIF()
+          IF(_MODULE STREQUAL Gui)
+            FIND_PACKAGE(MyPNG REQUIRED)
+            FIND_PACKAGE(JPEG REQUIRED)
+
+            TARGET_LINK_LIBRARIES(${_TARGET} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
+
             LINK_QT_LIBRARY(${_TARGET} PrintSupport)
             LINK_QT_LIBRARY(${_TARGET} PlatformSupport)
+
             IF(WIN32)
               TARGET_LINK_LIBRARIES(${_TARGET}
                 ${WINSDK_LIBRARY_DIR}/Imm32.lib
-                ${WINSDK_LIBRARY_DIR}/WS2_32.Lib
                 ${WINSDK_LIBRARY_DIR}/OpenGL32.lib
                 ${WINSDK_LIBRARY_DIR}/WinMM.Lib)
               LINK_QT_PLUGIN(${_TARGET} platforms qwindows)
@@ -389,14 +398,7 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
               LINK_QT_PLUGIN(${_TARGET} printsupport cocoaprintersupport)
               LINK_QT_PLUGIN(${_TARGET} platforms qcocoa)
             ENDIF()
-          ENDIF()
-          IF(_MODULE STREQUAL "Network")
-            IF(WIN32)
-              FIND_PACKAGE(OpenSSL REQUIRED)
-              TARGET_LINK_LIBRARIES(${_TARGET} ${WINSDK_LIBRARY_DIR}/Crypt32.lib ${OPENSSL_LIBRARIES})
-            ENDIF()
-          ENDIF()
-          IF(_MODULE STREQUAL "Gui")
+
             LINK_QT_PLUGIN(${_TARGET} imageformats qico)
             LINK_QT_PLUGIN(${_TARGET} imageformats qmng)
 

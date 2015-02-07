@@ -305,41 +305,6 @@ MACRO(CREATE_SOURCE_GROUPS DIR FILES)
   ENDIF()
 ENDMACRO(CREATE_SOURCE_GROUPS)
 
-MACRO(GET_PDB_FULLPATH name output)
-  IF(CMAKE_VERSION VERSION_LESS "2.8.12" OR CMAKE_VERSION VERSION_GREATER "3.0.9")
-    # determine output directory based on target type
-    GET_TARGET_PROPERTY(_targetType ${name} TYPE)
-    IF(${_targetType} STREQUAL "EXECUTABLE")
-      SET(_targetOutput ${CMAKE_RUNTIME_OUTPUT_DIRECTORY})
-    ELSEIF(${_targetType} STREQUAL "STATIC_LIBRARY")
-      SET(_targetOutput ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY})
-    ELSE()
-      SET(_targetOutput ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
-    ENDIF()
-
-    # determine target postfix
-    STRING(TOUPPER "${CMAKE_BUILD_TYPE}_POSTFIX" _postfix_var_name)
-    GET_TARGET_PROPERTY(_targetPostfix ${name} ${_postfix_var_name})
-
-    IF(${_targetPostfix} MATCHES NOTFOUND)
-      SET(_targetPostfix "${_DEBUG_POSTFIX}")
-    ENDIF()
-
-    IF(NMAKE)
-      SET(${output} "${_targetOutput}/${name}${_targetPostfix}.pdb")
-    ELSE()
-      SET(${output} "${_targetOutput}/Debug/${name}${_targetPostfix}.pdb")
-    ENDIF()
-  ELSE()
-    # use a simple path to put intermediary PDB file
-    IF(NMAKE)
-      SET(${output} "${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${name}.dir/vc${MSVC_TOOLSET}.pdb")
-    ELSE()
-      SET(${output} "${CMAKE_CURRENT_BINARY_DIR}/${name}.dir/Debug/vc${MSVC_TOOLSET}.pdb")
-    ENDIF()
-  ENDIF()
-ENDMACRO()
-
 MACRO(SET_TARGET_EXECUTABLE _TYPE name)
   IF(NOT BUILD_FLAGS_SETUP)
     SETUP_BUILD_FLAGS()
@@ -657,6 +622,14 @@ MACRO(SET_TARGET_LIB name)
   ENDIF()
 
   IF(IS_STATIC OR IS_SHARED)
+    # take into account prefix for PDB set in SET_TARGET_FLAGS
+    IF(MSVC AND WITH_PREFIX_LIB)
+      SET_TARGET_PROPERTIES(${name} PROPERTIES PREFIX "lib" IMPORT_PREFIX "lib")
+      IF(STATIC_LIB)
+        SET_TARGET_PROPERTIES(${name}_static PROPERTIES PREFIX "lib")
+      ENDIF()
+    ENDIF()
+
     SET_TARGET_FLAGS(${name})
   ENDIF()
 
@@ -666,17 +639,10 @@ MACRO(SET_TARGET_LIB name)
 
   IF(IS_STATIC OR IS_SHARED)
     # To prevent other libraries to be linked to the same libraries
-    SET_TARGET_PROPERTIES(${name} PROPERTIES LINK_INTERFACE_LIBRARIES "")
+#    SET_TARGET_PROPERTIES(${name} PROPERTIES INTERFACE_LINK_LIBRARIES "")
 
     IF(STATIC_LIB)
-      SET_TARGET_PROPERTIES(${name}_static PROPERTIES LINK_INTERFACE_LIBRARIES "")
-    ENDIF()
-
-    IF(MSVC AND WITH_PREFIX_LIB)
-      SET_TARGET_PROPERTIES(${name} PROPERTIES PREFIX "lib")
-      IF(STATIC_LIB)
-        SET_TARGET_PROPERTIES(${name}_static PROPERTIES PREFIX "lib")
-      ENDIF()
+#      SET_TARGET_PROPERTIES(${name}_static PROPERTIES INTERFACE_LINK_LIBRARIES "")
     ENDIF()
 
     IF(WIN32)
@@ -699,51 +665,8 @@ MACRO(SET_TARGET_LIB name)
           INSTALL(TARGETS ${name}_static RUNTIME DESTINATION ${BIN_PREFIX} LIBRARY DESTINATION ${LIBRARY_DEST})
         ENDIF()
       ENDIF()
-      # copy also PDB files in installation directory for Visual C++
-      IF(MSVC)
-        IF(IS_STATIC)
-          IF(STATIC_LIB)
-            SET(_name "${name}_static")
-          ELSE()
-            SET(_name "${name}")
-          ENDIF()
 
-          # Destination PDB filename
-          SET(OUTPUT_FILENAME ${_name}d.pdb)
-
-          # static libraries are always in CMAKE_ARCHIVE_OUTPUT_DIRECTORY
-          IF(NMAKE)
-            SET(OUTPUT_FULLPATH ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/${OUTPUT_FILENAME})
-          ELSE()
-            SET(OUTPUT_FULLPATH ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/Debug/${OUTPUT_FILENAME})
-          ENDIF()
-
-          IF(CMAKE_VERSION VERSION_LESS "2.8.12" OR CMAKE_VERSION VERSION_GREATER "3.0.9")
-            # copy PDB file together with LIB
-            INSTALL(FILES ${OUTPUT_FULLPATH} DESTINATION ${LIB_PREFIX} CONFIGURATIONS Debug)
-          ELSE()
-            # Since CMake 2.8.12, PDB files are not generated in output directory for static libraries
-            GET_TARGET_PROPERTY(PDB_FULLPATH ${_name} PDB_FULLPATH)
-
-            # copy PDB file together with LIB
-            INSTALL(FILES ${PDB_FULLPATH} DESTINATION ${LIB_PREFIX} CONFIGURATIONS Debug RENAME ${OUTPUT_FILENAME})
-          ENDIF()
-        ENDIF()
-        IF(IS_SHARED)
-          # Destination PDB filename
-          SET(OUTPUT_FILENAME ${name}d.pdb)
-
-          # shared libraries are always in CMAKE_LIBRARY_OUTPUT_DIRECTORY
-          IF(NMAKE)
-            SET(OUTPUT_FULLPATH ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${OUTPUT_FILENAME})
-          ELSE()
-            SET(OUTPUT_FULLPATH ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug/${OUTPUT_FILENAME})
-          ENDIF()
-
-          # copy PDB file together with DLL
-          INSTALL(FILES ${OUTPUT_FULLPATH} DESTINATION ${BIN_PREFIX} CONFIGURATIONS Debug)
-        ENDIF()
-      ENDIF()
+      INSTALL_LIBRARY_PDB(${name})
     ELSE()
       IF(IS_SHARED)
         # copy only DLL because we don't need development files
@@ -881,33 +804,7 @@ MACRO(SET_TARGET_PLUGIN name)
       ENDIF()
     ENDIF()
 
-    # copy also PDB files in installation directory for Visual C++
-    IF(MSVC)
-      # Destination PDB filename
-      SET(OUTPUT_FILENAME ${name}d.pdb)
-
-      IF(WITH_STATIC_PLUGINS)
-        # statics libraries are always in CMAKE_ARCHIVE_OUTPUT_DIRECTORY
-        IF(NMAKE)
-          SET(OUTPUT_FULLPATH ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/${OUTPUT_FILENAME})
-        ELSE()
-          SET(OUTPUT_FULLPATH ${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}/Debug/${OUTPUT_FILENAME})
-        ENDIF()
-
-        # copy PDB file together with LIB
-        INSTALL(FILES ${OUTPUT_FULLPATH} DESTINATION ${LIB_PREFIX} CONFIGURATIONS Debug)
-      ELSE()
-        # shared libraries are always in CMAKE_LIBRARY_OUTPUT_DIRECTORY
-        IF(NMAKE)
-          SET(OUTPUT_FULLPATH ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/${OUTPUT_FILENAME})
-        ELSE()
-          SET(OUTPUT_FULLPATH ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/Debug/${OUTPUT_FILENAME})
-        ENDIF()
-
-        # copy PDB file together with DLL
-        INSTALL(FILES ${OUTPUT_FULLPATH} DESTINATION ${PLUGIN_PREFIX} CONFIGURATIONS Debug)
-      ENDIF()
-    ENDIF()
+    INSTALL_PLUGIN_PDB(${name})
   ENDIF()
 ENDMACRO(SET_TARGET_PLUGIN)
 
@@ -961,28 +858,15 @@ MACRO(SET_TARGET_FLAGS name)
     ENDIF()
     IF(LIB_ABSOLUTE_PREFIX)
       SET_TARGET_PROPERTIES(${name} PROPERTIES INSTALL_NAME_DIR ${LIB_ABSOLUTE_PREFIX})
-    ELSEIF(LIB_ABSOLUTE_PREFIX)
+    ELSE()
       SET_TARGET_PROPERTIES(${name} PROPERTIES INSTALL_NAME_DIR ${CMAKE_INSTALL_PREFIX}/${LIB_PREFIX})
     ENDIF()
   ENDIF()
 
   TARGET_LINK_LIBRARIES(${name} ${CMAKE_THREAD_LIBS_INIT})
 
-  IF(NOT "${type}" STREQUAL "STATIC_LIBRARY")
-    IF(ANDROID)
-      TARGET_LINK_LIBRARIES(${name} ${STL_LIBRARY})
-    ENDIF()
-
-    IF(MSVC)
-      GET_TARGET_PROPERTY(_LINK_FLAGS ${name} LINK_FLAGS)
-      IF(NOT _LINK_FLAGS)
-        SET(_LINK_FLAGS "")
-      ENDIF()
-      SET_TARGET_PROPERTIES(${name} PROPERTIES
-        VERSION ${VERSION}
-        SOVERSION ${VERSION_MAJOR}
-        LINK_FLAGS "/VERSION:${VERSION_MAJOR}.${VERSION_MINOR} ${_LINK_FLAGS}")
-    ENDIF()
+  IF(NOT "${type}" STREQUAL "STATIC_LIBRARY" AND ANDROID)
+    TARGET_LINK_LIBRARIES(${name} ${STL_LIBRARY})
   ENDIF()
 
   IF(WITH_STLPORT)
@@ -1011,27 +895,7 @@ MACRO(SET_TARGET_FLAGS name)
 
   SET_TARGET_PROPERTIES(${name} PROPERTIES DEBUG_POSTFIX "${_DEBUG_POSTFIX}" RELEASE_POSTFIX "${_RELEASE_POSTFIX}")
 
-  IF(MSVC)
-    IF("${type}" STREQUAL "STATIC_LIBRARY")
-      IF(CMAKE_VERSION VERSION_GREATER "3.0.9")
-        SET_TARGET_PROPERTIES(${name} PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY_Debug "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}" COMPILE_PDB_NAME_Debug "${name}${_DEBUG_POSTFIX}.pdb")
-      ELSE()
-        SET_TARGET_PROPERTIES(${name} PROPERTIES PDB_OUTPUT_DIRECTORY "${CMAKE_ARCHIVE_OUTPUT_DIRECTORY}")
-      ENDIF()
-    ELSEIF("${type}" STREQUAL "EXECUTABLE")
-      SET_TARGET_PROPERTIES(${name} PROPERTIES COMPILE_FLAGS "/GA")
-    ELSEIF("${type}" STREQUAL "SHARED_LIBRARY")
-      SET_TARGET_PROPERTIES(${name} PROPERTIES PDB_OUTPUT_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
-    ENDIF()
-
-    IF(CMAKE_VERSION VERSION_GREATER "2.8.11.9") #  AND CMAKE_VERSION VERSION_LESS "3.0.9"
-      # Since CMake 2.8.12, PDB files are not generated in output directory
-      GET_PDB_FULLPATH(${name} PDB_FULLPATH)
-
-      SET_PROPERTY(TARGET ${name} APPEND_STRING PROPERTY COMPILE_FLAGS " /Fd${PDB_FULLPATH}")
-      SET_TARGET_PROPERTIES(${name} PROPERTIES PDB_FULLPATH "${PDB_FULLPATH}")
-    ENDIF()
-  ENDIF()
+  SET_TARGET_FLAGS_MSVC(${name})
 ENDMACRO(SET_TARGET_FLAGS)
 
 # Set special flags to sources depending on specific language based on their extension
@@ -1389,6 +1253,15 @@ MACRO(INIT_BUILD_FLAGS)
   ENDIF()
 
   IF(MSVC)
+    # From 2.8.12 (included) to 3.1.0 (excluded), the /Fd parameter to specify
+    # compilation PDB was managed entirely by CMake and there was no way to access
+    # or change it, so we need to remove it from CFLAGS and manage it ourself later
+    IF(CMAKE_VERSION VERSION_GREATER "2.8.11.9" AND CMAKE_VERSION VERSION_LESS "3.1.0")
+      SET(MANUALLY_MANAGE_PDB_FLAG ON)
+    ELSE()
+      SET(MANUALLY_MANAGE_PDB_FLAG OFF)
+    ENDIF()
+
     IF(MSVC_VERSION EQUAL "1700" AND NOT MSVC11)
       SET(MSVC11 ON)
     ENDIF()
@@ -1480,10 +1353,7 @@ MACRO(INIT_BUILD_FLAGS)
     SET(DEBUG_LINKFLAGS "/DEBUG /OPT:NOREF /OPT:NOICF /NODEFAULTLIB:msvcrt /PDBCOMPRESS ${MSVC_INCREMENTAL_YES_FLAG} ${DEBUG_LINKFLAGS}")
     SET(RELEASE_LINKFLAGS "/OPT:REF /OPT:ICF /INCREMENTAL:NO ${RELEASE_LINKFLAGS}")
 
-    # Since CMake 2.8.12, PDB are created in same directories as objects
-    # but we can't determinate this directory for PCH so we need to remove the /Fd flag
-    # and manually set it later
-    IF(CMAKE_VERSION VERSION_GREATER "2.8.11.9")
+    IF(MANUALLY_MANAGE_PDB_FLAG)
       SET(CMAKE_C_COMPILE_OBJECT "<CMAKE_C_COMPILER> /nologo /TC <FLAGS> <DEFINES> /Fo<OBJECT> -c <SOURCE>")
       SET(CMAKE_CXX_COMPILE_OBJECT "<CMAKE_CXX_COMPILER> /nologo /TP <FLAGS> <DEFINES> /Fo<OBJECT> -c <SOURCE>")
     ENDIF()
@@ -1572,6 +1442,7 @@ MACRO(INIT_BUILD_FLAGS)
           
           SET(DEBUG_CFLAGS "${DEBUG_CFLAGS} -marm")
           SET(RELEASE_CFLAGS "${RELEASE_CFLAGS} -mthumb")
+          SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -mthumb")
         ELSE()
           ADD_PLATFORM_FLAGS("-funswitch-loops")
 
@@ -1863,6 +1734,21 @@ MACRO(SETUP_EXTERNAL)
     FIND_PACKAGE(WindowsSDK REQUIRED)
   ENDIF()
 ENDMACRO(SETUP_EXTERNAL)
+
+# macro to define FIND_PACKAGE options with a different package name
+MACRO(FIX_PACKAGE_OPTIONS OLDNAME NEWNAME)
+  # append other options if needed
+  SET(_OPTIONS COMPONENTS REQUIRED QUIETLY)
+  
+  # process each options
+  FOREACH(_OPTION ${_OPTIONS})
+    SET(OLD_OPTION ${OLDNAME}_FIND_${_OPTION})
+    IF(DEFINED )
+      SET(NEW_OPTION ${NEWNAME}_FIND_${_OPTION})
+      SET(${NEW_OPTION} ${OLD_OPTION})
+    ENDIF()
+  ENDFOREACH()
+ENDMACRO()
 
 MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
   # Looks for a directory containing NAME.
