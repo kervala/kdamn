@@ -55,6 +55,9 @@ IF(X11_FOUND)
   INCLUDE_DIRECTORIES(${X11_INCLUDE_DIR})
 ENDIF()
 
+# To fix compilation of MOC files under Linux
+INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/src)
+
 FILE(GLOB HEADER src/*.h)
 FILE(GLOB SRC src/*.cpp)
 FILE(GLOB UI ui/*.ui)
