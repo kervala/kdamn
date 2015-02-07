@@ -470,7 +470,7 @@ MACRO(COMPILE_MAC_XIBS _TARGET)
 
       IF(${IBTOOL} STREQUAL "IBTOOL-NOTFOUND")
         MESSAGE(SEND_ERROR "ibtool can not be found and is needed to compile the .xib files. It should have been installed with the Apple developer tools. The default system paths were searched in addition to ${OSX_DEVELOPER_ROOT}/usr/bin")
-      ENDIF(${IBTOOL} STREQUAL "IBTOOL-NOTFOUND")
+      ENDIF()
 
       FOREACH(XIB ${MAC_XIBS})
         IF(XIB MATCHES "\\.lproj")

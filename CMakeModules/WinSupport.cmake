@@ -14,7 +14,7 @@ MACRO(SIGN_FILE_WINDOWS TARGET)
 #      POST_BUILD
 #      COMMAND ${WINSDK_SIGNTOOL} sign ${filename}
 #      VERBATIM)
-  ENDIF(WITH_SIGN_FILE AND WINSDK_SIGNTOOL AND CMAKE_BUILD_TYPE STREQUAL "Release")
+  ENDIF()
 ENDMACRO(SIGN_FILE_WINDOWS)
 
 ################################################################################ 
