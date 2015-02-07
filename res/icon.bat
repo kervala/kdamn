@@ -47,6 +47,7 @@ call:convert %SRC_ICON% %DST_ICON%256x256 256 0
 call:convert %SRC_ICON% %DST_ICON%512x512 512 0
 
 convert %DST_ICON%256x256.png %DST_ICON%48x48.png %DST_ICON%32x32.png %DST_ICON%16x16.png %DST_ICON%.ico
+png2icns %DST_ICON%.icns %DST_ICON%16x16.png %DST_ICON%32x32.png %DST_ICON%128x128.png %DST_ICON%256x256.png %DST_ICON%512x512.png
 convert %DST_ICON%32x32.png %DST_ICON%.xpm
 
 goto:eof
