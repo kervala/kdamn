@@ -95,7 +95,12 @@ MACRO(USE_QT_MODULES)
   SET(QT4_MODULES ${QT_SHARED_MODULES} Main)
 
   # Qt 5 modules
-  SET(QT5_MODULES ${QT_SHARED_MODULES} Bluetooth Concurrent LinguistTools MultimediaQuick MultimediaWidgets Nfc OpenGL OpenGLExtensions PlatformSupport Positioning PrintSupport Quick QuickParticles QuickTest QuickWidgets Sensors SerialPort V8 WebChannel WebKitWidgets WebSockets Widgets WinExtras)
+  SET(QT5_MODULES ${QT_SHARED_MODULES} Bluetooth Concurrent LinguistTools MultimediaQuick MultimediaWidgets Nfc OpenGL OpenGLExtensions PlatformSupport Positioning PrintSupport Quick QuickParticles QuickTest QuickWidgets Sensors SerialPort V8 WebChannel WebKitWidgets WebSockets Widgets)
+  
+  # Use WinExtras only under Windows
+  IF(WIN32)
+    LIST(APPEND QT5_MODULES WinExtras)
+  ENDIF()
 
   IF(WITH_QT5)
     # Look for Qt 5 in some environment variables
