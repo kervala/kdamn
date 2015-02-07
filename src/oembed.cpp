@@ -22,6 +22,10 @@
 #include "oauth2.h"
 #include "damn.h"
 
+#ifdef HAVE_CONFIG_H
+	#include "config.h"
+#endif
+
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
 #endif
