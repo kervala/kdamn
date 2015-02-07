@@ -68,7 +68,7 @@ struct DAmnImage
 	{
 	}
 
-	bool operator == (const DAmnImage &other)
+	bool operator == (const DAmnImage &other) const
 	{
 		return other.md5 == md5;
 	}
