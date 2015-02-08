@@ -156,12 +156,14 @@ bool DAmn::parseError(const QString &error)
 		{ "ok", tr("OK") },
 		{ "bad namespace", tr("Bad namespace") },
 		{ "bad parameter", tr("Bad parameter") },
+		{ "bad command", tr("Bad command") },
 		{ "unknown property", tr("Unknown property") },
 		{ "authentication failed", tr("Authentication failed") },
 		{ "nothing to send", tr("Nothing to send") },
 		{ "already joined", tr("Already joined") },
 		{ "no login", tr("No login") },
 		{ "not privileged", tr("Not privileged") },
+		{ "too many connections", tr("Too many connections") },
 		{ "unknown", tr("Unknown") },
 		{ "", "" }
 	};
