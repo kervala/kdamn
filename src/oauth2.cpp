@@ -594,12 +594,16 @@ bool OAuth2::processNextUpload()
 	// all files are currently uploading or no file to upload
 	if (index < 0) return false;
 
-	StashFile &file = m_filesToUpload.front();
+	StashFile &file = m_filesToUpload[index];
 	file.status = StashFile::StatusUploading;
 
-	requestStash(file.filename, file.room);
+	if (requestStash(file.filename, file.room)) return true;
 
-	return true;
+	// file not found, so remove it
+	m_filesToUpload.removeAt(index);
+
+	// process next file
+	return processNextUpload();
 }
 
 bool OAuth2::parseSessionVariables(const QByteArray &content)
