@@ -47,6 +47,7 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 	connect(damn, SIGNAL(userParted(QString, QString, QString, bool)), this, SLOT(onUserPart(QString, QString, QString, bool)));
 	connect(damn, SIGNAL(userKicked(QString, QString, QString)), this, SLOT(onUserKick(QString, QString, QString)));
 	connect(damn, SIGNAL(userPrivChanged(QString, QString, QString, QString)), this, SLOT(onUserPriv(QString, QString, QString, QString)));
+	connect(damn, SIGNAL(privClassChanged(QString, QString, QString, QString)), this, SLOT(onPrivClass(QString, QString, QString, QString)));
 	connect(damn, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
 //	connect(damn, SIGNAL(authenticationFailedWrongLogin()), this, SLOT(onRequestDAmnToken()));
 	connect(damn, SIGNAL(authenticationFailedWrongToken()), this, SLOT(onRequestDAmnToken()));
@@ -462,7 +463,15 @@ void RoomsTabWidget::onUserPriv(const QString &room, const QString &user, const 
 {
 	RoomFrame *frame = getRoomFrame(room);
 
-	if (frame) frame->setSystem(user, tr("has been made a member of %1 by %2").arg(pc).arg(by));
+	// TODO: group is in italic on DA
+	if (frame) frame->setSystem(user, tr("has been made a member of %1 by %2 *").arg(pc).arg(by));
+}
+
+void RoomsTabWidget::onPrivClass(const QString &room, const QString &privclass, const QString &by, const QString &privs)
+{
+	RoomFrame *frame = getRoomFrame(room);
+
+	if (frame) frame->setSystem("", tr("** privilege class %1 has been updated by %2 with: %3").arg(privclass).arg(by).arg(privs));
 }
 
 void RoomsTabWidget::onUsers(const QString &room, const QStringList &users)

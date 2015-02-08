@@ -67,6 +67,7 @@ public slots:
 	void onUserPart(const QString &room, const QString &user, const QString &reason, bool show);
 	void onUserKick(const QString &room, const QString &user, const QString &by);
 	void onUserPriv(const QString &room, const QString &user, const QString &by, const QString &pc);
+	void onPrivClass(const QString &room, const QString &privclass, const QString &by, const QString &privs);
 	void onError(const QString &error);
 
 	// slots activated from OAuth2 signals

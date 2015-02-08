@@ -184,7 +184,8 @@ signals:
 	void roomParted(const QString &room, const QString &reason);
 	void userJoined(const QString &room, const QString &user, bool show);
 	void userParted(const QString &room, const QString &user, const QString &reason, bool show);
-	void userPrivChanged(const QString &room, const QString &user, const QString &by, const QString &pc);
+	void userPrivChanged(const QString &room, const QString &user, const QString &by, const QString &privclass);
+	void privClassChanged(const QString &room, const QString &privclass, const QString &by, const QString &privs);
 	void userKicked(const QString &room, const QString &user, const QString &by);
 	void usersReceived(const QString &room, const QStringList &users);
 	void errorReceived(const QString &error);
@@ -217,6 +218,7 @@ private:
 	bool parsePart(const QString &room, const QString &user, bool show, const QString &reason, const QStringList &lines, int &i);
 	bool parsePriv(const QString &room, const QString &user, bool show, const QString &by, const QString &pc, const QStringList &lines, int &i);
 	bool parseKicked(const QString &room, const QString &user, bool show, const QString &by, const QStringList &lines, int &i);
+	bool parseAdminUpdate(const QString &room, const QString &prop, const QString &by, const QString &name, const QString &privs, const QStringList &lines, int &i);
 	bool parseError(const QString &error);
 
 	// parse message sent from server

@@ -45,6 +45,7 @@ struct DAmnPrivClass
 {
 	int id;
 	QString name;
+	QString priv;
 };
 
 typedef QList<DAmnPrivClass> DAmnPrivClasses;
@@ -89,9 +90,11 @@ public:
 	void removePrivClasses();
 	bool setPrivClass(const DAmnPrivClass &priv);
 
+	DAmnPrivClasses getPrivClasses() const { return m_privclasses; }
+	DAmnPrivClassesIterator findPrivClass(const QString &name);
+
 private:
 	DAmnRoomUsersIterator findUser(const QString &name);
-	DAmnPrivClassesIterator findPrivClass(const QString &name);
 
 	QString m_name;
 

@@ -344,6 +344,43 @@ bool DAmn::parseKicked(const QString &room, const QString &user, bool show, cons
 	return true;
 }
 
+bool DAmn::parseAdminUpdate(const QString &room, const QString &prop, const QString &by, const QString &name, const QString &privs, const QStringList &lines, int &i)
+{
+	DAmnRoom *r = getRoom(room);
+
+	if (!r)
+	{
+		emit errorReceived(tr("Room %1 doesn't exist").arg(room));
+
+		return true;
+	}
+
+	if (prop == "privclass")
+	{
+		// find priv class by its name
+		DAmnPrivClassesIterator it = r->findPrivClass(name);
+
+		if (it != r->getPrivClasses().end())
+		{
+			emit privClassChanged(room, name, by, privs);
+
+			// TODO: parse permissions instead of using the original string
+			it->priv = privs;
+		}
+		else
+		{
+			// this priv class doesn't exist
+			emit errorReceived(tr("Privilege class %1 doesn't exist").arg(name));
+		}
+	}
+	else
+	{
+		emit errorReceived(tr("Unable to recognize property: %1").arg(prop));
+	}
+
+	return true;
+}
+
 bool DAmn::parseRecv(const QStringList &lines)
 {
 	int i = 0;
@@ -370,6 +407,9 @@ bool DAmn::parseRecv(const QStringList &lines)
 
 		// kicked
 		if (parsePacket("kicked", lines, i, p)) return parseKicked(room, p.params[0], p.args["i"] == "1", p.args["by"], lines, i);
+
+		// admin update
+		if (parsePacket("admin update", lines, i, p)) return parseAdminUpdate(room, p.args["p"], p.args["by"], p.args["name"], p.args["privs"], lines, i);
 	}
 	else if (p.params[0] == "pchat")
 	{
