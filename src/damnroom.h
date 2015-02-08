@@ -32,7 +32,7 @@ struct DAmnRoomUser
 		count = 0;
 	}
 
-	bool operator == (const DAmnRoomUser &other)
+	bool operator == (const DAmnRoomUser &other) const
 	{
 		return other.name.toLower() == name.toLower();
 	}
