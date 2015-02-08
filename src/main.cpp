@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 	}
 
 	MainWindow mainWindow;
-	mainWindow.setWindowTitle(app.applicationName());
+	mainWindow.setWindowTitle(QApplication::applicationName());
 	mainWindow.show();
 
 	// only memory leaks are from plugins
