@@ -35,6 +35,8 @@ enum EMessageType
 	MessageAction,
 	MessageTopic,
 	MessageTitle,
+	MessageTopicFirst,
+	MessageTitleFirst,
 	MessageUnknown
 };
 

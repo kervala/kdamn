@@ -567,33 +567,41 @@ bool DAmn::parsePart(const QStringList &lines)
 
 bool DAmn::parseRoomProperty(const QString &room, const DAmnProperties &props, const QStringList &lines, int &i)
 {
-	DAmnRoom *chan = getRoom(room);
+	DAmnRoom *droom = getRoom(room);
 
-	if (!chan) return false;
+	if (!droom) return false;
 
-	DAmnRoomProperty prop;
-	prop.name = props["p"];
-	prop.by = props["by"];
-	prop.ts = props["ts"];
+	DAmnRoomProperty newProp, oldProp;
+	newProp.name = props["p"];
+	newProp.by = props["by"];
+	newProp.ts = props["ts"];
+
+	bool first = true;
+
+	// check if property already previously read
+	if (droom->getProperty(newProp.name, oldProp))
+	{
+		if (!oldProp.by.isEmpty()) first = false;
+	}
 
 	EMessageType type = MessageUnknown;
 
-	if (prop.name == "topic")
+	if (newProp.name == "topic")
 	{
-		type = MessageTopic;
+		type = first ? MessageTopicFirst:MessageTopic;
 	}
-	else if (prop.name == "title")
+	else if (newProp.name == "title")
 	{
-		type = MessageTitle;
+		type = first ? MessageTitleFirst:MessageTitle;
 	}
 	else
 	{
-		emit errorReceived(tr("Unable to recognize property: %1").arg(prop.name));
+		emit errorReceived(tr("Unable to recognize property: %1").arg(newProp.name));
 	}
 
-	parseText(room, prop.by, type, lines, i, prop.html, prop.text);
+	parseText(room, newProp.by, type, lines, i, newProp.html, newProp.text);
 
-	chan->setProperty(prop);
+	droom->setProperty(newProp);
 
 	return true;
 }
