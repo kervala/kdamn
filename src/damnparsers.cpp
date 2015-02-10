@@ -26,10 +26,11 @@
 	#define new DEBUG_NEW
 #endif
 
-struct DAmnError
+struct DAmnTranslation
 {
+	QString id;
 	QString name;
-	QString description;
+	QString translation;
 };
 
 bool DAmn::parseAllMessages(const QStringList &lines)
@@ -147,40 +148,76 @@ bool DAmn::parseUserInfo(const QStringList &lines, int &i, DAmnUser &user)
 	return true;
 }
 
+bool DAmn::translateError(const QString &error, QString &translation, int &id) const
+{
+	static DAmnTranslation s_errors[] =
+	{
+		{ OK, "ok", tr("OK") },
+		{ BAD_NAMESPACE, "bad namespace", tr("Bad namespace") },
+		{ BAD_PARAMETER, "bad parameter", tr("Bad parameter") },
+		{ BAD_COMMAND, "bad command", tr("Bad command") },
+		{ UNKNOWN_PROPERTY, "unknown property", tr("Unknown property") },
+		{ AUTHENTICATION_FAILED, "authentication failed", tr("Authentication failed") },
+		{ NOTHING_TO_SEND, "nothing to send", tr("Nothing to send") },
+		{ ALREADY_JOINED, "already joined", tr("Already joined") },
+		{ NO_LOGIN, "no login", tr("No login") },
+		{ NOT_PRIVILEGED, "not privileged", tr("Not privileged") },
+		{ TOO_MANY_CONNECTIONS, "too many connections", tr("Too many connections") },
+		{ UNKNOWN, "unknown", tr("Unknown") },
+		{ LAST_ERROR, "", "" }
+	};
+
+	for(int i = 0; i < LAST_ERROR; ++i)
+	{
+		if (error == s_errors[i].name)
+		{
+			translation = s_errors[i].translation;
+			id = i;
+			return true;
+		}
+	}
+
+	return false;
+}
+
 bool DAmn::parseError(const QString &error)
 {
 	if (error == "ok") return true;
 
-	static DAmnError s_errors[] =
+	QString translation;
+	int id = 0;
+	
+	if (!translateError(error, translation, id))
 	{
-		{ "ok", tr("OK") },
-		{ "bad namespace", tr("Bad namespace") },
-		{ "bad parameter", tr("Bad parameter") },
-		{ "bad command", tr("Bad command") },
-		{ "unknown property", tr("Unknown property") },
-		{ "authentication failed", tr("Authentication failed") },
-		{ "nothing to send", tr("Nothing to send") },
-		{ "already joined", tr("Already joined") },
-		{ "no login", tr("No login") },
-		{ "not privileged", tr("Not privileged") },
-		{ "too many connections", tr("Too many connections") },
-		{ "unknown", tr("Unknown") },
-		{ "", "" }
-	};
-
-	for(int i = 1; !s_errors[i].name.isEmpty(); ++i)
-	{
-		if (error == s_errors[i].name)
-		{
-			m_lastError = (EDAmnError)i;
-
-			emit errorReceived(s_errors[i].description);
-
-			return false;
-		}
+		emit errorReceived(tr("Error \"%1\" not recognized").arg(error));
+		return false;
 	}
 
-	emit errorReceived(tr("Error \"%1\" not recognized").arg(error));
+	m_lastError = (EDAmnError)id;
+
+	emit errorReceived(translation);
+
+	return false;
+}
+
+bool DAmn::translateReason(const QString &reason, QString &translation, int &id) const
+{
+	static DAmnTranslation s_reasons[] =
+	{
+		{ CONNECTION_CLOSED, "connection closed", tr("Connection closed") },
+		{ CONNECTION_TIMEOUT, "timed out", tr("Timed out") },
+		{ NO_REASON, "", "" }
+	};
+
+	for(int i = 0; i < NO_REASON; ++i)
+	{
+		if (reason == s_reasons[i].name)
+		{
+			translation = s_reasons[i].translation;
+			id = i;
+			return true;
+		}
+	}
 
 	return false;
 }
@@ -309,7 +346,16 @@ bool DAmn::parsePart(const QString &room, const QString &user, bool show, const 
 
 	if (c->removeUser(user))
 	{
-		emit userParted(room, user, reason, show);
+		QString translation;
+		int id = 0;
+
+		// try to translate reason
+		if (!translateReason(reason, translation, id))
+		{
+			translation = reason;
+		}
+
+		emit userParted(room, user, translation, show);
 	}
 
 	return true;
@@ -494,9 +540,27 @@ bool DAmn::parsePart(const QStringList &lines)
 
 	if (!parseError(p.args["e"])) return true;
 
-	removeRoom(p.params[1]);
+	QString room = p.params[1];
 
-	emit roomParted(p.params[1], p.args["p"]);
+	if (removeRoom(room))
+	{
+		QString reason = p.args["p"];
+
+		QString translation;
+		int id = 0;
+
+		// try to translate reason
+		if (!translateReason(reason, translation, id))
+		{
+			translation = reason;
+		}
+
+		emit roomParted(room, translation);
+	}
+	else
+	{
+		emit errorReceived(tr("Unable to remove room %1").arg(room));
+	}
 
 	return true;
 }

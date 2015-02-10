@@ -52,6 +52,13 @@ enum EDAmnError
 	LAST_ERROR
 };
 
+enum EDAmnReason
+{
+	CONNECTION_CLOSED,
+	CONNECTION_TIMEOUT,
+	NO_REASON
+};
+
 struct DAmnImage
 {
 	QString md5;
@@ -202,6 +209,10 @@ private:
 	DAmnUser* createUser(const QString &user);
 
 	QString getRoomType(const QString &room) const;
+
+	// translation helpers
+	bool translateError(const QString &error, QString &translation, int &id) const;
+	bool translateReason(const QString &reason, QString &translation, int &id) const;
 
 	// parser helpers
 	bool parseAllMessages(const QStringList &lines);
