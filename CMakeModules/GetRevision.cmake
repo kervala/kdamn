@@ -2,6 +2,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.6.3)
 
 # ROOT_DIR should be set to root of the repository (where to find the .svn or .hg directory)
 # SOURCE_DIR should be set to root of your code (where to find CMakeLists.txt)
+# BINARY_DIR should be set to root of your build directory
 
 IF(SOURCE_DIR)
   # Replace spaces by semi-columns
@@ -21,6 +22,7 @@ IF(SOURCE_DIR)
 ELSE()
   SET(SOURCE_DIR ${CMAKE_SOURCE_DIR})
   SET(ROOT_DIR ${CMAKE_SOURCE_DIR})
+  SET(BINARY_DIR ${CMAKE_BINARY_DIR})
 ENDIF()
 
 MACRO(NOW RESULT)
@@ -77,7 +79,7 @@ IF(SOURCE_DIR AND DEFINED REVISION)
   IF(EXISTS ${SOURCE_DIR}/revision.h.in)
     MESSAGE(STATUS "Revision: ${REVISION}")
     NOW(BUILD_DATE)
-    CONFIGURE_FILE(${SOURCE_DIR}/revision.h.in revision.h.txt)
-    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy revision.h.txt revision.h) # copy_if_different
+    CONFIGURE_FILE(${SOURCE_DIR}/revision.h.in ${BINARY_DIR}/revision.h.txt)
+    EXECUTE_PROCESS(COMMAND ${CMAKE_COMMAND} -E copy ${BINARY_DIR}/revision.h.txt ${BINARY_DIR}/revision.h) # copy_if_different
   ENDIF()
 ENDIF()
