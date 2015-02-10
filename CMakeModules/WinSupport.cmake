@@ -164,7 +164,7 @@ MACRO(SET_TARGET_FLAGS_MSVC name)
       ENDIF()
       SET_TARGET_PROPERTIES(${name} PROPERTIES LINK_FLAGS "/VERSION:${VERSION_MAJOR}.${VERSION_MINOR} ${_LINK_FLAGS}")
     ENDIF()
-    
+
     IF("${type}" STREQUAL "STATIC_LIBRARY")
       # final and intermediate PDB are identical
       GET_FINAL_PDB_FILENAME(${name} _PDB_FILENAME)
