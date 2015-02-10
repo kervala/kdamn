@@ -57,7 +57,7 @@ MACRO (MACRO_ADD_INTERFACES _output_list)
     SET_SOURCE_FILES_PROPERTIES(${_in_FILE} PROPERTIES HEADER_FILE_ONLY TRUE)
 
     SET(${_output_list} ${${_output_list}} ${_out_header})
-  ENDFOREACH(_in_FILE ${ARGN})
+  ENDFOREACH()
 ENDMACRO (MACRO_ADD_INTERFACES)
 
 ################################################################################ 
