@@ -28,7 +28,7 @@
 
 struct DAmnTranslation
 {
-	QString id;
+	int id;
 	QString name;
 	QString translation;
 };
