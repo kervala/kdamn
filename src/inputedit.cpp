@@ -341,8 +341,8 @@ bool InputEdit::cycleUser(const QString &user, QString &res) const
 {
 	QString lowerUser = user.toLower();
 
-	UsersMap::const_iterator it = m_users.cbegin();
-	UsersMap::const_iterator iend = m_users.cend();
+	UsersMap::const_iterator it = m_users.begin();
+	UsersMap::const_iterator iend = m_users.end();
 
 	// compare string with user names
 	while(it != iend)
