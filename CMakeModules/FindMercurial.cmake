@@ -89,7 +89,7 @@ IF(Mercurial_HG_EXECUTABLE)
       ENDIF()
     ENDIF()
 
-  ENDMACRO(Mercurial_WC_INFO)
+  ENDMACRO()
 
   MACRO(Mercurial_WC_LOG dir prefix)
     # This macro can block if the certificate is not signed:
@@ -106,7 +106,7 @@ IF(Mercurial_HG_EXECUTABLE)
     IF(NOT ${Mercurial_hg_log_result} EQUAL 0)
       MESSAGE(SEND_ERROR "Command \"${Mercurial_HG_EXECUTABLE} log -r BASE ${dir}\" failed with output:\n${Mercurial_hg_log_error}")
     ENDIF()
-  ENDMACRO(Mercurial_WC_LOG)
+  ENDMACRO()
 ENDIF()
 
 INCLUDE(FindPackageHandleStandardArgs)

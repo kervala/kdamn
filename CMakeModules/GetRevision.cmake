@@ -38,7 +38,7 @@ MACRO(NOW RESULT)
     MESSAGE(SEND_ERROR "date not implemented")
     SET(${RESULT} "0000-00-00 00:00:00")
   ENDIF()
-ENDMACRO(NOW)
+ENDMACRO()
 
 IF(EXISTS "${ROOT_DIR}/.svn/")
   FIND_PACKAGE(Subversion QUIET)

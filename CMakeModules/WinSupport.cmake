@@ -15,7 +15,7 @@ MACRO(SIGN_FILE_WINDOWS TARGET)
 #      COMMAND ${WINSDK_SIGNTOOL} sign ${filename}
 #      VERBATIM)
   ENDIF()
-ENDMACRO(SIGN_FILE_WINDOWS)
+ENDMACRO()
 
 ################################################################################ 
 # MACRO_ADD_INTERFACES(idl_files...) 
