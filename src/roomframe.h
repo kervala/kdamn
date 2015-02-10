@@ -34,21 +34,19 @@ public:
 	RoomFrame(QWidget *parent, const QString &room);
 	virtual ~RoomFrame();
 
-	void setAction(const QString &user, const QString &text, bool html);
-	void setText(const QString &user, const QString &text, bool html);
-	void setSystem(const QString &user, const QString &text, bool html);
-	void setTopic(const QString &user, const QString &topic, bool html);
-	void setTitle(const QString &user, const QString &title, bool html);
-
-	void setSystem(const QString &user, const QString &text);
-
 	void setUsers(const QStringList &users);
 	void userJoin(const QString &user);
-	void userPart(const QString &user, const QString &reason);
+	void userPart(const QString &user);
 
 	QString getRoom() const { return m_room; }
 
 	bool setFocus(bool focus);
+
+	void setReceiveHtml(bool on);
+	void setReceiveText(bool on);
+
+	void appendHtml(const QString &html);
+	void appendText(const QString &text);
 
 public slots:
 	// when user press enter
@@ -67,13 +65,20 @@ public slots:
 	void onKeyPressed(QKeyEvent *e);
 
 protected:
+	void updateCssScreen();
+	void updateCssFile();
+
+	void changeEvent(QEvent *e);
 	void updateSplitter();
 
 	QStringListModel *m_usersModel;
 	QString m_room;
 
-	bool m_firstTopic;
-	bool m_firstTitle;
+	bool m_textReceived;
+	bool m_htmlReceived;
+
+	LogFile m_htmlFile;
+	LogFile m_textFile;
 };
 
 #endif

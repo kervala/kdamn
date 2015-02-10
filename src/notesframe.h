@@ -35,8 +35,6 @@ public:
 	NotesFrame(QWidget *parent);
 	virtual ~NotesFrame();
 
-	virtual void setSystem(const QString &user, const QString &text);
-
 	QString getCurrentFolderId() const;
 
 	void setFolder(const Folder &folder);

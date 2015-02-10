@@ -74,10 +74,6 @@ NotesFrame::~NotesFrame()
 {
 }
 
-void NotesFrame::setSystem(const QString &user, const QString &text)
-{
-}
-
 QString NotesFrame::getCurrentFolderId() const
 {
 	return m_folderId;

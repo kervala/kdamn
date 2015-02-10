@@ -21,6 +21,7 @@
 #include "roomstabwidget.h"
 #include "moc_roomstabwidget.cpp"
 #include "damn.h"
+#include "damnuser.h"
 #include "oauth2.h"
 #include "roomframe.h"
 #include "serverframe.h"
@@ -28,6 +29,7 @@
 #include "noteframe.h"
 #include "configfile.h"
 #include "systrayicon.h"
+#include "htmlformatting.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -36,6 +38,8 @@
 RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTimer(NULL)
 {
 	createServerFrame();
+
+	m_format = new HtmlFormatting(this);
 
 	DAmn *damn = new DAmn(this);
 	connect(damn, SIGNAL(serverConnected()), this, SLOT(onConnectServer()));
@@ -231,7 +235,7 @@ RoomFrame* RoomsTabWidget::getCurrentRoomFrame()
 
 void RoomsTabWidget::onConnectServer()
 {
-	setSystem(tr("Connected to server"));
+	setServer(tr("Connected to server"));
 
 	ConfigRooms rooms = ConfigFile::getInstance()->getRooms();
 
@@ -303,7 +307,7 @@ void RoomsTabWidget::onReceiveNotes(int count)
 	{
 		if (count > 0)
 		{
-			setSystem(tr("You received %n note(s), click <a href=\"https://www.deviantart.com/messages/notes/\">here</a> to read them.", "", count));
+			setServer(tr("You received %n note(s), click <a href=\"https://www.deviantart.com/messages/notes/\">here</a> to read them.", "", count));
 
 			// display message in system tab
 			updateSystrayIcon("", "", ConfigFile::getInstance()->getLogin().toLower());
@@ -410,13 +414,59 @@ void RoomsTabWidget::onText(const QString &room, const QString &user, EMessageTy
 
 		if (frame)
 		{
+			QString formatted;
+
 			switch(type)
 			{
-				case MessageText: frame->setText(user, text, html); break;
-				case MessageAction: frame->setAction(user, text, html); break;
-				case MessageTopic: frame->setTopic(user, text, html); break;
-				case MessageTitle: frame->setTitle(user, text, html); break;
-				default: break;
+				case MessageText:
+				formatted = m_format->formatMessageText(user, text, html);
+				break;
+
+				case MessageAction:
+				formatted = m_format->formatMessageAction(user, text, html);
+				break;
+
+				case MessageTopic:
+				formatted = m_format->formatMessageTopic(user, text, html);
+				break;
+
+				case MessageTitle:
+				formatted = m_format->formatMessageTitle(user, text, html);
+				break;
+
+				case MessageTopicFirst:
+				formatted = m_format->formatMessageTopicFirst(user, text, html);
+				break;
+
+				case MessageTitleFirst:
+				formatted = m_format->formatMessageTitleFirst(user, text, html);
+				break;
+
+				default:
+				break;
+			}
+
+			bool display = true;
+
+			// don't display topic or title the first time if empty
+			if ((type == MessageTopicFirst || type == MessageTitleFirst) && text.isEmpty()) display = false;
+
+			if (display)
+			{
+				if (html)
+				{
+					// first HTML message received
+					if (type == MessageText || type == MessageAction) frame->setReceiveHtml(true);
+
+					frame->appendHtml(formatted);
+				}
+				else
+				{
+					// first text message received
+					if (type == MessageText || type == MessageAction) frame->setReceiveText(true);
+
+					frame->appendText(formatted);
+				}
 			}
 		}
 		else
@@ -428,7 +478,7 @@ void RoomsTabWidget::onText(const QString &room, const QString &user, EMessageTy
 	}
 	else
 	{
-		setSystem(text);
+		setServer(text);
 	}
 }
 
@@ -436,7 +486,13 @@ void RoomsTabWidget::onUserJoin(const QString &room, const QString &user, bool s
 {
 	RoomFrame *frame = getRoomFrame(room);
 
-	if (frame) frame->userJoin(user);
+	if (frame)
+	{
+		frame->userJoin(user);
+
+		frame->appendHtml(m_format->formatUserJoin(user, true));
+		frame->appendText(m_format->formatUserJoin(user, false));
+	}
 
 	updateSystrayIcon(room, user, "");
 }
@@ -445,7 +501,13 @@ void RoomsTabWidget::onUserPart(const QString &room, const QString &user, const 
 {
 	RoomFrame *frame = getRoomFrame(room);
 
-	if (frame) frame->userPart(user, reason);
+	if (frame)
+	{
+		frame->userPart(user);
+
+		frame->appendHtml(m_format->formatUserPart(user, reason, true));
+		frame->appendText(m_format->formatUserPart(user, reason, false));
+	}
 
 	updateSystrayIcon(room, user, "");
 }
@@ -454,7 +516,13 @@ void RoomsTabWidget::onUserKick(const QString &room, const QString &user, const 
 {
 	RoomFrame *frame = getRoomFrame(room);
 
-	if (frame) frame->userPart(user, tr("%1 has been kicked by %2").arg(user).arg(by));
+	if (frame)
+	{
+		frame->userPart(user);
+
+		frame->appendHtml(m_format->formatUserKick(user, by, true));
+		frame->appendText(m_format->formatUserKick(user, by, false));
+	}
 
 	updateSystrayIcon(room, user, "");
 }
@@ -463,15 +531,22 @@ void RoomsTabWidget::onUserPriv(const QString &room, const QString &user, const 
 {
 	RoomFrame *frame = getRoomFrame(room);
 
-	// TODO: group is in italic on DA
-	if (frame) frame->setSystem(user, tr("has been made a member of %1 by %2 *").arg(pc).arg(by));
+	if (frame)
+	{
+		frame->appendHtml(m_format->formatUserPriv(user, by, pc, true));
+		frame->appendText(m_format->formatUserPriv(user, by, pc, false));
+	}
 }
 
 void RoomsTabWidget::onPrivClass(const QString &room, const QString &privclass, const QString &by, const QString &privs)
 {
 	RoomFrame *frame = getRoomFrame(room);
 
-	if (frame) frame->setSystem("", tr("** privilege class %1 has been updated by %2 with: %3").arg(privclass).arg(by).arg(privs));
+	if (frame)
+	{
+		frame->appendHtml(m_format->formatPrivClass(privclass, by, privs, true));
+		frame->appendText(m_format->formatPrivClass(privclass, by, privs, false));
+	}
 }
 
 void RoomsTabWidget::onUsers(const QString &room, const QStringList &users)
@@ -485,7 +560,12 @@ void RoomsTabWidget::onJoinRoom(const QString &room)
 {
 	createRoomFrame(room);
 
-	setSystem(tr("You joined room %1").arg(room));
+	ServerFrame *frame = getServerFrame();
+
+	if (frame)
+	{
+		frame->appendHtml(m_format->formatJoinRoom(room, true));
+	}
 
 	ConfigFile::getInstance()->setRoomConnected(room, true);
 }
@@ -494,11 +574,12 @@ void RoomsTabWidget::onPartRoom(const QString &room, const QString &reason)
 {
 	removeRoomFrame(room);
 
-	QString str = tr("You left room %1").arg(room);
+	ServerFrame *frame = getServerFrame();
 
-	if (!reason.isEmpty()) str += QString(" (%1)").arg(reason);
-
-	setSystem(str);
+	if (frame)
+	{
+		frame->appendHtml(m_format->formatPartRoom(room, reason, true));
+	}
 
 	ConfigFile::getInstance()->setRoomConnected(room, false);
 }
@@ -507,16 +588,22 @@ void RoomsTabWidget::onError(const QString &error)
 {
 	ServerFrame *frame = getServerFrame();
 
-	if (frame) frame->setError(error);
+	if (frame)
+	{
+		frame->appendHtml(m_format->formatLineError(error, true));
+	}
 
 	updateSystrayIcon("", "", "");
 }
 
-void RoomsTabWidget::setSystem(const QString &text)
+void RoomsTabWidget::setServer(const QString &text)
 {
 	ServerFrame *frame = getServerFrame();
 
-	if (frame) frame->setSystem("", text);
+	if (frame)
+	{
+		frame->appendHtml(m_format->formatLineNormal(text, true));
+	}
 }
 
 void RoomsTabWidget::onRoomFocus(int index)
@@ -589,7 +676,7 @@ void RoomsTabWidget::updateSystrayIcon(const QString &room, const QString &user,
 	if (login == user.toLower()) return;
 
 	SystrayStatus oldStatus = SystrayIcon::getInstance()->getStatus(room);
-	SystrayStatus newStatus = text.toLower().indexOf(login) > -1 ? StatusTalkMe:StatusTalkOther;
+	SystrayStatus newStatus = m_format->searchUserInText(login, text) ? StatusTalkMe:StatusTalkOther;
 
 	if (newStatus > oldStatus)
 	{

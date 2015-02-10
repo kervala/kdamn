@@ -32,11 +32,6 @@ public:
 	ChatWidget(QWidget *parent);
 	virtual ~ChatWidget();
 
-	void setAction(const QString &user, const QString &text, bool html);
-	void setText(const QString &user, const QString &text, bool html);
-	void setSystem(const QString &user, const QString &text, bool html);
-	void setError(const QString &text);
-
 	QVariant loadResource(int type, const QUrl &name);
 
 	bool alreadyLoaded(const QString &url) const;
@@ -48,7 +43,8 @@ public:
 	QString getRoom() const { return m_room; }
 	void setRoom(const QString &room);
 
-	void updateCss();
+	void appendHtml(const QString &html);
+	void updateCss(const QString &css);
 
 signals:
     void keyPressed(QKeyEvent *e);
@@ -60,27 +56,16 @@ public slots:
 	void animate(int frame);
 
 protected:
-	void appendHtml(const QString &html);
-	void appendText(const QString &text);
-
 	void dragEnterEvent(QDragEnterEvent *e);
 	void dragMoveEvent(QDragMoveEvent *e);
 	void dragLeaveEvent(QDragLeaveEvent *e);
 	void dropEvent(QDropEvent *e);
 	void keyPressEvent(QKeyEvent *e);
-	void changeEvent(QEvent *e);
-
-	QString getTimestamp(bool html) const;
 
 	QHash<QMovie*, QUrl> m_urls;
 	bool m_focus;
 	QString m_room;
 	QDateTime m_lastReload;
-	bool m_textReceived;
-	bool m_htmlReceived;
-
-	LogFile m_htmlFile;
-	LogFile m_textFile;
 
 	QMutex m_contentMutex;
 };

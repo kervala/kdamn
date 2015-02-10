@@ -32,8 +32,6 @@ public:
 	NoteFrame(QWidget *parent);
 	virtual ~NoteFrame();
 
-	virtual void setSystem(const QString &user, const QString &text);
-
 public slots:
 	void onSaveDraft();
 	void onPreview();

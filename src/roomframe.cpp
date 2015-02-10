@@ -23,12 +23,13 @@
 #include "configfile.h"
 #include "damn.h"
 #include "systrayicon.h"
+#include "utils.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
 #endif
 
-RoomFrame::RoomFrame(QWidget *parent, const QString &room):TabFrame(parent), m_room(room), m_firstTopic(true), m_firstTitle(true)
+RoomFrame::RoomFrame(QWidget *parent, const QString &room):TabFrame(parent), m_room(room), m_textReceived(false), m_htmlReceived(false)
 {
 	setupUi(this);
 
@@ -62,6 +63,12 @@ RoomFrame::RoomFrame(QWidget *parent, const QString &room):TabFrame(parent), m_r
 
 	outputBrowser->setRoom(room);
 
+	m_htmlFile.setRoom(room);
+	m_textFile.setRoom(room);
+
+	updateCssFile();
+	updateCssScreen();
+
 	connect(inputEdit, SIGNAL(returnPressed()), SLOT(onSend()));
 	connect(usersView, SIGNAL(doubleClicked(QModelIndex)), SLOT(onUserDoubleClicked(QModelIndex)));
 
@@ -70,65 +77,6 @@ RoomFrame::RoomFrame(QWidget *parent, const QString &room):TabFrame(parent), m_r
 
 RoomFrame::~RoomFrame()
 {
-}
-
-void RoomFrame::setAction(const QString &user, const QString &text, bool html)
-{
-	if (html) outputBrowser->setAction(user, text, html);
-}
-
-void RoomFrame::setText(const QString &user, const QString &text, bool html)
-{
-	outputBrowser->setText(user, text, html);
-}
-
-void RoomFrame::setSystem(const QString &user, const QString &text, bool html)
-{
-	outputBrowser->setSystem(user, text, html);
-}
-
-void RoomFrame::setTopic(const QString &user, const QString &topic, bool html)
-{
-	if (topic.isEmpty())
-	{
-		if (m_firstTopic)
-		{
-			m_firstTopic = false;
-		}
-		else
-		{
-			outputBrowser->setSystem("", tr("Topic removed by %1").arg(user), html);
-		}
-	}
-	else
-	{
-		outputBrowser->setSystem("", tr("Topic changed by %1: %2").arg(user).arg(topic), html);
-	}
-}
-
-void RoomFrame::setTitle(const QString &user, const QString &title, bool html)
-{
-	if (title.isEmpty())
-	{
-		if (m_firstTitle)
-		{
-			m_firstTitle = false;
-		}
-		else
-		{
-			outputBrowser->setSystem("", tr("Title removed by %1").arg(user), html);
-		}
-	}
-	else
-	{
-		outputBrowser->setSystem("", tr("Title changed by %1: %2").arg(user).arg(title), html);
-	}
-}
-
-void RoomFrame::setSystem(const QString &user, const QString &text)
-{
-	outputBrowser->setSystem(user, text, true);
-	outputBrowser->setSystem(user, text, false);
 }
 
 void RoomFrame::setUsers(const QStringList &users)
@@ -141,8 +89,6 @@ void RoomFrame::setUsers(const QStringList &users)
 
 void RoomFrame::userJoin(const QString &user)
 {
-	setSystem(user, tr("has joined"));
-
 	QStringList users = m_usersModel->stringList();
 
 	if (users.indexOf(user) > -1) return;
@@ -155,10 +101,8 @@ void RoomFrame::userJoin(const QString &user)
 	updateSplitter();
 }
 
-void RoomFrame::userPart(const QString &user, const QString &reason)
+void RoomFrame::userPart(const QString &user)
 {
-	setSystem(user, tr("has left") + (!reason.isEmpty() ? QString(" [%1]").arg(reason):""));
-
 	QStringList users = m_usersModel->stringList();
 
 	users.removeAll(user);
@@ -291,4 +235,109 @@ void RoomFrame::updateSplitter()
 
 	usersView->setMinimumWidth(min);
 	usersView->setMaximumWidth(max);
+}
+
+void RoomFrame::setReceiveHtml(bool on)
+{
+	m_htmlReceived = on;
+}
+
+void RoomFrame::setReceiveText(bool on)
+{
+	m_textReceived = on;
+}
+
+void RoomFrame::appendHtml(const QString &html)
+{
+	outputBrowser->appendHtml(html);
+
+	if (m_htmlReceived) m_htmlFile.append(html);
+}
+
+void RoomFrame::appendText(const QString &text)
+{
+	if (m_textReceived) m_textFile.append(decodeEntities(text));
+}
+
+void RoomFrame::changeEvent(QEvent *e)
+{
+	TabFrame::changeEvent(e);
+
+	if (e->type() == QEvent::PaletteChange)
+	{
+		updateCssScreen();
+	}
+}
+
+static QColor average(const QColor &color1, const QColor &color2, qreal coef)
+{
+	QColor c1 = color1.toHsv();
+	QColor c2 = color2.toHsv();
+
+	qreal h = -1.0;
+
+	if (c1.hsvHueF() == -1.0)
+	{
+		h = c2.hsvHueF();
+	}
+	else if (c2.hsvHueF() == -1.0)
+	{
+		h = c1.hsvHueF();
+	}
+	else
+	{
+		h = ((1.0 - coef) * c2.hsvHueF()) + (coef * c1.hsvHueF());
+	}
+
+	qreal s = ((1.0 - coef) * c2.hsvSaturationF()) + (coef * c1.hsvSaturationF());
+	qreal v = ((1.0 - coef) * c2.valueF()) + (coef * c1.valueF());
+
+	return QColor::fromHsvF(h, s, v).toRgb();
+}
+
+void RoomFrame::updateCssScreen()
+{
+	QColor normalTextColor = palette().windowText().color();
+	QColor normalWindowColor = palette().window().color();
+
+	QColor darkerTextColor = average(normalTextColor, normalWindowColor, 0.75);
+	QColor darkestTextColor = average(normalTextColor, normalWindowColor, 0.5);
+
+	QColor hightlightColor = average(normalTextColor, QColor(Qt::blue), 0.5);
+	QColor errorColor = average(normalTextColor, QColor(Qt::red), 0.5);
+
+	QString css = \
+	".timestamp { color: #999; }\n" \
+	".username { font-weight: bold; }\n" \
+	".room { }\n" \
+	".privclass { font-style: italic; }\n" \
+	".error { color: %3; }\n" \
+	".normal { }\n" \
+	".emote { font-style: italic; }\n" \
+	".myself { color: %1; }\n" \
+	".highlight { color: %4; font-weight: bold; }\n" \
+	".system { color: %2; }\n" \
+	".hidden { display: none; }\n";
+
+	css = css.arg(darkerTextColor.name()).arg(darkestTextColor.name()).arg(errorColor.name()).arg(hightlightColor.name());
+
+	outputBrowser->updateCss(css);
+}
+
+void RoomFrame::updateCssFile()
+{
+	QString css = \
+	"body { background-color: #666; }\n" \
+	".timestamp { color: #999; }\n" \
+	".username { font-weight: bold; }\n" \
+	".room { }\n" \
+	".privclass { font-style: italic; }\n" \
+	".error { color: #f00; }\n" \
+	".normal { color: #fff; }\n" \
+	".emote { font-style: italic; }\n" \
+	".myself { color: #ccc; }\n" \
+	".highlight { color: #ccf; font-weight: bold; }\n" \
+	".system { color: #aaa; }\n";
+
+	m_htmlFile.setCss(css);
 }

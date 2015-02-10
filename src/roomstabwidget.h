@@ -26,6 +26,7 @@ class RoomFrame;
 class ServerFrame;
 class NotesFrame;
 class NoteFrame;
+class HtmlFormatting;
 
 class RoomsTabWidget : public QTabWidget
 {
@@ -51,7 +52,7 @@ public:
 	RoomFrame* getRoomFrame(const QString &room);
 	RoomFrame* getCurrentRoomFrame();
 
-	void setSystem(const QString &text);
+	void setServer(const QString &text);
 
 	void login();
 
@@ -89,8 +90,9 @@ public slots:
 protected:
 	void updateSystrayIcon(const QString &room, const QString &user, const QString &html);
 
-private:
 	QTimer *m_messagesTimer;
+
+	HtmlFormatting *m_format;
 };
 
 #endif

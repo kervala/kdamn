@@ -19,113 +19,22 @@
 
 #include "common.h"
 #include "chatwidget.h"
-#include "roomframe.h"
 #include "oauth2.h"
 #include "configfile.h"
-#include "utils.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
 #endif
 
-ChatWidget::ChatWidget(QWidget *parent):QTextBrowser(parent), m_focus(false), m_lastReload(QDateTime::currentDateTime()), m_textReceived(false), m_htmlReceived(false)
+ChatWidget::ChatWidget(QWidget *parent):QTextBrowser(parent), m_focus(false), m_lastReload(QDateTime::currentDateTime())
 {
 	connect(this, SIGNAL(anchorClicked(QUrl)), this, SLOT(onUrl(QUrl)));
-
-	updateCss();
 
 	setAcceptDrops(true);
 }
 
 ChatWidget::~ChatWidget()
 {
-}
-
-void ChatWidget::setAction(const QString &user, const QString &text, bool html)
-{
-	if (html)
-	{
-		appendHtml(QString("<div class=\"normal\">%1<span class=\"emote\"><span class=\"username\">* %2</span> %3</span></div>").arg(getTimestamp(true)).arg(user).arg(text));
-
-		startAnimations(text);
-	}
-	else
-	{
-		appendText(QString("%1%2 %3").arg(getTimestamp(false)).arg(user).arg(text));
-	}
-}
-
-void ChatWidget::setText(const QString &user, const QString &text, bool html)
-{
-	if (html)
-	{
-		m_htmlReceived = true;
-
-		// check if username mentioned in text
-		QString login = ConfigFile::getInstance()->getLogin().toLower();
-
-		QString formattedText = text;
-		QString style;
-
-		// don't alert if we talk to ourself
-		if (login != user.toLower())
-		{
-			QString lowerText = text.toLower().remove(QRegExp("<[^>]*>"));
-
-			int pos = lowerText.indexOf(login);
-			
-			if (pos > -1)
-			{
-				style = "highlight";
-			}
-		}
-		else
-		{
-			style = "myself";
-		}
-
-		if (!style.isEmpty())
-		{
-			formattedText = QString("<span class=\"%2\">%1</span>").arg(formattedText).arg(style);
-		}
-
-		appendHtml(QString("<div class=\"normal\">%1<span class=\"username\">&lt;%2&gt;</span> %3</div>").arg(getTimestamp(true)).arg(user).arg(formattedText));
-
-		startAnimations(text);
-	}
-	else
-	{
-		m_textReceived = true;
-
-		appendText(QString("%1<%2> %3").arg(getTimestamp(false)).arg(user).arg(text));
-	}
-}
-
-void ChatWidget::setSystem(const QString &user, const QString &text, bool html)
-{
-	if (html)
-	{
-		QString userFormatted;
-
-		if (!user.isEmpty())
-		{
-			userFormatted = QString("<span class=\"username\">** %1</span> ").arg(user);
-		}
-
-		appendHtml(QString("<div class=\"system\">%1%2%3</div>").arg(getTimestamp(true)).arg(userFormatted).arg(text));
-
-		startAnimations(text);
-	}
-	else
-	{
-		appendText(QString("%1%2").arg(getTimestamp(false)).arg(text));
-	}
-}
-
-void ChatWidget::setError(const QString &error)
-{
-	appendHtml(QString("<div class=\"error\">%1%2</div>").arg(getTimestamp(true)).arg(error));
-	appendText(QString("%1%2").arg(getTimestamp(false)).arg(error));
 }
 
 void ChatWidget::onUrl(const QUrl &url)
@@ -168,16 +77,6 @@ void ChatWidget::dragLeaveEvent(QDragLeaveEvent *event)
     event->accept();
 }
 
-QString ChatWidget::getTimestamp(bool html) const
-{
-	// check if user doesn't want to display timestamp
-	if (!ConfigFile::getInstance()->getDisplayTimestamps()) return QString();
-
-	QString timestamp = QTime::currentTime().toString();
-
-	return QString(html ? "<span class=\"timestamp\">%1</span> ":"[%1] ").arg(timestamp);
-}
-
 void ChatWidget::appendHtml(const QString &html)
 {
 	QMutexLocker lock(&m_contentMutex);
@@ -185,7 +84,7 @@ void ChatWidget::appendHtml(const QString &html)
 	// reset previous formatting, to cancel wrong behavior from previous HTML tags
 	if (!textCursor().blockFormat().properties().isEmpty())
 	{
-		// create a new empty block to keep previous forrmatting
+		// create a new empty block to keep previous formatting
 		append("<div class=\"hidden\" />");
 
 		// reset block formatting
@@ -194,12 +93,12 @@ void ChatWidget::appendHtml(const QString &html)
 
 	append(html);
 
-	if (m_htmlReceived) m_htmlFile.append(html);
+	startAnimations(html);
 }
 
-void ChatWidget::appendText(const QString &text)
+void ChatWidget::updateCss(const QString &css)
 {
-	if (m_textReceived) m_textFile.append(decodeEntities(text));
+	document()->setDefaultStyleSheet(css);
 }
 
 QVariant ChatWidget::loadResource(int type, const QUrl &name)
@@ -294,64 +193,6 @@ void ChatWidget::setFocus(bool focus)
 void ChatWidget::setRoom(const QString &room)
 {
 	m_room = room;
-
-	m_htmlFile.setRoom(room);
-	m_textFile.setRoom(room);
-}
-
-static QColor average(const QColor &color1, const QColor &color2, qreal coef)
-{
-	QColor c1 = color1.toHsv();
-	QColor c2 = color2.toHsv();
-
-	qreal h = -1.0;
-
-	if (c1.hsvHueF() == -1.0)
-	{
-		h = c2.hsvHueF();
-	}
-	else if (c2.hsvHueF() == -1.0)
-	{
-		h = c1.hsvHueF();
-	}
-	else
-	{
-		h = ((1.0 - coef) * c2.hsvHueF()) + (coef * c1.hsvHueF());
-	}
-
-	qreal s = ((1.0 - coef) * c2.hsvSaturationF()) + (coef * c1.hsvSaturationF());
-	qreal v = ((1.0 - coef) * c2.valueF()) + (coef * c1.valueF());
-
-	return QColor::fromHsvF(h, s, v).toRgb();
-}
-
-void ChatWidget::updateCss()
-{
-	QColor normalTextColor = palette().windowText().color();
-	QColor normalWindowColor = palette().window().color();
-
-	QColor darkerTextColor = average(normalTextColor, normalWindowColor, 0.75);
-	QColor darkestTextColor = average(normalTextColor, normalWindowColor, 0.5);
-
-	QColor hightlightColor = average(normalTextColor, QColor(Qt::blue), 0.5);
-	QColor errorColor = average(normalTextColor, QColor(Qt::red), 0.5);
-
-	QString css = \
-	".timestamp { color: #999; }\n" \
-	".username { font-weight: bold; }\n" \
-	".error { color: %3; }\n" \
-	".normal { }\n" \
-	".emote { font-style: italic; }\n" \
-	".myself { color: %1; }\n" \
-	".highlight { color: %4; font-weight: bold; }\n" \
-	".system { color: %2; }\n" \
-	".hidden { display: none; }\n";
-
-	css = css.arg(darkerTextColor.name()).arg(darkestTextColor.name()).arg(errorColor.name()).arg(hightlightColor.name());
-
-	document()->setDefaultStyleSheet(css);
-
-	m_htmlFile.setCss(css);
 }
 
 void ChatWidget::keyPressEvent(QKeyEvent *e)
@@ -368,16 +209,6 @@ void ChatWidget::keyPressEvent(QKeyEvent *e)
 	else if (e->modifiers() == Qt::ControlModifier && (e->key() == Qt::Key_V || e->key() == Qt::Key_Insert))
 	{
 		emit keyPressed(e);
-	}
-}
-
-void ChatWidget::changeEvent(QEvent *e)
-{
-	QTextBrowser::changeEvent(e);
-
-	if (e->type() == QEvent::PaletteChange)
-	{
-		updateCss();
 	}
 }
 

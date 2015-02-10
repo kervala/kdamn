@@ -30,8 +30,6 @@ public:
 	TabFrame(QWidget *parent);
 	virtual ~TabFrame();
 
-	virtual void setSystem(const QString &user, const QString &text) =0;
-
 	bool getFocus() const;
 	virtual bool setFocus(bool focus);
 
