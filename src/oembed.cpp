@@ -80,7 +80,7 @@ void OEmbed::init(bool local)
 #endif
 	localDir = QStandardPaths::writableLocation(location);
 #else
-	localDir = QDesktopServices::storageLocation(QDesktopServices::AppDataLocation);
+	localDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
 #endif
 
 	QString filename = QString("%1/oembed.ini").arg(local ? localDir:globalDir);
@@ -240,7 +240,6 @@ bool OEmbed::processContent(const QByteArray &content, const QString &url, const
 		}
 		else
 		{
-			data.thumbUrl;
 			data.thumbWidth = 0;
 			data.thumbHeight = 0;
 
@@ -355,14 +354,14 @@ bool OEmbed::applyData(Data &data)
 	while(it != iend)
 	{
 		// update waiting list
-		emit OAuth2::getInstance()->imageDownloaded(it.key(), it.value());
+		OAuth2::getInstance()->emitImageDownloaded(it.key(), it.value());
 
 		++it;
 	}
 
 	if (!data.error.isEmpty())
 	{
-		emit OAuth2::getInstance()->errorReceived(data.error);
+		OAuth2::getInstance()->emitErrorReceived(data.error);
 	}
 
 	return true;

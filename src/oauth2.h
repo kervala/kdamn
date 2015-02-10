@@ -150,6 +150,9 @@ public:
 
 	Folder getFolder(const QString &id) const;
 
+	void emitImageDownloaded(const QString &md5, bool downloaded);
+	void emitErrorReceived(const QString &error);
+
 signals:
 	void loggedIn();
 	void loggedOut();

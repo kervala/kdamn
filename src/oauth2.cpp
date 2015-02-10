@@ -136,6 +136,16 @@ Folder OAuth2::getFolder(const QString &id) const
 	return m_folders.value(id);
 }
 
+void OAuth2::emitImageDownloaded(const QString &md5, bool downloaded)
+{
+	emit imageDownloaded(md5, downloaded);
+}
+
+void OAuth2::emitErrorReceived(const QString &error)
+{
+	emit errorReceived(error);
+}
+
 bool OAuth2::authorizeApplication(const QString &validateKey, const QString &validateToken, bool authorize)
 {
 #ifdef USE_QT5
