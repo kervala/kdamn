@@ -133,9 +133,13 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 	QFileInfo info(filename);
 
 	// check mime type
+#ifdef USE_QT5
 	QMimeDatabase mimeDatabase;
 	QMimeType mimeType = mimeDatabase.mimeTypeForFile(info, QMimeDatabase::MatchContent);
 	QString mime = mimeType.name();
+#else
+	QString mime = "image/png";
+#endif
 
 	QNetworkRequest req;
 	req.setUrl(QUrl(QString("%1/stash/submit?access_token=%2").arg(OAUTH2_URL).arg(m_accessToken)));
