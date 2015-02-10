@@ -365,7 +365,7 @@ bool InputEdit::cycleUser(const QString &user, QString &res) const
 				if (it == m_users.end())
 				{
 					// end of users list, return the first one
-					res = m_users.first();
+					res = m_users.begin().value();
 
 					// if user name is exactly the same
 					if (res == currentUser) return false;
