@@ -575,7 +575,7 @@ bool OAuth2::parseMessageCenterGetViews(const QVariantMap &response)
 
 		QString offset = view["offset"].toString();
 		QString length = view["length"].toString();
-		int status = view["status"].toInt();
+//		int status = view["status"].toInt();
 
 		QVariantMap result = view["result"].toMap();
 
@@ -604,10 +604,10 @@ bool OAuth2::parseNotesCreateFolder(const QVariantMap &response)
 
 bool OAuth2::parseNotesDelete(const QVariantMap &response)
 {
-	QVariantMap data = response["content"].toMap();
+//	QVariantMap data = response["content"].toMap();
 
 	// TODO: browse all folders IDs
-	int count = data["1"].toString().toInt();
+//	int count = data["1"].toString().toInt();
 
 	emit notesDeleted();
 
@@ -619,10 +619,10 @@ bool OAuth2::parseNotesDeleteFolder(const QVariantMap &response)
 	QVariantMap data = response["content"].toMap();
 
 	QString id = QString::number(data["folderid"].toInt());
-	QVariantMap counts = data["counts"].toMap();
+//	QVariantMap counts = data["counts"].toMap();
 
 	// TODO: browse all folders IDs
-	int count = counts["1"].toString().toInt();
+//	int count = counts["1"].toString().toInt();
 
 	emit notesFolderDeleted(id);
 
@@ -738,6 +738,7 @@ bool OAuth2::parseNotesMarkAsUnread(const QVariantMap &response)
 
 bool OAuth2::parseNotesMove(const QVariantMap &response)
 {
+/*
 	QVariantMap data = response["content"].toMap();
 
 	QList<QString> folders;
@@ -751,7 +752,7 @@ bool OAuth2::parseNotesMove(const QVariantMap &response)
 
 		++it;
 	}
-
+*/
 	emit notesMoved();
 
 	return true;

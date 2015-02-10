@@ -321,7 +321,7 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 		{
 			qint64 stashId = (qint64)map["stashid"].toDouble();
 			QString folder = map["folder"].toString();
-			qint64 folderId = (qint64)map["folderid"].toDouble();
+//			qint64 folderId = (qint64)map["folderid"].toDouble();
 
 			if (!m_filesToUpload.isEmpty())
 			{
