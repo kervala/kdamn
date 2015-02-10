@@ -20,11 +20,22 @@
 #include "common.h"
 #include "utils.h"
 
+QMap<QChar, QString> s_specialEntities;
+
+void initSpecialEntities()
+{
+	if (!s_specialEntities.isEmpty()) return;
+
+	s_specialEntities['<'] = "lt";
+	s_specialEntities['>'] = "gt";
+	s_specialEntities['&'] = "amp";
+}
+
 /***************************************************************************//*!
  * @brief Encode all non ASCII characters into &#...;
  * @param[in] src        Text to analyze
  * @param[in,opt] force  Force the characters "list" to be converted.
- * @return ASCII text compatible. 
+ * @return ASCII text compatible.
  *
  * @note Original code: http://www.qtforum.org/article/3891/text-encoding.html
  *
@@ -32,6 +43,8 @@
  */
 QString encodeEntities(const QString& src, const QString& force)
 {
+	initSpecialEntities();
+
 	QString tmp(src);
 	uint len = tmp.length();
 	uint i = 0;
@@ -40,7 +53,20 @@ QString encodeEntities(const QString& src, const QString& force)
 	{
 		if (tmp[i].unicode() > 128 || force.contains(tmp[i]))
 		{
-			QString rp = "&#" + QString::number(tmp[i].unicode()) + ";";
+			QString ent;
+
+			if (s_specialEntities.contains(tmp[i]))
+			{
+				// look first for named entities
+				ent = s_specialEntities[tmp[i]];
+			}
+			else
+			{
+				// use unicode value
+				ent = "#" + QString::number(tmp[i].unicode());
+			}
+
+			QString rp = "&" + ent + ";";
 			tmp.replace(i, 1, rp);
 			len += rp.length()-1;
 			i += rp.length();
@@ -63,6 +89,8 @@ QString encodeEntities(const QString& src, const QString& force)
  */
 QString decodeEntities(const QString& src)
 {
+	initSpecialEntities();
+
 	QString ret(src);
 	QRegExp re("&#([0-9]+);");
 	re.setMinimal(true);
