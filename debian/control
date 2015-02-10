@@ -2,7 +2,8 @@ Source: kdamn
 Section: net
 Priority: optional
 Maintainer: Cédric OCHS <kervala@gmail.com>
-Build-Depends: debhelper (>= 9), libqt4-dev, qt4-dev-tools, cmake (>= 2.8), pkg-config,
+Build-Depends: debhelper (>= 9), libqt4-dev | qt5-default,
+ qt4-dev-tools | qttools5-dev-tools, cmake (>= 2.8), pkg-config,
  libxmu-dev
 Standards-Version: 3.9.3
 
