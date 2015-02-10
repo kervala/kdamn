@@ -915,7 +915,7 @@ FUNCTION(SET_SOURCES_FLAGS)
       SET_SOURCE_FILES_PROPERTIES(${_OBJC} PROPERTIES COMPILE_FLAGS "-fobjc-abi-version=2 -fobjc-legacy-dispatch")
     ENDIF()
   ENDIF()
-ENDFUNCTION(SET_SOURCES_FLAGS)
+ENDFUNCTION()
 
 ###
 # Checks build vs. source location. Prevents In-Source builds.
