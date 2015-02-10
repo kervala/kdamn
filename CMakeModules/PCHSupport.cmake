@@ -101,6 +101,34 @@ MACRO(PCH_SET_COMPILE_FLAGS _target)
     ENDFOREACH(item)
   ENDIF()
 
+  GET_TARGET_PROPERTY(_LIBS ${_target} INTERFACE_LINK_LIBRARIES)
+  IF(_LIBS)
+    FOREACH(_LIB ${_LIBS})
+      IF(TARGET "${_LIB}")
+        # use same include directories
+        GET_TARGET_PROPERTY(_DIRS ${_LIB} INTERFACE_INCLUDE_DIRECTORIES)
+
+        FOREACH(item ${_DIRS})
+          LIST(APPEND GLOBAL_DEFINITIONS " -I\"${item}\"")
+        ENDFOREACH()
+
+        # use same compile definitions
+        GET_TARGET_PROPERTY(_DEFINITIONS ${_LIB} INTERFACE_COMPILE_DEFINITIONS)
+
+        FOREACH(item ${_DEFINITIONS})
+          IF(item STREQUAL "$<$<NOT:$<CONFIG:Debug>>:QT_NO_DEBUG>")
+            # Ugly hack to fix missing QT_NO_DEBUG in Release
+            IF(_UPPER_BUILD STREQUAL "RELEASE")
+              LIST(APPEND GLOBAL_DEFINITIONS " -DQT_NO_DEBUG")
+            ENDIF()
+          ELSE()
+            LIST(APPEND GLOBAL_DEFINITIONS " -D${item}")
+          ENDIF()
+        ENDFOREACH()
+      ENDIF()
+    ENDFOREACH()
+  ENDIF()
+  
   GET_DIRECTORY_PROPERTY(_directory_flags DEFINITIONS)
   GET_DIRECTORY_PROPERTY(_directory_definitions DIRECTORY ${CMAKE_SOURCE_DIR} DEFINITIONS)
   LIST(APPEND _FLAGS " ${GLOBAL_DEFINITIONS}")
