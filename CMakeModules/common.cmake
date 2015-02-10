@@ -639,13 +639,6 @@ MACRO(SET_TARGET_LIB name)
   ENDIF()
 
   IF(IS_STATIC OR IS_SHARED)
-    # To prevent other libraries to be linked to the same libraries
-#    SET_TARGET_PROPERTIES(${name} PROPERTIES INTERFACE_LINK_LIBRARIES "")
-
-    IF(STATIC_LIB)
-#      SET_TARGET_PROPERTIES(${name}_static PROPERTIES INTERFACE_LINK_LIBRARIES "")
-    ENDIF()
-
     IF(WIN32)
       # DLLs are in bin directory under Windows
       SET(LIBRARY_DEST ${BIN_PREFIX})
