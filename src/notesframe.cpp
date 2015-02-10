@@ -43,19 +43,21 @@ NotesFrame::NotesFrame(QWidget *parent):TabFrame(parent), m_model(NULL)
 
 	// by default sort by date descending order
 	m_proxyModel->sort(2, Qt::DescendingOrder);
+
 	notesView->horizontalHeader()->setSortIndicator(2, Qt::DescendingOrder);
+	notesView->horizontalHeader()->setCascadingSectionResizes(true);
+
+	notesView->verticalHeader()->setDefaultSectionSize(notesView->fontMetrics().height() + 4);
 
 #ifdef USE_QT5
 	notesView->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
-#else
-	// TODO: Qt 4 equivalent
-#endif
-	notesView->verticalHeader()->setDefaultSectionSize(notesView->fontMetrics().height() + 4);
 
-	notesView->horizontalHeader()->setCascadingSectionResizes(true);
 	notesView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Interactive);
 	notesView->horizontalHeader()->setSectionResizeMode(1, QHeaderView::Interactive);
 	notesView->horizontalHeader()->setSectionResizeMode(2, QHeaderView::Fixed);
+#else
+	// TODO: Qt 4 equivalent
+#endif
 
 	int dateWidth = notesView->fontMetrics().width("0000-00-00 00:00:00") + 4;
 	notesView->horizontalHeader()->resizeSection(1, 150);
