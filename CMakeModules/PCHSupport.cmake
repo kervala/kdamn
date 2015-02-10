@@ -116,12 +116,8 @@ MACRO(PCH_SET_COMPILE_FLAGS _target)
         GET_TARGET_PROPERTY(_DEFINITIONS ${_LIB} INTERFACE_COMPILE_DEFINITIONS)
 
         FOREACH(item ${_DEFINITIONS})
-          IF(item STREQUAL "$<$<NOT:$<CONFIG:Debug>>:QT_NO_DEBUG>")
-            # Ugly hack to fix missing QT_NO_DEBUG in Release
-            IF(_UPPER_BUILD STREQUAL "RELEASE")
-              LIST(APPEND GLOBAL_DEFINITIONS " -DQT_NO_DEBUG")
-            ENDIF()
-          ELSE()
+          # don't use dynamic expressions
+          IF(NOT item MATCHES "\\$<")
             LIST(APPEND GLOBAL_DEFINITIONS " -D${item}")
           ENDIF()
         ENDFOREACH()
