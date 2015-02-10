@@ -72,7 +72,13 @@ MACRO(GET_INTERMEDIATE_PDB_FILENAME name output)
     # intermediate and final PDB are identical
     GET_FINAL_PDB_FILENAME(${name} output)
   ELSE()
-    SET(${output} "vc${MSVC_TOOLSET}")
+    # determine target prefix
+    GET_TARGET_PROPERTY(_targetPrefix ${name} PREFIX)
+    IF(${_targetPrefix} MATCHES NOTFOUND)
+      SET(_targetPrefix "")
+    ENDIF()
+
+    SET(${output} "${_targetPrefix}vc${MSVC_TOOLSET}")
   ENDIF()
 ENDMACRO()
 
@@ -164,6 +170,11 @@ MACRO(SET_TARGET_FLAGS_MSVC name)
       GET_FINAL_PDB_FILENAME(${name} _PDB_FILENAME)
       GET_FINAL_PDB_DIRECTORY(${name} _PDB_DIRECTORY)
 
+      # Remove lib prefix if CMake added it itself
+      IF(WITH_PREFIX_LIB)
+        STRING(REGEX REPLACE "^lib" "" _PDB_FILENAME ${_PDB_FILENAME})
+      ENDIF()
+
       # define all properties supported by CMake for PDB (if not supported, it won't change anything)
       SET_TARGET_PROPERTIES(${name} PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY_DEBUG "${_PDB_DIRECTORY}" COMPILE_PDB_NAME_DEBUG "${_PDB_FILENAME}")
       SET_TARGET_PROPERTIES(${name} PROPERTIES PDB_OUTPUT_DIRECTORY_DEBUG "${_PDB_DIRECTORY}" PDB_NAME_DEBUG "${_PDB_FILENAME}")
@@ -175,10 +186,20 @@ MACRO(SET_TARGET_FLAGS_MSVC name)
       GET_FINAL_PDB_FILENAME(${name} _PDB_FILENAME)
       GET_FINAL_PDB_DIRECTORY(${name} _PDB_DIRECTORY)
 
+      # Remove lib prefix if CMake added it itself
+      IF(WITH_PREFIX_LIB)
+        STRING(REGEX REPLACE "^lib" "" _PDB_FILENAME ${_PDB_FILENAME})
+      ENDIF()
+
       # intermediate PDB
       GET_INTERMEDIATE_PDB_FILENAME(${name} _COMPILE_PDB_FILENAME)
       GET_INTERMEDIATE_PDB_DIRECTORY(${name} _COMPILE_PDB_DIRECTORY)
 
+      # Remove lib prefix if CMake added it itself
+      IF(WITH_PREFIX_LIB)
+        STRING(REGEX REPLACE "^lib" "" _COMPILE_PDB_FILENAME ${_COMPILE_PDB_FILENAME})
+      ENDIF()
+      
       # define all properties supported by CMake for PDB (if not supported, it won't change anything)
       SET_TARGET_PROPERTIES(${name} PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY_DEBUG "${_COMPILE_PDB_DIRECTORY}" COMPILE_PDB_NAME_DEBUG "${_COMPILE_PDB_FILENAME}")
       SET_TARGET_PROPERTIES(${name} PROPERTIES PDB_OUTPUT_DIRECTORY_DEBUG "${_PDB_DIRECTORY}" PDB_NAME_DEBUG "${_PDB_FILENAME}")
