@@ -7,6 +7,7 @@ Build-Depends: debhelper (>= 9), cmake (>= 2.8), pkg-config,
  libqt5svg5-dev | libqt4-dev, qttools5-dev | qt4-dev-tools,
  libxmu-dev
 Standards-Version: 3.9.3
+Homepage: http://dev.kervala.net/projects/kdamn
 
 Package: kdamn
 Architecture: any
@@ -14,8 +15,6 @@ Depends: ${misc:Depends}, ${shlibs:Depends}, libqt5svg5 | libqt4-svg,
  qt5-image-formats-plugins | libqtgui4
 Description: deviantART Messaging Network client
  kdAmn is a multiplatform client for deviantART Messaging Network chat protocol.
- .
- Homepage: http://dev.kervala.net/projects/kdamn
 
 Package: kdamn-dbg
 Priority: extra
@@ -24,5 +23,3 @@ Architecture: any
 Depends: ${misc:Depends}, kdamn (= ${binary:Version})
 Description: deviantART Messaging Network client (debug)
  kdAmn is a multiplatform client for deviantART Messaging Network chat protocol.
- .
- Homepage: http://dev.kervala.net/projects/kdamn
