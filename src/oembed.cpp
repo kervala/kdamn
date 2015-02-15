@@ -36,7 +36,7 @@ static const int s_maxWidth = 150;
 
 OEmbed* OEmbed::s_instance = NULL;
 
-OEmbed::OEmbed(QObject *parent)
+OEmbed::OEmbed(QObject *parent):QObject(parent)
 {
 	if (s_instance == NULL) s_instance = this;
 
