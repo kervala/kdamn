@@ -103,7 +103,7 @@ public:
 	void setDAmnToken(const QString &token) { m_damnToken = token; }
 
 	bool login();
-	bool logout();
+	bool logout(bool reconnect);
 	bool requestAuthorization();
 	bool uploadToStash(const QStringList &filenames, const QString &room);
 	bool requestDAmnToken();
@@ -155,7 +155,7 @@ public:
 
 signals:
 	void loggedIn();
-	void loggedOut();
+	void loggedOut(bool reconnect);
 	void errorReceived(const QString &error);
 	void accessTokenReceived(const QString &access, const QString &refresh);
 	void damnTokenReceived(const QString &login, const QString &damntoken);
@@ -262,6 +262,7 @@ private:
 	int m_inboxId;
 	int m_noteId;
 	bool m_logged;
+	bool m_reconnectAfterLogout;
 
 	// session variables
 	QString m_sessionId;

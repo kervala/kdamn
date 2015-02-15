@@ -63,7 +63,7 @@ public slots:
 	void trayActivated(QSystemTrayIcon::ActivationReason reseaon);
 
 	// signals from OAuth2
-	void onLoggedOut();
+	void onLoggedOut(bool reconnect);
 	void onNewVersion(const QString &url, const QString &date, uint size, const QString &version);
 	void onNoNewVersion();
 	void onProgress(qint64 readBytes, qint64 totalBytes);

@@ -85,7 +85,7 @@ MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false), m_mustLogin
 	QPoint pos = ConfigFile::getInstance()->getWindowPosition();
 	if (!pos.isNull()) move(pos);
 
-	connect(OAuth2::getInstance(), SIGNAL(loggedOut()), this, SLOT(onLoggedOut()));
+	connect(OAuth2::getInstance(), SIGNAL(loggedOut(bool)), this, SLOT(onLoggedOut(bool)));
 	connect(OAuth2::getInstance(), SIGNAL(newVersionDetected(QString, QString, uint, QString)), this, SLOT(onNewVersion(QString, QString, uint, QString)));
 	connect(OAuth2::getInstance(), SIGNAL(noNewVersionDetected()), this, SLOT(onNoNewVersion()));
 	connect(OAuth2::getInstance(), SIGNAL(uploadProgress(qint64, qint64)), this, SLOT(onProgress(qint64, qint64)));
@@ -120,7 +120,7 @@ void MainWindow::closeEvent(QCloseEvent *e)
 
 		m_mustLoginAfterLogout = false;
 
-		OAuth2::getInstance()->logout();
+		OAuth2::getInstance()->logout(false);
 	}
 	else
 	{
@@ -180,14 +180,14 @@ void MainWindow::onConnect()
 		m_mustLoginAfterLogout = true;
 
 		DAmn::getInstance()->disconnect();
-		OAuth2::getInstance()->logout();
+		OAuth2::getInstance()->logout(true);
 	}
 }
 
 void MainWindow::onDisconnect()
 {
 	DAmn::getInstance()->disconnect();
-	OAuth2::getInstance()->logout();
+	OAuth2::getInstance()->logout(false);
 }
 
 void MainWindow::onSettings()
@@ -371,14 +371,17 @@ bool MainWindow::event(QEvent *e)
 	return QMainWindow::event(e);
 }
 
-void MainWindow::onLoggedOut()
+void MainWindow::onLoggedOut(bool reconnect)
 {
 	// only close window if already hidden (when close button pressed)
 	if (isHidden()) close();
 
-	if (m_mustLoginAfterLogout)
+	if (reconnect)
 	{
-		m_mustLoginAfterLogout = false;
+		if (m_mustLoginAfterLogout)
+		{
+			m_mustLoginAfterLogout = false;
+		}
 
 		roomsWidget->login();
 	}

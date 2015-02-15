@@ -31,7 +31,7 @@
 QString OAuth2::s_userAgent;
 OAuth2* OAuth2::s_instance = NULL;
 
-OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0), m_expiresIn(0), m_inboxId(0), m_noteId(0), m_logged(false)
+OAuth2::OAuth2(QObject *parent):QObject(parent), m_manager(NULL), m_clientId(0), m_expiresIn(0), m_inboxId(0), m_noteId(0), m_logged(false), m_reconnectAfterLogout(false)
 {
 	if (s_instance == NULL) s_instance = this;
 
@@ -210,19 +210,21 @@ bool OAuth2::login()
 	return post(OAUTH2LOGIN_URL, data);
 }
 
-bool OAuth2::logout()
+bool OAuth2::logout(bool reconnect)
 {
 	if (!m_logged)
 	{
 		clear();
 
-		emit loggedOut();
+		emit loggedOut(reconnect);
 
 		return false;
 	}
 
 	if (m_sessionId.isEmpty() || m_validateToken.isEmpty() || m_validateKey.isEmpty())
 	{
+		m_reconnectAfterLogout = reconnect;
+
 		m_actions.push_front(ActionLogout);
 
 		return get(SESSIONS_URL);
@@ -560,7 +562,7 @@ void OAuth2::processNextAction()
 			break;
 
 			case ActionLogout:
-			logout();
+			logout(m_reconnectAfterLogout);
 			break;
 
 			case ActionRequestDAmnToken:
@@ -811,7 +813,7 @@ void OAuth2::processRedirection(const QString &redirection, const QString &url)
 	{
 		m_logged = false;
 
-		logout();
+		logout(m_reconnectAfterLogout);
 	}
 	else if (url.startsWith(SENDNOTE_URL))
 	{
@@ -833,6 +835,14 @@ void OAuth2::processRedirection(const QString &redirection, const QString &url)
 		{
 			emit errorReceived(tr("Error when sending note: %1").arg(redirection));
 		}
+	}
+	else if (url.startsWith(SESSIONS_URL) && redirection.contains(SESSIONS_URL))
+	{
+		// session has been closed somewhere else
+		m_logged = false;
+
+		// reconnect automatically
+		logout(true);
 	}
 	else if (redirection != url)
 	{
