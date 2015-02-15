@@ -136,6 +136,7 @@ public:
 	void setToken(const QString &token);
 
 	bool connectToServer();
+	bool isConnected() const;
 
 	static DAmn* getInstance() { return s_instance; }
 
@@ -173,9 +174,6 @@ public:
 public slots:
 	void onConnected();
 	void onDisconnected();
-	void onStageChanged(QAbstractSocket::SocketState state);
-	void onAboutToClose();
-	void onReadChannelFinished();
 
 	void onRead();
 	void onWritten(qint64 bytes);
@@ -189,6 +187,7 @@ signals:
 	void authenticationFailedWrongLogin();
 	void authenticationFailedWrongToken();
 	void serverConnected();
+	void serverDisconnected(bool reconnect);
 
 	void textReceived(const QString &room, const QString &user, EMessageType type, const QString &text, bool html);
 
@@ -273,6 +272,7 @@ private:
 	QDateTime m_lastMessage;
 
 	EDAmnError m_lastError;
+	bool m_connected;
 
 	QStringList m_delayedImages;
 

@@ -61,6 +61,8 @@ public slots:
 	void onRequestDAmnToken();
 	void onText(const QString &room, const QString &user, EMessageType type, const QString &text, bool html);
 	void onConnectServer();
+	void onDisconnectServer(bool reconnect);
+	void onReconnectServer();
 	void onUsers(const QString &room, const QStringList &users);
 	void onJoinRoom(const QString &room);
 	void onPartRoom(const QString &room, const QString &reason);
@@ -91,6 +93,7 @@ protected:
 	void updateSystrayIcon(const QString &room, const QString &user, const QString &html);
 
 	QTimer *m_messagesTimer;
+	QTimer *m_reconnectTimer;
 
 	HtmlFormatting *m_format;
 };

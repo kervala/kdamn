@@ -267,6 +267,8 @@ bool DAmn::parseLogin(const QStringList &lines)
 
 	if (!parseUserInfo(lines, i, *user)) return true;
 
+	m_connected = true;
+
 	emit serverConnected();
 
 	return true;
@@ -793,6 +795,8 @@ bool DAmn::parseDisconnect(const QStringList &lines)
 	DAmnPacket p;
 
 	if (!parsePacket("disconnect", lines, i, p)) return false;
+
+	m_connected = false;
 
 	if (!parseError(p.args["e"])) return true;
 

@@ -35,7 +35,7 @@
 	#define new DEBUG_NEW
 #endif
 
-RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTimer(NULL)
+RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTimer(NULL), m_reconnectTimer(NULL)
 {
 	createServerFrame();
 
@@ -43,6 +43,7 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 
 	DAmn *damn = new DAmn(this);
 	connect(damn, SIGNAL(serverConnected()), this, SLOT(onConnectServer()));
+	connect(damn, SIGNAL(serverDisconnected(bool)), this, SLOT(onDisconnectServer(bool)));
 	connect(damn, SIGNAL(textReceived(QString, QString, EMessageType, QString, bool)), this, SLOT(onText(QString, QString, EMessageType, QString, bool)));
 	connect(damn, SIGNAL(usersReceived(QString, QStringList)), this, SLOT(onUsers(QString, QStringList)));
 	connect(damn, SIGNAL(roomJoined(QString)), this, SLOT(onJoinRoom(QString)));
@@ -72,6 +73,10 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 	m_messagesTimer = new QTimer(this);
 	m_messagesTimer->setSingleShot(true);
 	connect(m_messagesTimer, SIGNAL(timeout()), this, SLOT(checkMessages()));
+
+	m_reconnectTimer = new QTimer(this);
+	m_reconnectTimer->setSingleShot(true);
+	connect(m_reconnectTimer, SIGNAL(timeout()), this, SLOT(onReconnectServer()));
 
 	connect(this, SIGNAL(currentChanged(int)), this, SLOT(onRoomFocus(int)));
 }
@@ -235,6 +240,9 @@ RoomFrame* RoomsTabWidget::getCurrentRoomFrame()
 
 void RoomsTabWidget::onConnectServer()
 {
+	// stop reconnect timer
+	m_reconnectTimer->stop();
+
 	setServer(tr("Connected to server"));
 
 	ConfigRooms rooms = ConfigFile::getInstance()->getRooms();
@@ -250,6 +258,25 @@ void RoomsTabWidget::onConnectServer()
 
 	// we need to log to DA site for OAuth2 and DiFi requests
 	OAuth2::getInstance()->requestAuthorization();
+}
+
+void RoomsTabWidget::onDisconnectServer(bool reconnect)
+{
+	setServer(tr("Disconnected from server"));
+
+	if (reconnect) onReconnectServer();
+}
+
+void RoomsTabWidget::onReconnectServer()
+{
+	if (!DAmn::getInstance()->isConnected())
+	{
+		setServer(tr("Trying to reconnect..."));
+
+		m_reconnectTimer->start(5000);
+
+		DAmn::getInstance()->connectToServer();
+	}
 }
 
 void RoomsTabWidget::onRequestDAmnToken()
@@ -291,7 +318,7 @@ void RoomsTabWidget::onReceiveDAmnToken(const QString &login, const QString &aut
 	DAmn::getInstance()->setLogin(login);
 	DAmn::getInstance()->setToken(authtoken);
 
-	DAmn::getInstance()->connectToServer();
+	if (!DAmn::getInstance()->isConnected()) DAmn::getInstance()->connectToServer();
 }
 
 void RoomsTabWidget::onUploadImage(const QString &room, const QString &url)
@@ -698,8 +725,12 @@ void RoomsTabWidget::login()
 	DAmn::getInstance()->setLogin(log);
 	DAmn::getInstance()->setToken(damnToken);
 
-	if (!DAmn::getInstance()->connectToServer())
+	if (!DAmn::getInstance()->isConnected() && !DAmn::getInstance()->connectToServer())
 	{
 		OAuth2::getInstance()->requestDAmnToken();
+	}
+	else
+	{
+		OAuth2::getInstance()->login();
 	}
 }

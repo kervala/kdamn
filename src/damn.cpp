@@ -30,7 +30,7 @@
 
 DAmn *DAmn::s_instance = NULL;
 
-DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_lastError(OK)
+DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_lastError(OK), m_connected(false)
 {
 	if (s_instance == NULL) s_instance = this;
 
@@ -38,9 +38,6 @@ DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_lastError(OK)
 
 	connect(m_socket, SIGNAL(connected()), this, SLOT(onConnected()));
 	connect(m_socket, SIGNAL(disconnected()), this, SLOT(onDisconnected()));
-	connect(m_socket, SIGNAL(stateChanged(QAbstractSocket::SocketState)), this, SLOT(onStageChanged(QAbstractSocket::SocketState)));
-	connect(m_socket, SIGNAL(aboutToClose()), this, SLOT(onAboutToClose()));
-	connect(m_socket, SIGNAL(readChannelFinished()), this, SLOT(onReadChannelFinished()));
 
 	connect(m_socket, SIGNAL(readyRead()), this, SLOT(onRead()));
 	connect(m_socket, SIGNAL(bytesWritten(qint64)), this, SLOT(onWritten(qint64)));
@@ -94,6 +91,11 @@ bool DAmn::connectToServer()
 	return false;
 }
 
+bool DAmn::isConnected() const
+{
+	return 	m_connected;
+}
+
 void DAmn::setLogin(const QString &login)
 {
 	m_login = login;
@@ -121,7 +123,6 @@ void DAmn::onError(QAbstractSocket::SocketError error)
 #ifdef USE_QT5
 		case QAbstractSocket::OperationError:
 		// receive it when connectToServer() after received a QAbstractSocket::RemoteHostClosedError
-		emit errorReceived(tr("Operation error"));
 		break;
 #endif
 
@@ -142,22 +143,17 @@ void DAmn::onConnected()
 
 void DAmn::onDisconnected()
 {
-	emit errorReceived(tr("Disconnected"));
-}
+	// already disconnected
+	if (!m_connected)
+	{
+		emit serverDisconnected(false);
+	}
+	else
+	{
+		m_connected = false;
 
-void DAmn::onStageChanged(QAbstractSocket::SocketState state)
-{
-//	emit errorReceived(tr("Stage changed %1").arg(state));
-}
-
-void DAmn::onAboutToClose()
-{
-	emit errorReceived(tr("About to close"));
-}
-
-void DAmn::onReadChannelFinished()
-{
-	emit errorReceived(tr("Read channel finished"));
+		emit serverDisconnected(true);
+	}
 }
 
 bool DAmn::downloadImage(DAmnImage &image, int delay)
