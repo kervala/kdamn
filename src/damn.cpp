@@ -23,6 +23,7 @@
 #include "damnuser.h"
 #include "oauth2.h"
 #include "oembed.h"
+#include "configfile.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -177,18 +178,8 @@ bool DAmn::downloadImage(DAmnImage &image, int delay)
 
 	if (!image.valid) return false;
 
-	QString cachePath;
-
-#ifdef USE_QT5
-	cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-#else
-	cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
-#endif
-
-	QString dir(QDir::fromNativeSeparators(cachePath));
-
 	image.md5 = QCryptographicHash::hash(image.remoteUrl.toLatin1(), QCryptographicHash::Md5).toHex();
-	image.filename = QString("%1/%2").arg(dir).arg(image.md5);
+	image.filename = QString("%1/%2").arg(ConfigFile::getInstance()->getCacheDirectory()).arg(image.md5);
 	image.localUrl = QUrl::fromLocalFile(image.filename).toString();
 	image.downloaded = QFile::exists(image.filename);
 
@@ -196,7 +187,7 @@ bool DAmn::downloadImage(DAmnImage &image, int delay)
 
 	// create directory to be sure, there won't be any error later
 	QDir tmp;
-	tmp.mkpath(dir);
+	tmp.mkpath(ConfigFile::getInstance()->getCacheDirectory());
 
 	// request download of image
 	if (!delay)

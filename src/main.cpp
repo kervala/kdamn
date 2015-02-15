@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "mainwindow.h"
+#include "configfile.h"
 
 #ifdef HAVE_CONFIG_H
 	#include "config.h"
@@ -58,38 +59,25 @@ int main(int argc, char *argv[])
 	QApplication::setApplicationVersion(VERSION);
 	QApplication::setWindowIcon(QIcon(":/icons/icon.svg"));
 
-	QString locale = QLocale::system().name().left(2);
+	new ConfigFile(qApp);
 
-	QString folder;
-	QDir dir(QApplication::applicationDirPath());
-	
-#if defined(Q_OS_WIN32)
-	folder = dir.absolutePath();
-#else
-	dir.cdUp();
+	QString locale = QLocale::system().name();
 
-#ifdef Q_OS_MAC
-	folder = dir.absolutePath() + "/Resources";
-#elif defined(SHARE_PREFIX)
-	folder = SHARE_PREFIX;
-#else
-	folder = QString("%1/share/%2").arg(dir.absolutePath()).arg(TARGET);
-#endif
-
-#endif
-
-	folder += "/translations";
-
-	// take the whole locale
 	QTranslator localTranslator;
-	if (localTranslator.load(QString("%1_%2").arg(TARGET).arg(locale), folder))
+	if (localTranslator.load(QString("%1_%2").arg(TARGET).arg(locale), ConfigFile::getInstance()->getTranslationsDirectory()))
 	{
 		QApplication::installTranslator(&localTranslator);
 	}
 
-	// take the whole locale
+	QString qtbaseFilename;
+#ifdef USE_QT5
+	qtbaseFilename = "qtbase";
+#else
+	qtbaseFilename = "qt";
+#endif
+
 	QTranslator qtTranslator;
-	if (qtTranslator.load("qt_" + locale, folder))
+	if (qtTranslator.load(QString("%1_%2").arg(qtbaseFilename).arg(locale), ConfigFile::getInstance()->getQtTranslationsDirectory()))
 	{
 		QApplication::installTranslator(&qtTranslator);
 	}

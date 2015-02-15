@@ -20,6 +20,10 @@
 #include "common.h"
 #include "configfile.h"
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
 #endif
@@ -95,6 +99,7 @@ ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::I
 
 	if (!s_instance) s_instance = this;
 
+	initDirectories();
 	load();
 }
 
@@ -107,22 +112,6 @@ ConfigFile::~ConfigFile()
 
 bool ConfigFile::load()
 {
-	QString documentsPath;
-
-#ifdef USE_QT5
-	documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
-#else
-	documentsPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
-#endif
-
-	// define default logs directory
-	m_logsDirectory = QString("%1/kdAmn/logs").arg(QDir::fromNativeSeparators(documentsPath));
-
-	if (!QDir().mkpath(m_logsDirectory))
-	{
-		qCritical() << "Unable to create directory" << m_logsDirectory;
-	}
-
 	int version = m_settings.value("version", 1).toInt();
 
 	if (version == 2)
@@ -412,6 +401,91 @@ void ConfigFile::setRoomValue(const QString &name, int value)
 	modified(true);
 }
 
+void ConfigFile::initDirectories()
+{
+	// logs directory
+	QString documentsPath;
+
+#ifdef USE_QT5
+	documentsPath = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#else
+	documentsPath = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#endif
+
+	// define default logs directory
+	m_logsDirectory = QString("%1/kdAmn/logs").arg(documentsPath);
+
+	if (!QDir().mkpath(m_logsDirectory))
+	{
+		qCritical() << "Unable to create directory" << m_logsDirectory;
+	}
+
+	QDir applicationDir(QApplication::applicationDirPath());
+
+	// global data directory
+#if defined(Q_OS_WIN32)
+#ifdef _DEBUG
+	applicationDir.cdUp();
+	applicationDir.cdUp();
+#endif
+	// same directory as executable
+	m_globalDataDirectory = applicationDir.absolutePath();
+#else
+	applicationDir.cdUp();
+
+#ifdef Q_OS_MAC
+	m_globalDataDirectory = applicationDir.absolutePath() + "/Resources";
+#elif defined(SHARE_PREFIX)
+	m_globalDataDirectory = SHARE_PREFIX;
+#else
+	m_globalDataDirectory = QString("%1/share/%2").arg(applicationDir.absolutePath()).arg(TARGET);
+#endif
+
+#endif
+
+	// translations directory
+	m_translationsDirectory = m_globalDataDirectory + "/translations";
+
+	// Qt translations directory
+#if defined(Q_OS_WIN32)
+	m_qtTranslationsDirectory = m_translationsDirectory;
+#elif defined(Q_OS_MAC)
+	m_qtTranslationsDirectory = m_translationsDirectory;
+#elif defined(USE_QT5)
+	m_qtTranslationsDirectory = "/usr/share/qt5/translations";
+#else
+	m_qtTranslationsDirectory = "/usr/share/qt4/translations";
+#endif
+
+	// cache directory
+#ifdef USE_QT5
+	m_cacheDirectory = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+#else
+	m_cacheDirectory = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
+#endif
+
+	// local data
+#ifdef USE_QT5
+	QStandardPaths::StandardLocation location;
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
+	location = QStandardPaths::AppDataLocation;
+#else
+	location = QStandardPaths::ConfigLocation;
+#endif
+	m_localDataDirectory = QStandardPaths::writableLocation(location);
+#else
+	m_localDataDirectory = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
+#endif
+
+	// download directory
+#ifdef USE_QT5
+	m_downloadDirectory = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+#else
+	m_downloadDirectory = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#endif
+}
+
 void ConfigFile::autoSave()
 {
 	if (m_autoSaveDelay > 0) QTimer::singleShot(m_autoSaveDelay * 60 * 1000, this, SLOT(save()));
@@ -432,5 +506,11 @@ IMPLEMENT_INT_VAR(CheckMessagesDelay, checkMessagesDelay);
 IMPLEMENT_BOOL_VAR(DisplayTimestamps, displayTimestamps);
 IMPLEMENT_BOOL_VAR(EnableAnimations, enableAnimations);
 IMPLEMENT_QSTRING_VAR(LogsDirectory, logsDirectory);
+IMPLEMENT_QSTRING_VAR(TranslationsDirectory, translationsDirectory);
+IMPLEMENT_QSTRING_VAR(QtTranslationsDirectory, qtTranslationsDirectory);
+IMPLEMENT_QSTRING_VAR(CacheDirectory, cacheDirectory);
+IMPLEMENT_QSTRING_VAR(DownloadDirectory, downloadDirectory);
+IMPLEMENT_QSTRING_VAR(GlobalDataDirectory, globalDataDirectory);
+IMPLEMENT_QSTRING_VAR(LocalDataDirectory, localDataDirectory);
 IMPLEMENT_INT_VAR(Splitter, splitter);
 IMPLEMENT_BOOL_VAR(EnableOembedThumbnail, enableOembedThumbnail);

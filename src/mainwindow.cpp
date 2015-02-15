@@ -75,8 +75,6 @@ MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false), m_mustLogin
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
 	connect(actionAboutQt, SIGNAL(triggered()), this, SLOT(onAboutQt()));
 
-	new ConfigFile(this);
-
 	new SystrayIcon(this);
 
 	QSize size = ConfigFile::getInstance()->getWindowSize();
@@ -284,14 +282,6 @@ void MainWindow::onUploadScreenshot()
 		}
 	}
 
-	QString cachePath;
-
-#ifdef USE_QT5
-	cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-#else
-	cachePath = QDesktopServices::storageLocation(QDesktopServices::CacheLocation);
-#endif
-
 	int pos = name.indexOf(QRegExp("[\\\\/:? *;<>&-]"));
 
 	if (pos > -1)
@@ -306,7 +296,7 @@ void MainWindow::onUploadScreenshot()
 		}
 	}
 
-	QString filename = QString("%1/%2-%3.png").arg(QDir::fromNativeSeparators(cachePath)).arg(name).arg(QDateTime::currentMSecsSinceEpoch());
+	QString filename = QString("%1/%2-%3.png").arg(ConfigFile::getInstance()->getCacheDirectory()).arg(name).arg(QDateTime::currentMSecsSinceEpoch());
 
 	pixmap.save(filename);
 

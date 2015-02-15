@@ -144,15 +144,10 @@ QString UpdateDialog::getOutputFilename(const QString &filename)
 {
 	QString res;
 
-#ifdef USE_QT5
-	QString path = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
-#else
-	QString path = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
-#endif
-
 	int i = 0;
 
 	QFileInfo info(filename);
+	QString path = ConfigFile::getInstance()->getDownloadDirectory();
 
 	do
 	{

@@ -21,6 +21,7 @@
 #include "oembed.h"
 #include "oauth2.h"
 #include "damn.h"
+#include "configfile.h"
 
 #ifdef HAVE_CONFIG_H
 	#include "config.h"
@@ -50,40 +51,7 @@ OEmbed::~OEmbed()
 
 void OEmbed::init(bool local)
 {
-	QString globalDir, localDir;
-
-	QDir dir(QCoreApplication::applicationDirPath());
-	
-#if defined(Q_OS_WIN32)
-	// same directory as executable
-	globalDir = dir.absolutePath();
-#else
-	dir.cdUp();
-
-#ifdef Q_OS_MAC
-	globalDir = dir.absolutePath() + "/Resources";
-#elif defined(SHARE_PREFIX)
-	globalDir = SHARE_PREFIX;
-#else
-	globalDir = QString("%1/share/%2").arg(dir.absolutePath()).arg(TARGET);
-#endif
-
-#endif
-
-#ifdef USE_QT5
-	QStandardPaths::StandardLocation location;
-
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 4, 0))
-	location = QStandardPaths::AppDataLocation;
-#else
-	location = QStandardPaths::ConfigLocation;
-#endif
-	localDir = QStandardPaths::writableLocation(location);
-#else
-	localDir = QDesktopServices::storageLocation(QDesktopServices::DataLocation);
-#endif
-
-	QString filename = QString("%1/oembed.ini").arg(local ? localDir:globalDir);
+	QString filename = QString("%1/oembed.ini").arg(local ? ConfigFile::getInstance()->getLocalDataDirectory():ConfigFile::getInstance()->getGlobalDataDirectory());
 
 	QSettings settings(filename, QSettings::IniFormat);
 

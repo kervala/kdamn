@@ -113,6 +113,12 @@ DECLARE_INT_VAR(CheckMessagesDelay, checkMessagesDelay);
 DECLARE_BOOL_VAR(DisplayTimestamps, displayTimestamps);
 DECLARE_BOOL_VAR(EnableAnimations, enableAnimations);
 DECLARE_QSTRING_VAR(LogsDirectory, logsDirectory);
+DECLARE_QSTRING_VAR(TranslationsDirectory, translationsDirectory);
+DECLARE_QSTRING_VAR(QtTranslationsDirectory, qtTranslationsDirectory);
+DECLARE_QSTRING_VAR(CacheDirectory, cacheDirectory);
+DECLARE_QSTRING_VAR(DownloadDirectory, downloadDirectory);
+DECLARE_QSTRING_VAR(GlobalDataDirectory, globalDataDirectory);
+DECLARE_QSTRING_VAR(LocalDataDirectory, localDataDirectory);
 DECLARE_TYPED_VAR(QSize, WindowSize, size);
 DECLARE_TYPED_VAR(QPoint, WindowPosition, position);
 DECLARE_INT_VAR(Splitter, splitter);
@@ -123,6 +129,7 @@ public slots:
 	bool save();
 
 private:
+	void initDirectories();
 	void autoSave();
 	void modified(bool modified);
 
