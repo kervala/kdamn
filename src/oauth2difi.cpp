@@ -184,7 +184,7 @@ bool OAuth2::requestNotesUnstar(const QStringList &notesIds)
 void OAuth2::processDiFi(const QByteArray &content)
 {
 	// we received JSON response
-	QString status, error, errorDescription;
+	QString status, errorDescription;
 
 	if (!content.isEmpty())
 	{
@@ -215,9 +215,11 @@ void OAuth2::processDiFi(const QByteArray &content)
 
 			if (status == "FAIL")
 			{
+				QString errorStr = response["error"].toString();
+				QString detailsStr = response["details"].toString();
+
+				errorDescription = QString("FAIL: %1: %2").arg(errorStr).arg(detailsStr);
 				status = "error";
-				error = response["error"].toString();
-				errorDescription = QString("FAIL: %1 (%2)").arg(error).arg(response["details"].toString());
 			}
 			else if (status == "SUCCESS")
 			{
@@ -326,32 +328,93 @@ void OAuth2::processDiFi(const QByteArray &content)
 					}
 					else if (status == "NOEXEC_HALT")
 					{
+						QString errorCode = status;
+						QString errorHuman;
+						QString errorDetails;
+
 						QVariantMap data = response["content"].toMap();
-						QString error = data["error"].toString();
 
-						QVariantMap errorDetails = data["details"].toMap();
+						QString errorStr = data["error"].toString();
 
-						QString argument = errorDetails["argument"].toString();
+						if (errorStr.isEmpty())
+						{
+							// auth error
+							QVariantMap errorMap = data["error"].toMap();
 
-						QVariantMap filterError = errorDetails["filter_error"].toMap();
+							errorCode = errorMap["code"].toString();
+							errorHuman = errorMap["human"].toString();
 
-						QString err = filterError["error"].toString();
-						QString det = filterError["details"].toString();
+							if (errorCode == "ERR_DIFI_ACCESS_DENIED")
+							{
+								m_logged = false;
 
+								logout(true);
+							}
+						}
+						else
+						{
+							errorHuman = errorStr;
+						}
+
+						QString detailsStr = data["details"].toString();
+
+						if (detailsStr.isEmpty())
+						{
+							QVariantMap detailsMap = data["details"].toMap();
+
+							QString textStr = detailsMap["text"].toString();
+
+							if (!textStr.isEmpty())
+							{
+								errorDetails = textStr;
+							}
+							else
+							{
+								QString errorStr = detailsMap["error"].toString();
+
+								if (!errorStr.isEmpty())
+								{
+									errorDetails = errorStr;
+
+									QString detailsStr = detailsMap["details"].toString();
+
+									if (!detailsStr.isEmpty())
+									{
+										errorDetails += " - " + detailsStr;
+									}
+								}
+								else
+								{
+									QString argumentStr = detailsMap["argument"].toString();
+
+									errorDetails = argumentStr;
+
+									QVariantMap filterErrorMap = detailsMap["filter_error"].toMap();
+
+									QString err = filterErrorMap["error"].toString();
+									QString det = filterErrorMap["details"].toString();
+								}
+							}
+						}
+						else
+						{
+							errorDetails = detailsStr;
+						}
+
+						errorDescription = tr("%1: %2 (%3)").arg(errorCode).arg(errorHuman).arg(errorDetails);
 						status = "error";
-						errorDescription = tr("NOEXEC_HALT: %1 (%2 - %3: %4)").arg(error).arg(argument).arg(err).arg(det);
 					}
 					else
 					{
 						QVariantMap data = response["content"].toMap();
-						QVariantMap err = data["error"].toMap();
 
-						QString errorCode = err["code"].toString();
-						QString errorHuman = err["human"].toString();
+						QVariantMap errMap = data["error"].toMap();
 
+						QString errorCode = errMap["code"].toString();
+						QString errorHuman = errMap["human"].toString();
+
+						errorDescription = tr("%1: %2 (%3)").arg(status).arg(errorCode).arg(errorHuman);
 						status = "error";
-						error = errorCode;
-						errorDescription = tr("%1 (%2)").arg(errorDescription).arg(errorCode);
 					}
 				}
 			}
@@ -364,7 +427,7 @@ void OAuth2::processDiFi(const QByteArray &content)
 
 	if (status == "error")
 	{
-		emit errorReceived(tr("DiFi error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
+		emit errorReceived(tr("DiFi error: %1").arg(errorDescription));
 	}
 
 	processNextAction();
