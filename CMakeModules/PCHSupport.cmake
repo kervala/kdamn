@@ -110,19 +110,23 @@ MACRO(PCH_SET_COMPILE_FLAGS _target)
         # use same include directories
         GET_TARGET_PROPERTY(_DIRS ${_LIB} INTERFACE_INCLUDE_DIRECTORIES)
 
-        FOREACH(item ${_DIRS})
-          LIST(APPEND GLOBAL_DEFINITIONS " -I\"${item}\"")
-        ENDFOREACH()
+        IF(_DIRS)
+          FOREACH(item ${_DIRS})
+            LIST(APPEND GLOBAL_DEFINITIONS " -I\"${item}\"")
+          ENDFOREACH()
+        ENDIF()
 
         # use same compile definitions
         GET_TARGET_PROPERTY(_DEFINITIONS ${_LIB} INTERFACE_COMPILE_DEFINITIONS)
 
-        FOREACH(item ${_DEFINITIONS})
-          # don't use dynamic expressions
-          IF(NOT item MATCHES "\\$<")
-            LIST(APPEND GLOBAL_DEFINITIONS " -D${item}")
-          ENDIF()
-        ENDFOREACH()
+        IF(_DEFINITIONS)
+          FOREACH(item ${_DEFINITIONS})
+            # don't use dynamic expressions
+            IF(NOT item MATCHES "\\$<")
+              LIST(APPEND GLOBAL_DEFINITIONS " -D${item}")
+            ENDIF()
+          ENDFOREACH()
+        ENDIF()
       ENDIF()
     ENDFOREACH()
   ENDIF()
