@@ -174,14 +174,12 @@ QString HtmlFormatting::formatMessageTopicFirst(const QString &user, const QStri
 {
 	if (text.isEmpty()) return QString();
 
-	return formatLineNormal(tr("Topic: %1").arg(text), html);
+	return formatLineNormal(text, html);
 }
 
 QString HtmlFormatting::formatMessageTitleFirst(const QString &user, const QString &text, bool html) const
 {
-	if (text.isEmpty()) return QString();
-
-	return formatLineNormal(tr("Title: %1").arg(text), html);
+	return QString();
 }
 
 QString HtmlFormatting::formatStyle(const QString &text, bool html, const QString &style) const
