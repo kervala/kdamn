@@ -496,14 +496,14 @@ void RoomsTabWidget::onText(const QString &room, const QString &user, EMessageTy
 				if (html)
 				{
 					// first HTML message received
-					if (type == MessageText || type == MessageAction) frame->setReceiveHtml(true);
+					if (type == MessageAction || type == MessageText) frame->setReceiveHtml(true);
 
 					frame->appendHtml(formatted);
 				}
 				else
 				{
 					// first text message received
-					if (type == MessageText || type == MessageAction) frame->setReceiveText(true);
+					if (type == MessageAction || type == MessageText) frame->setReceiveText(true);
 
 					frame->appendText(formatted);
 				}
