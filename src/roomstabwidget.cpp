@@ -345,6 +345,8 @@ void RoomsTabWidget::onReceiveNotes(int count)
 	{
 		if (count > 0)
 		{
+			playSound(ConfigFile::getInstance()->getNoteReceivedSound());
+
 			setServer(tr("You received %n note(s), click <a href=\"https://www.deviantart.com/messages/notes/\">here</a> to read them.", "", count));
 
 			// display message in system tab

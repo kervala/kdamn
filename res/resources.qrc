@@ -7,4 +7,7 @@
   <qresource prefix="images">
     <file>blank.png</file>
   </qresource>
+  <qresource prefix="sounds">
+    <file>default.wav</file>
+  </qresource>
 </RCC>
