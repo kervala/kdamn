@@ -32,4 +32,4 @@ body { background-color: #666; }
 .myself { color: #ccc; }
 
 /* user name span when someone mentioned our name */
-.highlight { color: %ccf; font-weight: bold; }
+.highlight { color: #ccf; font-weight: bold; }
