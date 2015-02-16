@@ -304,15 +304,17 @@ QString HtmlFormatting::highlightUser(const QString &user, const QString &text) 
 
 		QString textPartlower = textPart.toLower();
 
-		int pos = 0;
+		int pos = -1;
 
 		// search all users in part
-		while((pos = textPartlower.indexOf(lowerUser, pos)) > -1)
+		while((pos = textPartlower.lastIndexOf(lowerUser, pos)) > -1)
 		{
 			// replace login by highlighted HTML code
 			textPart.replace(pos, user.length(), formattedLogin);
 
-			pos += user.length();
+			pos -= user.length();
+
+			if (pos < 0) break;
 		}
 
 		// append this text
