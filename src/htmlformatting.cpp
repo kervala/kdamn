@@ -28,7 +28,7 @@
 	#define new DEBUG_NEW
 #endif
 
-HtmlFormatting::HtmlFormatting(QObject *parent):QObject(parent)
+HtmlFormatting::HtmlFormatting(bool html, QObject *parent):QObject(parent), m_html(html)
 {
 }
 
@@ -36,47 +36,47 @@ HtmlFormatting::~HtmlFormatting()
 {
 }
 
-QString HtmlFormatting::formatUserPriv(const QString &user, const QString &by, const QString &privclass, bool html) const
+QString HtmlFormatting::formatUserPriv(const QString &user, const QString &by, const QString &privclass) const
 {
 	// TODO: the whole line is bold
-	return formatLineSystem(tr("** %1 has been made a member of %2 by %3 *").arg(formatUser(user, html)).arg(formatPrivClass(privclass, html)).arg(formatUser(by, html)), html);
+	return formatLineSystem(tr("** %1 has been made a member of %2 by %3 *").arg(formatUser(user)).arg(formatPrivClass(privclass)).arg(formatUser(by)));
 }
 
-QString HtmlFormatting::formatPrivClass(const QString &privclass, const QString &by, const QString &privs, bool html) const
+QString HtmlFormatting::formatPrivClass(const QString &privclass, const QString &by, const QString &privs) const
 {
-	return formatLineSystem(tr("** Privilege class %1 has been updated by %2 with: %3").arg(formatPrivClass(privclass, html)).arg(formatUser(by, html)).arg(privs), html);
+	return formatLineSystem(tr("** Privilege class %1 has been updated by %2 with: %3").arg(formatPrivClass(privclass)).arg(formatUser(by)).arg(privs));
 }
 
-QString HtmlFormatting::formatUserJoin(const QString &user, bool html) const
+QString HtmlFormatting::formatUserJoin(const QString &user) const
 {
-	return formatLineSystem(tr("** %1 has joined").arg(formatUser(user, html)), html);
+	return formatLineSystem(tr("** %1 has joined").arg(formatUser(user)));
 }
 
-QString HtmlFormatting::formatUserPart(const QString &user, const QString &reason, bool html) const
+QString HtmlFormatting::formatUserPart(const QString &user, const QString &reason) const
 {
-	return formatLineSystem(tr("** %1 has left").arg(formatUser(user, html)) + (!reason.isEmpty() ? QString(" [%1]").arg(reason):""), html);
+	return formatLineSystem(tr("** %1 has left").arg(formatUser(user)) + (!reason.isEmpty() ? QString(" [%1]").arg(reason):""));
 }
 
-QString HtmlFormatting::formatUserKick(const QString &user, const QString &by, bool html) const
+QString HtmlFormatting::formatUserKick(const QString &user, const QString &by) const
 {
-	return formatLineSystem(tr("** %1 has been kicked by %2").arg(formatUser(user, html)).arg(formatUser(by, html)), html);
+	return formatLineSystem(tr("** %1 has been kicked by %2").arg(formatUser(user)).arg(formatUser(by)));
 }
 
-QString HtmlFormatting::formatJoinRoom(const QString &room, bool html) const
+QString HtmlFormatting::formatJoinRoom(const QString &room) const
 {
-	return formatLineNormal(tr("*** You have joined %1 *").arg(formatRoom(room, html)), html);
+	return formatLineNormal(tr("*** You have joined %1 *").arg(formatRoom(room)));
 }
 
-QString HtmlFormatting::formatPartRoom(const QString &room, const QString &reason, bool html) const
+QString HtmlFormatting::formatPartRoom(const QString &room, const QString &reason) const
 {
-	return formatLineNormal(tr("*** You have left %1 *").arg(formatRoom(room, html)) + (!reason.isEmpty() ? QString(" [%1]").arg(reason):""), html);
+	return formatLineNormal(tr("*** You have left %1 *").arg(formatRoom(room)) + (!reason.isEmpty() ? QString(" [%1]").arg(reason):""));
 }
 
-QString HtmlFormatting::formatMessageText(const QString &user, const QString &text, bool html) const
+QString HtmlFormatting::formatMessageText(const QString &user, const QString &text) const
 {
 	QString formattedText;
 
-	if (html)
+	if (m_html)
 	{
 		QString login = ConfigFile::getInstance()->getLogin().toLower();
 
@@ -84,10 +84,10 @@ QString HtmlFormatting::formatMessageText(const QString &user, const QString &te
 		if (login != user.toLower())
 		{
 			// check if username mentioned in HTML code
-			if (searchUserInHtml(login, text))
+			if (searchUser(login, text))
 			{
 				// hightlight username in HTML code
-				formattedText = highlightUserInHtml(login, text);
+				formattedText = highlightUser(login, text);
 			}
 			else
 			{
@@ -96,7 +96,7 @@ QString HtmlFormatting::formatMessageText(const QString &user, const QString &te
 		}
 		else
 		{
-			formattedText = formatStyle(text, true, "myself");
+			formattedText = formatStyle(text, "myself");
 		}
 	}
 	else
@@ -104,14 +104,14 @@ QString HtmlFormatting::formatMessageText(const QString &user, const QString &te
 		formattedText = text;
 	}
 
-	return formatLineNormal(formatUser(QString("<%1>").arg(user), html) + " " + formattedText, html);
+	return formatLineNormal(formatUser(QString("<%1>").arg(user)) + " " + formattedText);
 }
 
-QString HtmlFormatting::formatMessageAction(const QString &user, const QString &text, bool html) const
+QString HtmlFormatting::formatMessageAction(const QString &user, const QString &text) const
 {
 	QString formattedText;
 
-	if (html)
+	if (m_html)
 	{
 		QString login = ConfigFile::getInstance()->getLogin().toLower();
 
@@ -119,15 +119,15 @@ QString HtmlFormatting::formatMessageAction(const QString &user, const QString &
 		if (login != user.toLower())
 		{
 			// check if username mentioned in HTML code
-			if (searchUserInHtml(login, text))
+			if (searchUser(login, text))
 			{
 				// hightlight username in HTML code
-				formattedText = highlightUserInHtml(login, text);
+				formattedText = highlightUser(login, text);
 			}
 		}
 		else
 		{
-			formattedText = formatStyle(text, true, "myself");
+			formattedText = formatStyle(text, "myself");
 		}
 	}
 	else
@@ -135,73 +135,73 @@ QString HtmlFormatting::formatMessageAction(const QString &user, const QString &
 		formattedText = text;
 	}
 
-	return formatLineNormal(formatStyle(formatUser(QString("* %1").arg(user), html) + " " + formattedText, html, "emote"), html);
+	return formatLineNormal(formatStyle(formatUser(QString("* %1").arg(user)) + " " + formattedText, "emote"));
 }
 
-QString HtmlFormatting::formatMessageTopic(const QString &user, const QString &text, bool html) const
+QString HtmlFormatting::formatMessageTopic(const QString &user, const QString &text) const
 {
 	QString formattedText;
 
 	if (text.isEmpty())
 	{
-		formattedText = tr("** Topic removed by %1 *").arg(formatUser(user, html));
+		formattedText = tr("** Topic removed by %1 *").arg(formatUser(user));
 	}
 	else
 	{
-		formattedText = tr("** Topic changed by %1: %2 *").arg(formatUser(user, html)).arg(text);
+		formattedText = tr("** Topic changed by %1: %2 *").arg(formatUser(user)).arg(text);
 	}
 
-	return formatLineSystem(formattedText, html);
+	return formatLineSystem(formattedText);
 }
 
-QString HtmlFormatting::formatMessageTitle(const QString &user, const QString &text, bool html) const
+QString HtmlFormatting::formatMessageTitle(const QString &user, const QString &text) const
 {
 	QString formattedText;
 
 	if (text.isEmpty())
 	{
-		formattedText = tr("** Title removed by %1 *").arg(formatUser(user, html));
+		formattedText = tr("** Title removed by %1 *").arg(formatUser(user));
 	}
 	else
 	{
-		formattedText = tr("** Title changed by %1: %2 *").arg(formatUser(user, html)).arg(text);
+		formattedText = tr("** Title changed by %1: %2 *").arg(formatUser(user)).arg(text);
 	}
 
-	return formatLineSystem(formattedText, html);
+	return formatLineSystem(formattedText);
 }
 
-QString HtmlFormatting::formatMessageTopicFirst(const QString &user, const QString &text, bool html) const
+QString HtmlFormatting::formatMessageTopicFirst(const QString &user, const QString &text) const
 {
 	if (text.isEmpty()) return QString();
 
-	return formatLineNormal(text, html);
+	return formatLineNormal(text);
 }
 
-QString HtmlFormatting::formatMessageTitleFirst(const QString &user, const QString &text, bool html) const
+QString HtmlFormatting::formatMessageTitleFirst(const QString &user, const QString &text) const
 {
 	return QString();
 }
 
-QString HtmlFormatting::formatStyle(const QString &text, bool html, const QString &style) const
+QString HtmlFormatting::formatStyle(const QString &text, const QString &style) const
 {
-	if (html) return QString("<span class=\"%1\">%2</span>").arg(style).arg(text);
+	if (m_html) return QString("<span class=\"%1\">%2</span>").arg(style).arg(text);
 
 	return text;
 }
 
-QString HtmlFormatting::formatUser(const QString &user, bool html) const
+QString HtmlFormatting::formatUser(const QString &user) const
 {
-	return formatStyle(html ? encodeEntities(user, "<>"):user, html, "username");
+	return formatStyle(m_html ? encodeEntities(user, "<>"):user, "username");
 }
 
-QString HtmlFormatting::formatRoom(const QString &room, bool html) const
+QString HtmlFormatting::formatRoom(const QString &room) const
 {
-	return formatStyle("#" + room, html, "room");
+	return formatStyle("#" + room, "room");
 }
 
-QString HtmlFormatting::formatPrivClass(const QString &privclass, bool html) const
+QString HtmlFormatting::formatPrivClass(const QString &privclass) const
 {
-	return formatStyle(privclass, html, "privclass");
+	return formatStyle(privclass, "privclass");
 }
 
 QString HtmlFormatting::formatTimestamp(bool html) const
@@ -214,48 +214,51 @@ QString HtmlFormatting::formatTimestamp(bool html) const
 	return QString(html ? "<span class=\"timestamp\">%1</span> ":"[%1] ").arg(timestamp);
 }
 
-QString HtmlFormatting::formatLine(const QString &text, bool html, const QString &style) const
+QString HtmlFormatting::formatLine(const QString &text, const QString &style) const
 {
-	if (html) return QString("<div class=\"%1\">%2%3</div>").arg(style).arg(formatTimestamp(true)).arg(text);
+	if (m_html) return QString("<div class=\"line\">%1<span class=\"%2\">%3</span></div>").arg(formatTimestamp(true)).arg(style).arg(text);
 
 	return formatTimestamp(false) + text;
 }
 
-QString HtmlFormatting::formatLineNormal(const QString &text, bool html) const
+QString HtmlFormatting::formatLineNormal(const QString &text) const
 {
-	return formatLine(text, html, "normal");
+	return formatLine(text, "normal");
 }
 
-QString HtmlFormatting::formatLineSystem(const QString &text, bool html) const
+QString HtmlFormatting::formatLineSystem(const QString &text) const
 {
-	return formatLine(text, html, "system");
+	return formatLine(text, "system");
 }
 
-QString HtmlFormatting::formatLineError(const QString &text, bool html) const
+QString HtmlFormatting::formatLineError(const QString &text) const
 {
-	return formatLine(text, html, "error");
+	return formatLine(text, "error");
 }
 
-bool HtmlFormatting::searchUserInHtml(const QString &user, const QString &html) const
+bool HtmlFormatting::searchUser(const QString &user, const QString &text) const
 {
-	// lower HTML code
-	QString lowerTextWithoutHtml = html.toLower();
+	if (m_html)
+	{
+		// lower HTML code
+		QString lowerTextWithoutHtml = text.toLower();
 
-	// remove HTML code
-	lowerTextWithoutHtml.remove(QRegExp("<[^>]+>"));
+		// remove HTML code
+		lowerTextWithoutHtml.remove(QRegExp("<[^>]+>"));
 
-	// found at least one occurence of login
-	return lowerTextWithoutHtml.indexOf(user.toLower()) > -1;
-}
+		// found at least one occurence of login
+		return lowerTextWithoutHtml.indexOf(user.toLower()) > -1;
+	}
 
-bool HtmlFormatting::searchUserInText(const QString &user, const QString &text) const
-{
 	// found at least one occurence of login
 	return text.toLower().indexOf(user.toLower()) > -1;
 }
 
-QString HtmlFormatting::highlightUserInHtml(const QString &user, const QString &html) const
+QString HtmlFormatting::highlightUser(const QString &user, const QString &text) const
 {
+	// can't highlight in text
+	if (!m_html) return text;
+
 	QString login = user;
 
 	// use original username case
@@ -263,11 +266,11 @@ QString HtmlFormatting::highlightUserInHtml(const QString &user, const QString &
 	if (damnUser) login = damnUser->getName();
 
 	// format it in HTML
-	QString formattedLogin = formatStyle(login, true, "highlight");
+	QString formattedLogin = formatStyle(login, "highlight");
 	QString lowerUser = user.toLower();
 
 	QString finalHtml;
-	QString lowerHtml = html.toLower();
+	QString lowerHtml = text.toLower();
 
 	QRegExp htmlReg("<[^>]+>");
 
@@ -283,8 +286,8 @@ QString HtmlFormatting::highlightUserInHtml(const QString &user, const QString &
 		{
 			// found HTML code after text
 			// take text from begin to end-begin
-			textPart = html.mid(begin, end-begin);
-			htmlPart = html.mid(end, end+htmlReg.matchedLength());
+			textPart = text.mid(begin, end-begin);
+			htmlPart = text.mid(end, end+htmlReg.matchedLength());
 
 			begin = end+1;
 		}
@@ -292,7 +295,7 @@ QString HtmlFormatting::highlightUserInHtml(const QString &user, const QString &
 		{
 			// no HTML code after text
 			// take text from begin to the end
-			textPart = html.mid(begin);
+			textPart = text.mid(begin);
 
 			begin = end;
 		}

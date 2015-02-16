@@ -39,7 +39,8 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 {
 	createServerFrame();
 
-	m_format = new HtmlFormatting(this);
+	m_formatHtml = new HtmlFormatting(true, this);
+	m_formatText = new HtmlFormatting(false, this);
 
 	DAmn *damn = new DAmn(this);
 	connect(damn, SIGNAL(serverConnected()), this, SLOT(onConnectServer()));
@@ -446,27 +447,27 @@ void RoomsTabWidget::onText(const QString &room, const QString &user, EMessageTy
 			switch(type)
 			{
 				case MessageText:
-				formatted = m_format->formatMessageText(user, text, html);
+				formatted = html ? m_formatHtml->formatMessageText(user, text):m_formatText->formatMessageText(user, text);
 				break;
 
 				case MessageAction:
-				formatted = m_format->formatMessageAction(user, text, html);
+				formatted = html ? m_formatHtml->formatMessageAction(user, text):m_formatText->formatMessageAction(user, text);
 				break;
 
 				case MessageTopic:
-				formatted = m_format->formatMessageTopic(user, text, html);
+				formatted = html ? m_formatHtml->formatMessageTopic(user, text):m_formatText->formatMessageTopic(user, text);
 				break;
 
 				case MessageTitle:
-				formatted = m_format->formatMessageTitle(user, text, html);
+				formatted = html ? m_formatHtml->formatMessageTitle(user, text):m_formatText->formatMessageTitle(user, text);
 				break;
 
 				case MessageTopicFirst:
-				formatted = m_format->formatMessageTopicFirst(user, text, html);
+				formatted = html ? m_formatHtml->formatMessageTopicFirst(user, text):m_formatText->formatMessageTopicFirst(user, text);
 				break;
 
 				case MessageTitleFirst:
-				formatted = m_format->formatMessageTitleFirst(user, text, html);
+				formatted = html ? m_formatHtml->formatMessageTitleFirst(user, text):m_formatText->formatMessageTitleFirst(user, text);
 				break;
 
 				default:
@@ -517,8 +518,8 @@ void RoomsTabWidget::onUserJoin(const QString &room, const QString &user, bool s
 	{
 		frame->userJoin(user);
 
-		frame->appendHtml(m_format->formatUserJoin(user, true));
-		frame->appendText(m_format->formatUserJoin(user, false));
+		frame->appendHtml(m_formatHtml->formatUserJoin(user));
+		frame->appendText(m_formatText->formatUserJoin(user));
 	}
 
 	updateSystrayIcon(room, user, "");
@@ -532,8 +533,8 @@ void RoomsTabWidget::onUserPart(const QString &room, const QString &user, const 
 	{
 		frame->userPart(user);
 
-		frame->appendHtml(m_format->formatUserPart(user, reason, true));
-		frame->appendText(m_format->formatUserPart(user, reason, false));
+		frame->appendHtml(m_formatHtml->formatUserPart(user, reason));
+		frame->appendText(m_formatText->formatUserPart(user, reason));
 	}
 
 	updateSystrayIcon(room, user, "");
@@ -547,8 +548,8 @@ void RoomsTabWidget::onUserKick(const QString &room, const QString &user, const 
 	{
 		frame->userPart(user);
 
-		frame->appendHtml(m_format->formatUserKick(user, by, true));
-		frame->appendText(m_format->formatUserKick(user, by, false));
+		frame->appendHtml(m_formatHtml->formatUserKick(user, by));
+		frame->appendText(m_formatText->formatUserKick(user, by));
 	}
 
 	updateSystrayIcon(room, user, "");
@@ -560,8 +561,8 @@ void RoomsTabWidget::onUserPriv(const QString &room, const QString &user, const 
 
 	if (frame)
 	{
-		frame->appendHtml(m_format->formatUserPriv(user, by, pc, true));
-		frame->appendText(m_format->formatUserPriv(user, by, pc, false));
+		frame->appendHtml(m_formatHtml->formatUserPriv(user, by, pc));
+		frame->appendText(m_formatText->formatUserPriv(user, by, pc));
 	}
 }
 
@@ -571,8 +572,8 @@ void RoomsTabWidget::onPrivClass(const QString &room, const QString &privclass, 
 
 	if (frame)
 	{
-		frame->appendHtml(m_format->formatPrivClass(privclass, by, privs, true));
-		frame->appendText(m_format->formatPrivClass(privclass, by, privs, false));
+		frame->appendHtml(m_formatHtml->formatPrivClass(privclass, by, privs));
+		frame->appendText(m_formatText->formatPrivClass(privclass, by, privs));
 	}
 }
 
@@ -591,7 +592,7 @@ void RoomsTabWidget::onJoinRoom(const QString &room)
 
 	if (frame)
 	{
-		frame->appendHtml(m_format->formatJoinRoom(room, true));
+		frame->appendHtml(m_formatHtml->formatJoinRoom(room));
 	}
 
 	ConfigFile::getInstance()->setRoomConnected(room, true);
@@ -605,7 +606,7 @@ void RoomsTabWidget::onPartRoom(const QString &room, const QString &reason)
 
 	if (frame)
 	{
-		frame->appendHtml(m_format->formatPartRoom(room, reason, true));
+		frame->appendHtml(m_formatHtml->formatPartRoom(room, reason));
 	}
 
 	ConfigFile::getInstance()->setRoomConnected(room, false);
@@ -617,7 +618,7 @@ void RoomsTabWidget::onError(const QString &error)
 
 	if (frame)
 	{
-		frame->appendHtml(m_format->formatLineError(error, true));
+		frame->appendHtml(m_formatHtml->formatLineError(error));
 	}
 
 	updateSystrayIcon("", "", "");
@@ -629,7 +630,7 @@ void RoomsTabWidget::setServer(const QString &text)
 
 	if (frame)
 	{
-		frame->appendHtml(m_format->formatLineNormal(text, true));
+		frame->appendHtml(m_formatHtml->formatLineNormal(text));
 	}
 }
 
@@ -703,7 +704,12 @@ void RoomsTabWidget::updateSystrayIcon(const QString &room, const QString &user,
 	if (login == user.toLower()) return;
 
 	SystrayStatus oldStatus = SystrayIcon::getInstance()->getStatus(room);
-	SystrayStatus newStatus = m_format->searchUserInText(login, text) ? StatusTalkMe:StatusTalkOther;
+	SystrayStatus newStatus = m_formatText->searchUser(login, text) ? StatusTalkMe:StatusTalkOther;
+
+	if (newStatus == StatusTalkMe)
+	{
+		playSound(ConfigFile::getInstance()->getNameMentionedSound());
+	}
 
 	if (newStatus > oldStatus)
 	{

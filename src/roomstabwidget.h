@@ -95,7 +95,11 @@ protected:
 	QTimer *m_messagesTimer;
 	QTimer *m_reconnectTimer;
 
-	HtmlFormatting *m_format;
+	HtmlFormatting *m_formatHtml;
+	HtmlFormatting *m_formatText;
+
+	QString m_screenCss;
+	QString m_logCss;
 };
 
 #endif
