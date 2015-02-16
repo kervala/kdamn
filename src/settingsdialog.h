@@ -32,6 +32,14 @@ public:
 
 public slots:
 	void accept();
+	void onHighlightColorClicked();
+	void onErrorColorClicked();
+	void onLogsBrowseClicked();
+	void onNameMentionedSoundBrowseClicked();
+	void onNoteReceivedSoundBrowseClicked();
+
+private:
+	void updateButtonsColors();
 };
 
 #endif

@@ -1,49 +1,77 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
+ <author>Kervala</author>
  <class>SettingsDialog</class>
  <widget class="QDialog" name="SettingsDialog">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>378</width>
-    <height>279</height>
+    <width>418</width>
+    <height>424</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="mainLayout">
    <item>
-    <widget class="QGroupBox" name="groupBox_2">
+    <widget class="QGroupBox" name="chatGroupBox">
      <property name="title">
       <string>Chat</string>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_4" stretch="1,0">
-        <item>
-         <widget class="QLabel" name="label">
-          <property name="text">
-           <string>Text font:</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QFontComboBox" name="fontComboBox">
-          <property name="editable">
-           <bool>false</bool>
-          </property>
-          <property name="writingSystem">
-           <enum>QFontDatabase::Latin</enum>
-          </property>
-          <property name="currentFont">
-           <font>
-            <family>Arial</family>
-           </font>
-          </property>
-         </widget>
-        </item>
-       </layout>
+     <layout class="QFormLayout" name="chatFormLayout">
+      <property name="formAlignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+      </property>
+      <item row="0" column="0">
+       <widget class="QLabel" name="fontLabel">
+        <property name="text">
+         <string>Text font:</string>
+        </property>
+       </widget>
       </item>
-      <item>
+      <item row="0" column="1">
+       <widget class="QFontComboBox" name="fontComboBox">
+        <property name="editable">
+         <bool>false</bool>
+        </property>
+        <property name="writingSystem">
+         <enum>QFontDatabase::Latin</enum>
+        </property>
+        <property name="currentFont">
+         <font>
+          <family>Arial</family>
+         </font>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="highlightColorLabel">
+        <property name="text">
+         <string>Highlight color:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="highlightColorButton">
+        <property name="text">
+         <string>Click to change color</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="errorColorLabel">
+        <property name="text">
+         <string>Error color:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QPushButton" name="errorColorButton">
+        <property name="text">
+         <string>Click to change color</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
        <widget class="QCheckBox" name="displayTimestampsCheckBox">
         <property name="text">
          <string>Display timestamp</string>
@@ -63,9 +91,9 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,0,0">
+       <layout class="QHBoxLayout" name="logsFormatsGroupBox" stretch="1,0,0">
         <item>
-         <widget class="QLabel" name="label_2">
+         <widget class="QLabel" name="logsFormatsLabel">
           <property name="text">
            <string>Files formats:</string>
           </property>
@@ -90,17 +118,17 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,1,0">
         <item>
-         <widget class="QLabel" name="label_3">
+         <widget class="QLabel" name="logsDirectoryLabel">
           <property name="text">
            <string>Output directory:</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="lineEdit"/>
+         <widget class="QLineEdit" name="logsDirectoryEdit"/>
         </item>
         <item>
-         <widget class="QPushButton" name="browseButton">
+         <widget class="QPushButton" name="logsBrowseButton">
           <property name="maximumSize">
            <size>
             <width>32</width>
@@ -153,17 +181,76 @@
     </widget>
    </item>
    <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
+    <widget class="QGroupBox" name="enableSoundGroupBox">
+     <property name="title">
+      <string>Enable sound</string>
      </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
+     <property name="checkable">
+      <bool>true</bool>
      </property>
-    </spacer>
+     <layout class="QFormLayout" name="soundsLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="nameMentionedSoundLabel">
+        <property name="text">
+         <string>Someone mentioned your name:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <layout class="QHBoxLayout" name="enableSoundLayout">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QLineEdit" name="nameMentionedSoundEdit"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="nameMentionedSoundBrowseButton">
+          <property name="maximumSize">
+           <size>
+            <width>32</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="noteReceivedSoundLabel">
+        <property name="text">
+         <string>You received a note:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <layout class="QHBoxLayout" name="enableSoundLayout_2">
+        <property name="spacing">
+         <number>6</number>
+        </property>
+        <item>
+         <widget class="QLineEdit" name="noteReceivedSoundEdit"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="noteReceivedSoundBrowseButton">
+          <property name="maximumSize">
+           <size>
+            <width>32</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <property name="text">
+           <string>...</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
@@ -177,6 +264,18 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>fontComboBox</tabstop>
+  <tabstop>highlightColorButton</tabstop>
+  <tabstop>errorColorButton</tabstop>
+  <tabstop>logsGroupBox</tabstop>
+  <tabstop>enableLogsTextCheckBox</tabstop>
+  <tabstop>enableLogsHTMLCheckBox</tabstop>
+  <tabstop>logsDirectoryEdit</tabstop>
+  <tabstop>logsBrowseButton</tabstop>
+  <tabstop>enableAnimationsGroupBox</tabstop>
+  <tabstop>animationRefreshSpinBox</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

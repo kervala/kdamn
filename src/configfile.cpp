@@ -28,6 +28,20 @@
 	#define new DEBUG_NEW
 #endif
 
+#define IMPLEMENT_SIMPLE_VAR(type, function, var) \
+void ConfigFile::set##function(type var)\
+{\
+	if (m_##var == var) return;\
+	\
+	m_##var = var;\
+	modified(true);\
+}\
+\
+type ConfigFile::get##function() const\
+{\
+	return m_##var;\
+}
+
 #define IMPLEMENT_TYPED_VAR(type, function, var) \
 void ConfigFile::set##function(const type &var)\
 {\
@@ -43,46 +57,16 @@ type ConfigFile::get##function() const\
 }
 
 #define IMPLEMENT_QSTRING_VAR(function, var) \
-void ConfigFile::set##function(const QString &var)\
-{\
-	if (m_##var == var) return;\
-	\
-	m_##var = var;\
-	modified(true);\
-}\
-\
-QString ConfigFile::get##function() const\
-{\
-	return m_##var;\
-}
+IMPLEMENT_TYPED_VAR(QString, function, var)
+
+#define IMPLEMENT_QCOLOR_VAR(function, var) \
+IMPLEMENT_TYPED_VAR(QColor, function, var)
 
 #define IMPLEMENT_INT_VAR(function, var) \
-void ConfigFile::set##function(int var)\
-{\
-	if (m_##var == var) return;\
-	\
-	m_##var = var;\
-	modified(true);\
-}\
-\
-int ConfigFile::get##function() const\
-{\
-	return m_##var;\
-}
+IMPLEMENT_SIMPLE_VAR(int, function, var)
 
 #define IMPLEMENT_BOOL_VAR(function, var) \
-void ConfigFile::set##function(bool var)\
-{\
-	if (m_##var == var) return;\
-	\
-	m_##var = var;\
-	modified(true);\
-}\
-\
-bool ConfigFile::get##function() const\
-{\
-	return m_##var;\
-}
+IMPLEMENT_SIMPLE_VAR(bool, function, var)
 
 ConfigFile* ConfigFile::s_instance = NULL;
 
@@ -96,6 +80,10 @@ ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::I
 	m_enableAnimations = true; // enable animations for MNG and animated GIF
 	m_splitter = 0; // position of splitter
 	m_enableOembedThumbnail = true;
+	m_enableLogs = true;
+	m_enableTextLogs = true;
+	m_enableHtmlLogs = true;
+	m_enableSound = false;
 
 	if (!s_instance) s_instance = this;
 
@@ -184,6 +172,20 @@ bool ConfigFile::loadVersion2()
 	m_animationFrameDelay = m_settings.value("animation_frame_delay", 100).toInt();
 	m_displayTimestamps = m_settings.value("display_timestamps", true).toBool();
 	m_enableOembedThumbnail = m_settings.value("enable_oembed_thumbnail", true).toBool();
+	m_highlightColor = m_settings.value("highlight_color", "").toString();
+	m_errorColor = m_settings.value("error_color", "").toString();
+	m_screenStyle = m_settings.value("screen_style", "").toString();
+	m_logStyle = m_settings.value("log_style", "").toString();
+
+	m_settings.endGroup();
+
+	// logs parameters
+	m_settings.beginGroup("logs");
+
+	m_enableLogs = m_settings.value("enable_logs", true).toBool();
+	m_enableHtmlLogs = m_settings.value("enable_html_logs", true).toBool();
+	m_enableTextLogs = m_settings.value("enable_text_logs", true).toBool();
+	m_logsDirectory = m_settings.value("logs_directory", "").toString();
 
 	m_settings.endGroup();
 
@@ -207,6 +209,17 @@ bool ConfigFile::loadVersion2()
 	m_checkMessagesDelay = m_settings.value("check_messages_delay", 60).toInt(); // in seconds
 
 	m_settings.endGroup();
+
+	// sound parameters
+	m_settings.beginGroup("sound");
+
+	m_enableSound = m_settings.value("enable_sound", true).toBool();
+	m_nameMentionedSound = m_settings.value("name_mentioned_sound", "").toString();
+	m_noteReceivedSound = m_settings.value("note_received_sound", "").toString();
+
+	m_settings.endGroup();
+
+	updateSettings();
 
 	return true;
 }
@@ -255,6 +268,20 @@ bool ConfigFile::save()
 	m_settings.setValue("animation_frame_delay", m_animationFrameDelay);
 	m_settings.setValue("display_timestamps", m_displayTimestamps);
 	m_settings.setValue("enable_oembed_thumbnail", m_enableOembedThumbnail);
+	m_settings.setValue("highlight_color", m_highlightColor == Qt::blue ? "":m_highlightColor.name());
+	m_settings.setValue("error_color", m_errorColor == Qt::red ? "":m_errorColor.name());
+	m_settings.setValue("screen_style", m_screenStyle);
+	m_settings.setValue("log_style", m_logStyle);
+
+	m_settings.endGroup();
+
+	// logs parameters
+	m_settings.beginGroup("logs");
+
+	m_settings.setValue("enable_logs", m_enableLogs);
+	m_settings.setValue("enable_html_logs", m_enableHtmlLogs);
+	m_settings.setValue("enable_text_logs", m_enableTextLogs);
+	m_settings.setValue("logs_directory", m_logsDirectory == m_defaultLogsDirectory ? "":m_logsDirectory);
 
 	m_settings.endGroup();
 
@@ -276,6 +303,15 @@ bool ConfigFile::save()
 	m_settings.beginGroup("messages");
 
 	m_settings.setValue("check_messages_delay", m_checkMessagesDelay);
+
+	m_settings.endGroup();
+
+	// sound parameters
+	m_settings.beginGroup("sound");
+
+	m_settings.setValue("enable_sound", m_enableSound);
+	m_settings.setValue("name_mentioned_sound", m_nameMentionedSound);
+	m_settings.setValue("note_received_sound", m_noteReceivedSound);
 
 	m_settings.endGroup();
 
@@ -413,11 +449,11 @@ void ConfigFile::initDirectories()
 #endif
 
 	// define default logs directory
-	m_logsDirectory = QString("%1/kdAmn/logs").arg(documentsPath);
+	m_defaultLogsDirectory = QString("%1/kdAmn/logs").arg(documentsPath);
 
-	if (!QDir().mkpath(m_logsDirectory))
+	if (!QDir().mkpath(m_defaultLogsDirectory))
 	{
-		qCritical() << "Unable to create directory" << m_logsDirectory;
+		qCritical() << "Unable to create directory" << m_defaultLogsDirectory;
 	}
 
 	QDir applicationDir(QApplication::applicationDirPath());
@@ -486,6 +522,26 @@ void ConfigFile::initDirectories()
 #endif
 }
 
+void ConfigFile::updateSettings()
+{
+	// logs directory
+	if (m_logsDirectory.isEmpty() || !QFile::exists(m_logsDirectory))
+	{
+		m_logsDirectory = m_defaultLogsDirectory;
+	}
+
+	// colors
+	if (!m_highlightColor.isValid())
+	{
+		m_highlightColor = Qt::blue;
+	}
+
+	if (!m_errorColor.isValid())
+	{
+		m_errorColor = Qt::red;
+	}
+}
+
 void ConfigFile::autoSave()
 {
 	if (m_autoSaveDelay > 0) QTimer::singleShot(m_autoSaveDelay * 60 * 1000, this, SLOT(save()));
@@ -505,6 +561,7 @@ IMPLEMENT_INT_VAR(AutoSaveDelay, autoSaveDelay);
 IMPLEMENT_INT_VAR(CheckMessagesDelay, checkMessagesDelay);
 IMPLEMENT_BOOL_VAR(DisplayTimestamps, displayTimestamps);
 IMPLEMENT_BOOL_VAR(EnableAnimations, enableAnimations);
+IMPLEMENT_QSTRING_VAR(DefaultLogsDirectory, defaultLogsDirectory);
 IMPLEMENT_QSTRING_VAR(LogsDirectory, logsDirectory);
 IMPLEMENT_QSTRING_VAR(TranslationsDirectory, translationsDirectory);
 IMPLEMENT_QSTRING_VAR(QtTranslationsDirectory, qtTranslationsDirectory);
@@ -514,3 +571,13 @@ IMPLEMENT_QSTRING_VAR(GlobalDataDirectory, globalDataDirectory);
 IMPLEMENT_QSTRING_VAR(LocalDataDirectory, localDataDirectory);
 IMPLEMENT_INT_VAR(Splitter, splitter);
 IMPLEMENT_BOOL_VAR(EnableOembedThumbnail, enableOembedThumbnail);
+IMPLEMENT_BOOL_VAR(EnableLogs, enableLogs);
+IMPLEMENT_BOOL_VAR(EnableTextLogs, enableTextLogs);
+IMPLEMENT_BOOL_VAR(EnableHtmlLogs, enableHtmlLogs);
+IMPLEMENT_QCOLOR_VAR(HighlightColor, highlightColor);
+IMPLEMENT_QCOLOR_VAR(ErrorColor, errorColor);
+IMPLEMENT_QSTRING_VAR(ScreenStyle, screenStyle);
+IMPLEMENT_QSTRING_VAR(LogStyle, logStyle);
+IMPLEMENT_BOOL_VAR(EnableSound, enableSound);
+IMPLEMENT_QSTRING_VAR(NameMentionedSound, nameMentionedSound);
+IMPLEMENT_QSTRING_VAR(NoteReceivedSound, noteReceivedSound);

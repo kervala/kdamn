@@ -194,6 +194,7 @@ void MainWindow::onSettings()
 
 	if (dialog.exec())
 	{
+		roomsWidget->updateConfig();
 	}
 }
 

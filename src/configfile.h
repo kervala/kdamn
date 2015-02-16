@@ -37,6 +37,9 @@ protected:\
 #define DECLARE_QSTRING_VAR(function, var) \
 DECLARE_TYPED_VAR(QString, function, var);
 
+#define DECLARE_QCOLOR_VAR(function, var) \
+DECLARE_TYPED_VAR(QColor, function, var);
+
 #define DECLARE_INT_VAR(function, var) \
 DECLARE_SIMPLE_VAR(int, function, var);
 
@@ -103,6 +106,8 @@ public:
 	void setRoomFocused(const QString &room, bool focused);
 	void setRoomOrder(const QString &room, int order);
 
+	void updateSettings();
+
 DECLARE_QSTRING_VAR(Login, login);
 DECLARE_QSTRING_VAR(Password, password);
 DECLARE_BOOL_VAR(RememberPassword, rememberPassword);
@@ -112,6 +117,7 @@ DECLARE_INT_VAR(AutoSaveDelay, autoSaveDelay);
 DECLARE_INT_VAR(CheckMessagesDelay, checkMessagesDelay);
 DECLARE_BOOL_VAR(DisplayTimestamps, displayTimestamps);
 DECLARE_BOOL_VAR(EnableAnimations, enableAnimations);
+DECLARE_QSTRING_VAR(DefaultLogsDirectory, defaultLogsDirectory);
 DECLARE_QSTRING_VAR(LogsDirectory, logsDirectory);
 DECLARE_QSTRING_VAR(TranslationsDirectory, translationsDirectory);
 DECLARE_QSTRING_VAR(QtTranslationsDirectory, qtTranslationsDirectory);
@@ -123,6 +129,16 @@ DECLARE_TYPED_VAR(QSize, WindowSize, size);
 DECLARE_TYPED_VAR(QPoint, WindowPosition, position);
 DECLARE_INT_VAR(Splitter, splitter);
 DECLARE_BOOL_VAR(EnableOembedThumbnail, enableOembedThumbnail);
+DECLARE_BOOL_VAR(EnableLogs, enableLogs);
+DECLARE_BOOL_VAR(EnableTextLogs, enableTextLogs);
+DECLARE_BOOL_VAR(EnableHtmlLogs, enableHtmlLogs);
+DECLARE_QCOLOR_VAR(HighlightColor, highlightColor);
+DECLARE_QCOLOR_VAR(ErrorColor, errorColor);
+DECLARE_QSTRING_VAR(ScreenStyle, screenStyle);
+DECLARE_QSTRING_VAR(LogStyle, logStyle);
+DECLARE_BOOL_VAR(EnableSound, enableSound);
+DECLARE_QSTRING_VAR(NameMentionedSound, nameMentionedSound);
+DECLARE_QSTRING_VAR(NoteReceivedSound, noteReceivedSound);
 
 public slots:
 	bool load();

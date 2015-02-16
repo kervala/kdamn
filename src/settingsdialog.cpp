@@ -21,6 +21,7 @@
 #include "settingsdialog.h"
 #include "moc_settingsdialog.cpp"
 #include "configfile.h"
+#include "utils.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -30,9 +31,35 @@ SettingsDialog::SettingsDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt:
 {
 	setupUi(this);
 
-	animationRefreshSpinBox->setValue(ConfigFile::getInstance()->getAnimationFrameDelay());
+	// chat
 	displayTimestampsCheckBox->setChecked(ConfigFile::getInstance()->getDisplayTimestamps());
+	highlightColorButton->setUserData(0, new StringUserData(ConfigFile::getInstance()->getHighlightColor().name()));
+	errorColorButton->setUserData(0, new StringUserData(ConfigFile::getInstance()->getErrorColor().name()));
+
+	updateButtonsColors();
+
+	connect(highlightColorButton, SIGNAL(clicked()), this, SLOT(onHighlightColorClicked()));
+	connect(errorColorButton, SIGNAL(clicked()), this, SLOT(onErrorColorClicked()));
+
+	// logs
+	logsGroupBox->setChecked(ConfigFile::getInstance()->getEnableLogs());
+	enableLogsTextCheckBox->setChecked(ConfigFile::getInstance()->getEnableTextLogs());
+	enableLogsHTMLCheckBox->setChecked(ConfigFile::getInstance()->getEnableHtmlLogs());
+	logsDirectoryEdit->setText(ConfigFile::getInstance()->getLogsDirectory());
+
+	connect(logsBrowseButton, SIGNAL(clicked()), this, SLOT(onLogsBrowseClicked()));
+
+	// animations
+	animationRefreshSpinBox->setValue(ConfigFile::getInstance()->getAnimationFrameDelay());
 	enableAnimationsGroupBox->setChecked(ConfigFile::getInstance()->getEnableAnimations());
+
+	// sounds
+	enableSoundGroupBox->setChecked(ConfigFile::getInstance()->getEnableSound());
+	nameMentionedSoundEdit->setText(ConfigFile::getInstance()->getNameMentionedSound());
+	noteReceivedSoundEdit->setText(ConfigFile::getInstance()->getNoteReceivedSound());
+
+	connect(nameMentionedSoundBrowseButton, SIGNAL(clicked()), this, SLOT(onNameMentionedSoundBrowseClicked()));
+	connect(noteReceivedSoundBrowseButton, SIGNAL(clicked()), this, SLOT(onNoteReceivedSoundBrowseClicked()));
 }
 
 SettingsDialog::~SettingsDialog()
@@ -41,9 +68,96 @@ SettingsDialog::~SettingsDialog()
 
 void SettingsDialog::accept()
 {
-	ConfigFile::getInstance()->setAnimationFrameDelay(animationRefreshSpinBox->value());
-	ConfigFile::getInstance()->setDisplayTimestamps(displayTimestampsCheckBox->isChecked());
-	ConfigFile::getInstance()->setEnableAnimations(enableAnimationsGroupBox->isChecked());
+	ConfigFile *config = ConfigFile::getInstance();
+
+	config->setDisplayTimestamps(displayTimestampsCheckBox->isChecked());
+
+	// colors
+	config->setHighlightColor(((StringUserData*)highlightColorButton->userData(0))->text);
+	config->setErrorColor(((StringUserData*)errorColorButton->userData(0))->text);
+
+	// logs
+	config->setEnableLogs(logsGroupBox->isChecked());
+	config->setEnableTextLogs(enableLogsTextCheckBox->isChecked());
+	config->setEnableHtmlLogs(enableLogsHTMLCheckBox->isChecked());
+	config->setLogsDirectory(logsDirectoryEdit->text());
+
+	// animations
+	config->setAnimationFrameDelay(animationRefreshSpinBox->value());
+	config->setEnableAnimations(enableAnimationsGroupBox->isChecked());
+
+	// sounds
+	config->setEnableSound(enableSoundGroupBox->isChecked());
+	config->setNameMentionedSound(nameMentionedSoundEdit->text());
+	config->setNoteReceivedSound(noteReceivedSoundEdit->text());
+
+	// fix settings with wrong values
+	config->updateSettings();
 
 	QDialog::accept();
+}
+
+void SettingsDialog::onHighlightColorClicked()
+{
+	QColor defaultColor(((StringUserData*)highlightColorButton->userData(0))->text);
+	QColor color = QColorDialog::getColor(defaultColor, this);
+
+	if (color.isValid())
+	{
+		highlightColorButton->setUserData(0, new StringUserData(color.name()));
+		updateButtonsColors();
+	}
+}
+
+void SettingsDialog::onErrorColorClicked()
+{
+	QColor defaultColor(((StringUserData*)errorColorButton->userData(0))->text);
+	QColor color = QColorDialog::getColor(defaultColor, this);
+
+	if (color.isValid())
+	{
+		errorColorButton->setUserData(0, new StringUserData(color.name()));
+		updateButtonsColors();
+	}
+}
+
+void SettingsDialog::onLogsBrowseClicked()
+{
+	QString dir = QFileDialog::getExistingDirectory(this, tr("Choose logs directory"), logsDirectoryEdit->text());
+
+	if (!dir.isEmpty())
+	{
+		logsDirectoryEdit->setText(dir);
+	}
+}
+
+void SettingsDialog::onNameMentionedSoundBrowseClicked()
+{
+	QString dir = QFileDialog::getOpenFileName(this, tr("Choose WAV file"), nameMentionedSoundEdit->text(), tr("Audio files (*.wav)"));
+
+	if (!dir.isEmpty())
+	{
+		nameMentionedSoundEdit->setText(dir);
+	}
+}
+
+void SettingsDialog::onNoteReceivedSoundBrowseClicked()
+{
+	QString dir = QFileDialog::getOpenFileName(this, tr("Choose WAV file"), noteReceivedSoundEdit->text(), tr("Audio files (*.wav)"));
+
+	if (!dir.isEmpty())
+	{
+		noteReceivedSoundEdit->setText(dir);
+	}
+}
+
+void SettingsDialog::updateButtonsColors()
+{
+	QColor highlightColor(((StringUserData*)highlightColorButton->userData(0))->text);
+
+	highlightColorButton->setStyleSheet(QString("background-color: %1;").arg(highlightColor.name()));
+
+	QColor errorColor(((StringUserData*)errorColorButton->userData(0))->text);
+
+	errorColorButton->setStyleSheet(QString("background-color: %1;").arg(errorColor.name()));
 }
