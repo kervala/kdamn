@@ -287,9 +287,11 @@ QString HtmlFormatting::highlightUser(const QString &user, const QString &text) 
 			// found HTML code after text
 			// take text from begin to end-begin
 			textPart = text.mid(begin, end-begin);
-			htmlPart = text.mid(end, end+htmlReg.matchedLength());
 
-			begin = end+1;
+			int htmlLen = htmlReg.matchedLength();
+			htmlPart = text.mid(end, htmlLen);
+
+			begin = end+htmlLen;
 		}
 		else
 		{
