@@ -1,0 +1,32 @@
+/* line div */
+.line { }
+
+/* time span */
+.timestamp { color: #999; }
+
+/* user name span */
+.username { font-weight: bold; }
+
+/* room name span */
+.room { }
+
+/* privilege class span */
+.privclass { font-style: italic; }
+
+/* emote message span */
+.emote { font-style: italic; }
+
+/* error message span */
+.error { color: $error_color$; }
+
+/* normal message span */
+.normal { }
+
+/* system message span */
+.system { color: $darkest_text_color$; }
+
+/* normal message span when talking */
+.myself { color: $darker_text_color$; }
+
+/* user name span when someone mentioned our name */
+.highlight { color: %4; font-weight: bold; }

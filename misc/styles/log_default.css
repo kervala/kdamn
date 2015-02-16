@@ -1,0 +1,35 @@
+/* whole document */
+body { background-color: #666; }
+
+/* line div */
+.line { }
+
+/* time span */
+.timestamp { color: #999; }
+
+/* user name span */
+.username { font-weight: bold; }
+
+/* room name span */
+.room { }
+
+/* privilege class span */
+.privclass { font-style: italic; }
+
+/* emote message span */
+.emote { font-style: italic; }
+
+/* error message span */
+.error { color: #f00; }
+
+/* normal message span */
+.normal { #fff; }
+
+/* system message span */
+.system { color: #aaa; }
+
+/* normal message span when talking */
+.myself { color: #ccc; }
+
+/* user name span when someone mentioned our name */
+.highlight { color: %ccf; font-weight: bold; }
