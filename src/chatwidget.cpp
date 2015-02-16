@@ -98,7 +98,7 @@ void ChatWidget::appendHtml(const QString &html)
 
 void ChatWidget::updateCss(const QString &css)
 {
-	document()->setDefaultStyleSheet(css);
+	document()->setDefaultStyleSheet(css + ".hidden { display: none; }\n");
 }
 
 QVariant ChatWidget::loadResource(int type, const QUrl &name)

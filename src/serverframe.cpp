@@ -37,3 +37,8 @@ void ServerFrame::appendHtml(const QString &text)
 {
 	serverBrowser->appendHtml(text);
 }
+
+void ServerFrame::updateCssScreen(const QString &css)
+{
+	serverBrowser->updateCss(css);
+}

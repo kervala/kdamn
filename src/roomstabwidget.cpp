@@ -30,6 +30,7 @@
 #include "configfile.h"
 #include "systrayicon.h"
 #include "htmlformatting.h"
+#include "utils.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -37,6 +38,9 @@
 
 RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTimer(NULL), m_reconnectTimer(NULL)
 {
+	updateScreenCss();
+	updateLogCss();
+
 	createServerFrame();
 
 	m_formatHtml = new HtmlFormatting(true, this);
@@ -88,7 +92,10 @@ RoomsTabWidget::~RoomsTabWidget()
 
 bool RoomsTabWidget::createServerFrame()
 {
-	int id = addTab(new ServerFrame(this), tr("Server"));
+	ServerFrame *frame = new ServerFrame(this);
+	frame->updateCssScreen(m_screenCss);
+
+	int id = addTab(frame, tr("Server"));
 
 	setCurrentIndex(id);
 
@@ -192,7 +199,10 @@ bool RoomsTabWidget::createRoomFrame(const QString &room)
 	// a tab already exists for this room
 	if (getRoomFrame(room)) return false;
 
-	int id = addTab(new RoomFrame(this, room), room);
+	RoomFrame *frame = new RoomFrame(this, room);
+	frame->updateCssScreen(m_screenCss);
+
+	int id = addTab(frame, room);
 
 	setCurrentIndex(id);
 
@@ -738,5 +748,146 @@ void RoomsTabWidget::login()
 	else
 	{
 		OAuth2::getInstance()->login();
+	}
+}
+
+void RoomsTabWidget::updateConfig()
+{
+	// config file possibly updated
+	bool logs = ConfigFile::getInstance()->getEnableLogs();
+	bool html = logs && ConfigFile::getInstance()->getEnableHtmlLogs();
+	bool text = logs && ConfigFile::getInstance()->getEnableTextLogs();
+
+	// update CSS
+	updateScreenCss();
+	updateLogCss();
+
+	for(int i = 0; i < count(); ++i)
+	{
+		RoomFrame *roomFrame = qobject_cast<RoomFrame*>(widget(i));
+
+		if (roomFrame)
+		{
+			if (!html) roomFrame->closeHtmlLog();
+			if (!text) roomFrame->closeTextLog();
+
+			roomFrame->updateCssScreen(m_screenCss);
+			roomFrame->updateCssFile(m_logCss);
+		}
+
+		ServerFrame *serverFrame = qobject_cast<ServerFrame*>(widget(i));
+
+		if (serverFrame)
+		{
+			serverFrame->updateCssScreen(m_screenCss);
+		}
+	}
+}
+
+void RoomsTabWidget::updateScreenCss()
+{
+	QString css;
+	QString style = ConfigFile::getInstance()->getScreenStyle();
+
+	// try to load CSS from style
+	if (!style.isEmpty())
+	{
+		css = getCssFromStyle(style);
+	}
+
+	// load default CSS
+	if (css.isEmpty()) css = getCssFromStyle("screen_default");
+
+	if (css.isEmpty()) return;
+
+	QMap<QString, QColor> colorsMap;
+
+	colorsMap["normal_text_color"] = palette().windowText().color();
+	colorsMap["normal_window_color"] = palette().window().color();
+
+	colorsMap["darker_text_color"] = average(colorsMap["normal_text_color"], colorsMap["normal_window_color"], 0.75);
+	colorsMap["darkest_text_color"] = average(colorsMap["normal_text_color"], colorsMap["normal_window_color"], 0.5);
+
+	colorsMap["highlight_color"] = average(colorsMap["normal_text_color"], ConfigFile::getInstance()->getHighlightColor(), 0.5); // blue
+	colorsMap["error_color"] = average(colorsMap["normal_text_color"], ConfigFile::getInstance()->getErrorColor(), 0.5); // red
+
+	// replace named colors
+	QMap<QString, QColor>::const_iterator it = colorsMap.begin(), iend = colorsMap.end();
+
+	while(it != iend)
+	{
+		css.replace(QString("$%1$").arg(it.key()), it.value().name());
+
+		++it;
+	}
+
+	m_screenCss = css;
+}
+
+void RoomsTabWidget::updateLogCss()
+{
+	QString css;
+	QString style = ConfigFile::getInstance()->getLogStyle();
+
+	// try to load CSS from style
+	if (!style.isEmpty())
+	{
+		css = getCssFromStyle(style);
+	}
+
+	// load default CSS
+	if (css.isEmpty()) css = getCssFromStyle("log_default");
+
+	m_logCss = css;
+}
+
+void RoomsTabWidget::playSound(const QString &filename) const
+{
+	if (!ConfigFile::getInstance()->getEnableSound()) return;
+
+	QString sound = ":/icons/default.wav";
+
+	if (!filename.isEmpty() && QFile::exists(filename)) sound = filename;
+
+	QSound::play(sound);
+}
+
+QString RoomsTabWidget::getCssFromStyle(const QString &style) const
+{
+	// partial filename, try to complete it with local data
+	QString fullPath = QString("%1/styles/%2.css").arg(ConfigFile::getInstance()->getLocalDataDirectory()).arg(style);
+
+	if (!QFile::exists(fullPath))
+	{
+		// partial filename, try to complete it with global data
+		fullPath = QString("%1/styles/%2.css").arg(ConfigFile::getInstance()->getGlobalDataDirectory()).arg(style);
+
+		if (!QFile::exists(fullPath))
+		{
+			// not found
+			fullPath.clear();
+		}
+	}
+
+	if (!fullPath.isEmpty())
+	{
+		QFile file(fullPath);
+
+		if (file.open(QFile::ReadOnly))
+		{
+			return QString::fromUtf8(file.readAll());
+		}
+	}
+
+	return QString();
+}
+
+void RoomsTabWidget::changeEvent(QEvent *e)
+{
+	QTabWidget::changeEvent(e);
+
+	if (e->type() == QEvent::PaletteChange)
+	{
+		updateConfig();
 	}
 }

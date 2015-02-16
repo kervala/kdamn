@@ -48,6 +48,12 @@ public:
 	void appendHtml(const QString &html);
 	void appendText(const QString &text);
 
+	void closeHtmlLog();
+	void closeTextLog();
+
+	void updateCssScreen(const QString &css);
+	void updateCssFile(const QString &css);
+
 public slots:
 	// when user press enter
 	void onSend();
@@ -65,10 +71,6 @@ public slots:
 	void onKeyPressed(QKeyEvent *e);
 
 protected:
-	void updateCssScreen();
-	void updateCssFile();
-
-	void changeEvent(QEvent *e);
 	void updateSplitter();
 
 	QStringListModel *m_usersModel;

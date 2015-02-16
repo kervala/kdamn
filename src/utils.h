@@ -36,6 +36,7 @@ QString convertDateToISO(const QString &date);
 QString convertIDOToDate(const QString &date);
 
 QString base36enc(qint64 value);
+QColor average(const QColor &color1, const QColor &color2, qreal coef);
 
 // useful class to attach a string to a QObject
 class StringUserData : public QObjectUserData

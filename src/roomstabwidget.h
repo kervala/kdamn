@@ -55,6 +55,7 @@ public:
 	void setServer(const QString &text);
 
 	void login();
+	void updateConfig();
 
 public slots:
 	// slots activated from DAmn signals
@@ -90,7 +91,17 @@ public slots:
 	void checkMessages();
 
 protected:
+	void changeEvent(QEvent *e);
+
 	void updateSystrayIcon(const QString &room, const QString &user, const QString &html);
+
+	void updateScreenCss();
+	void updateLogCss();
+
+	void playSound(const QString &filename) const;
+
+	QString getCssFromStyle(const QString &style) const;
+
 
 	QTimer *m_messagesTimer;
 	QTimer *m_reconnectTimer;

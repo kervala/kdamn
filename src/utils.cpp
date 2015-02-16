@@ -138,3 +138,29 @@ QString base36enc(qint64 value)
 
 	return res;
 }
+
+QColor average(const QColor &color1, const QColor &color2, qreal coef)
+{
+	QColor c1 = color1.toHsv();
+	QColor c2 = color2.toHsv();
+
+	qreal h = -1.0;
+
+	if (c1.hsvHueF() == -1.0)
+	{
+		h = c2.hsvHueF();
+	}
+	else if (c2.hsvHueF() == -1.0)
+	{
+		h = c1.hsvHueF();
+	}
+	else
+	{
+		h = ((1.0 - coef) * c2.hsvHueF()) + (coef * c1.hsvHueF());
+	}
+
+	qreal s = ((1.0 - coef) * c2.hsvSaturationF()) + (coef * c1.hsvSaturationF());
+	qreal v = ((1.0 - coef) * c2.valueF()) + (coef * c1.valueF());
+
+	return QColor::fromHsvF(h, s, v).toRgb();
+}

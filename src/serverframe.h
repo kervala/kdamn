@@ -35,6 +35,8 @@ public:
 	virtual ~ServerFrame();
 
 	void appendHtml(const QString &text);
+
+	void updateCssScreen(const QString &css);
 };
 
 #endif

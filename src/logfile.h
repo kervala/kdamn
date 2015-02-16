@@ -31,9 +31,10 @@ public:
 
 	void append(const QString &text);
 
+	void close();
+
 private:
 	void open();
-	void close();
 
 	QFile m_file;
 
