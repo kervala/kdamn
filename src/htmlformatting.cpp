@@ -174,7 +174,7 @@ QString HtmlFormatting::formatMessageTopicFirst(const QString &user, const QStri
 {
 	if (text.isEmpty()) return QString();
 
-	return formatLineNormal(text);
+	return formatLineTopic(text);
 }
 
 QString HtmlFormatting::formatMessageTitleFirst(const QString &user, const QString &text) const
@@ -234,6 +234,20 @@ QString HtmlFormatting::formatLineSystem(const QString &text) const
 QString HtmlFormatting::formatLineError(const QString &text) const
 {
 	return formatLine(text, "error");
+}
+
+QString HtmlFormatting::formatLineTitle(const QString &text) const
+{
+	if (m_html) return QString("<div class=\"title\">%1%2</div>").arg(formatTimestamp(true)).arg(text);
+
+	return formatTimestamp(false) + text;
+}
+
+QString HtmlFormatting::formatLineTopic(const QString &text) const
+{
+	if (m_html) return QString("<div class=\"topic\">%1%2</div>").arg(formatTimestamp(true)).arg(text);
+
+	return formatTimestamp(false) + text;
 }
 
 bool HtmlFormatting::searchUser(const QString &user, const QString &text) const

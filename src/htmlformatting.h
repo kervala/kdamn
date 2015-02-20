@@ -60,6 +60,8 @@ public:
 	QString formatLineNormal(const QString &text) const;
 	QString formatLineSystem(const QString &text) const;
 	QString formatLineError(const QString &text) const;
+	QString formatLineTitle(const QString &text) const;
+	QString formatLineTopic(const QString &text) const;
 
 	bool searchUser(const QString &user, const QString &text) const;
 
