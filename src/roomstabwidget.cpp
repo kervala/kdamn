@@ -486,7 +486,8 @@ void RoomsTabWidget::onText(const QString &room, const QString &user, EMessageTy
 				break;
 			}
 
-			bool display = true;
+			// don't display message if formatted message is empty
+			bool display = !formatted.isEmpty();
 
 			// don't display topic or title the first time if empty
 			if ((type == MessageTopicFirst || type == MessageTitleFirst) && text.isEmpty()) display = false;
