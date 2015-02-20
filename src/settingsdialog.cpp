@@ -31,10 +31,36 @@ SettingsDialog::SettingsDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt:
 {
 	setupUi(this);
 
+	QStringList filter("*.css");
+
+	QStringList styles;
+	styles << QDir(QString("%1/styles").arg(ConfigFile::getInstance()->getLocalDataDirectory())).entryList(filter);
+	styles << QDir(QString("%1/styles").arg(ConfigFile::getInstance()->getGlobalDataDirectory())).entryList(filter);
+
+	styles.replaceInStrings(".css", "");
+	styles.removeDuplicates();
+	styles.sort();
+	styles.prepend(QString(tr("<default>")));
+
+	int logIndex = 0, screenIndex = 0;
+
+	QString screenStyle = ConfigFile::getInstance()->getScreenStyle();
+	QString logStyle = ConfigFile::getInstance()->getLogStyle();
+
+	for(int i = 0; i < styles.size(); ++i)
+	{
+		if (styles[i] == screenStyle) screenIndex = i;
+		if (styles[i] == logStyle) logIndex = i;
+	}
+
+	QStringListModel *model = new QStringListModel(styles, this);
+
 	// chat
 	displayTimestampsCheckBox->setChecked(ConfigFile::getInstance()->getDisplayTimestamps());
 	highlightColorButton->setUserData(0, new StringUserData(ConfigFile::getInstance()->getHighlightColor().name()));
 	errorColorButton->setUserData(0, new StringUserData(ConfigFile::getInstance()->getErrorColor().name()));
+	chatStyleComboBox->setModel(model);
+	chatStyleComboBox->setCurrentIndex(screenIndex);
 
 	updateButtonsColors();
 
@@ -46,6 +72,8 @@ SettingsDialog::SettingsDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt:
 	enableLogsTextCheckBox->setChecked(ConfigFile::getInstance()->getEnableTextLogs());
 	enableLogsHTMLCheckBox->setChecked(ConfigFile::getInstance()->getEnableHtmlLogs());
 	logsDirectoryEdit->setText(ConfigFile::getInstance()->getLogsDirectory());
+	logsStyleComboBox->setModel(model);
+	logsStyleComboBox->setCurrentIndex(logIndex);
 
 	connect(logsBrowseButton, SIGNAL(clicked()), this, SLOT(onLogsBrowseClicked()));
 
@@ -70,17 +98,18 @@ void SettingsDialog::accept()
 {
 	ConfigFile *config = ConfigFile::getInstance();
 
-	config->setDisplayTimestamps(displayTimestampsCheckBox->isChecked());
-
-	// colors
+	// chat
 	config->setHighlightColor(((StringUserData*)highlightColorButton->userData(0))->text);
 	config->setErrorColor(((StringUserData*)errorColorButton->userData(0))->text);
+	config->setScreenStyle(chatStyleComboBox->currentIndex() == 0 ? "":chatStyleComboBox->currentText());
+	config->setDisplayTimestamps(displayTimestampsCheckBox->isChecked());
 
 	// logs
 	config->setEnableLogs(logsGroupBox->isChecked());
 	config->setEnableTextLogs(enableLogsTextCheckBox->isChecked());
 	config->setEnableHtmlLogs(enableLogsHTMLCheckBox->isChecked());
 	config->setLogsDirectory(logsDirectoryEdit->text());
+	config->setLogStyle(logsStyleComboBox->currentIndex() == 0 ? "":logsStyleComboBox->currentText());
 
 	// animations
 	config->setAnimationFrameDelay(animationRefreshSpinBox->value());
