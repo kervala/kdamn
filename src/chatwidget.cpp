@@ -91,6 +91,8 @@ void ChatWidget::appendHtml(const QString &html)
 		textCursor().setBlockFormat(QTextBlockFormat());
 	}
 
+	m_lines << html;
+
 	append(html);
 
 	startAnimations(html);
@@ -99,6 +101,27 @@ void ChatWidget::appendHtml(const QString &html)
 void ChatWidget::updateCss(const QString &css)
 {
 	document()->setDefaultStyleSheet(css + ".hidden { display: none; }\n");
+
+	clear();
+
+	QColor bodyColor = QApplication::palette().base().color();
+
+	// parse background-color
+	QRegExp bodyColorReg("body \\{ background-color: ([^;]+); \\}");
+
+	if (bodyColorReg.indexIn(css) > -1)
+	{
+		bodyColor = QColor(bodyColorReg.cap(1));
+	}
+
+	QPalette p = palette();
+	p.setColor(QPalette::Base, bodyColor);
+	setPalette(p);
+
+	foreach(const QString &line, m_lines)
+	{
+		append(line);
+	}
 }
 
 QVariant ChatWidget::loadResource(int type, const QUrl &name)

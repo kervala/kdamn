@@ -68,6 +68,7 @@ protected:
 	QDateTime m_lastReload;
 
 	QMutex m_contentMutex;
+	QStringList m_lines;
 };
 
 class AnimationStart : public QObject
