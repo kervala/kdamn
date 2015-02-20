@@ -347,14 +347,14 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
           IF(_MODULE STREQUAL "Core")
           ENDIF()
           IF(_MODULE STREQUAL "Network")
+            FIND_PACKAGE(OpenSSL REQUIRED)
+            FIND_PACKAGE(MyZLIB REQUIRED)
+            TARGET_LINK_LIBRARIES(${_TARGET} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES})
+
             IF(WIN32)
-              FIND_PACKAGE(OpenSSL REQUIRED)
-              FIND_PACKAGE(MyZLIB REQUIRED)
               TARGET_LINK_LIBRARIES(${_TARGET}
                 ${WINSDK_LIBRARY_DIR}/Crypt32.lib
-                ${WINSDK_LIBRARY_DIR}/WS2_32.Lib
-                ${OPENSSL_LIBRARIES}
-                ${ZLIB_LIBRARIES})
+                ${WINSDK_LIBRARY_DIR}/WS2_32.Lib)
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL Gui)
