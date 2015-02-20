@@ -339,7 +339,7 @@ bool OEmbed::buildHtml(Data &data, const QString &localUrl)
 {
 	if (data.type == "photo" || data.type == "video" || data.type == "rich" || data.type == "link")
 	{
-		data.url.replace("%", "¤");
+		data.url.replace("%", "<percent>");
 
 		if (!data.thumbUrl.isEmpty())
 		{
@@ -364,8 +364,8 @@ bool OEmbed::buildHtml(Data &data, const QString &localUrl)
 			data.html = QString("<a href=\"%1\">%1</a>").arg(data.url);
 		}
 
-		data.url.replace("¤", "%");
-		data.html.replace("¤", "%");
+		data.url.replace("<percent>", "%");
+		data.html.replace("<percent>", "%");
 
 		return true;
 	}
