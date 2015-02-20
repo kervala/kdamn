@@ -461,6 +461,12 @@ MACRO(INSTALL_MAC_RESOURCES _TARGET)
   ENDIF()
 ENDMACRO()
 
+MACRO(INSTALL_RESOURCES_MAC _TARGET _DIR)
+  IF(APPLE)
+    ADD_CUSTOM_COMMAND(TARGET ${_TARGET} PRE_BUILD COMMAND cp -R ARGS ${_DIR}/ ${RESOURCES_DIR})
+  ENDIF()
+ENDMACRO()
+
 MACRO(COMPILE_MAC_XIBS _TARGET)
   # Compile the .xib files using the 'ibtool' program with the destination being the app package
   IF(MAC_XIBS)

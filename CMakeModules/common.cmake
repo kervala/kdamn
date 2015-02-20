@@ -895,6 +895,17 @@ MACRO(SET_TARGET_FLAGS name)
   SET_TARGET_FLAGS_MSVC(${name})
 ENDMACRO()
 
+MACRO(INSTALL_RESOURCES _TARGET _DIR)
+  INSTALL_RESOURCES_MAC(${_TARGET} ${DIR})
+
+  # Common code for Unix and Windows
+  IF(NOT APPLE)
+    IF(WIN32 OR UNIX)
+      INSTALL(DIRECTORY ${_DIR}/ DESTINATION ${SHARE_PREFIX})
+    ENDIF()
+  ENDIF()
+ENDMACRO()
+
 # Set special flags to sources depending on specific language based on their extension
 FUNCTION(SET_SOURCES_FLAGS)
   SET(_C)
