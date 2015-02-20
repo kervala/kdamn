@@ -156,7 +156,7 @@
     <string>&amp;Part</string>
    </property>
    <property name="menuRole">
-    <enum>QAction::ApplicationSpecificRole</enum>
+    <enum>QAction::NoRole</enum>
    </property>
   </action>
   <action name="actionKnownRooms">
@@ -180,6 +180,9 @@
   <action name="actionCheckUpdates">
    <property name="text">
     <string>Check for updates</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::ApplicationSpecificRole</enum>
    </property>
   </action>
   <action name="actionDisplayNotes">
