@@ -845,15 +845,22 @@ void RoomsTabWidget::updateLogCss()
 	m_logCss = css;
 }
 
-void RoomsTabWidget::playSound(const QString &filename) const
+void RoomsTabWidget::playSound(const QString &filename)
 {
 	if (!ConfigFile::getInstance()->getEnableSound()) return;
 
-	QString sound = ":/icons/default.wav";
+	QString sound = QString("%1/sounds/default.wav").arg(ConfigFile::getInstance()->getGlobalDataDirectory());
 
 	if (!filename.isEmpty() && QFile::exists(filename)) sound = filename;
 
-	QSound::play(sound);
+	if (QFile::exists(sound))
+	{
+		QSound::play(sound);
+	}
+	else
+	{
+		onError(tr("Unable to find sound file: %1").arg(sound));
+	}
 }
 
 QString RoomsTabWidget::getCssFromStyle(const QString &style) const

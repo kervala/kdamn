@@ -98,7 +98,7 @@ protected:
 	void updateScreenCss();
 	void updateLogCss();
 
-	void playSound(const QString &filename) const;
+	void playSound(const QString &filename);
 
 	QString getCssFromStyle(const QString &style) const;
 
