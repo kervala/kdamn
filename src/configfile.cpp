@@ -463,6 +463,13 @@ void ConfigFile::initDirectories()
 #ifdef _DEBUG
 	applicationDir.cdUp();
 	applicationDir.cdUp();
+
+	// translations are in build directory
+	QString buildDirectory = applicationDir.absolutePath();
+
+	// all files are in misc subfolder
+	applicationDir.cdUp();
+	applicationDir.cd("misc");
 #endif
 	// same directory as executable
 	m_globalDataDirectory = applicationDir.absolutePath();
@@ -480,7 +487,11 @@ void ConfigFile::initDirectories()
 #endif
 
 	// translations directory
+#if defined(Q_OS_WIN32) && defined(_DEBUG)
+	m_translationsDirectory = buildDirectory + "/translations";
+#else
 	m_translationsDirectory = m_globalDataDirectory + "/translations";
+#endif
 
 	// Qt translations directory
 #if defined(Q_OS_WIN32)
