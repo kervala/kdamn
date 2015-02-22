@@ -201,6 +201,7 @@ bool RoomsTabWidget::createRoomFrame(const QString &room)
 
 	RoomFrame *frame = new RoomFrame(this, room);
 	frame->updateCssScreen(m_screenCss);
+	frame->updateCssFile(m_logCss);
 
 	int id = addTab(frame, room);
 
