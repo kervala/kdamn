@@ -250,7 +250,12 @@ void RoomFrame::appendHtml(const QString &html)
 
 	if (m_htmlReceived && ConfigFile::getInstance()->getEnableLogs() && ConfigFile::getInstance()->getEnableHtmlLogs())
 	{
-		m_htmlFile.append(html);
+		QString fixedHtml = html;
+
+		// remove proprietary HTML attributes
+		fixedHtml.remove(QRegExp(" local=\"file://([^\"])+\""));
+
+		m_htmlFile.append(fixedHtml);
 	}
 }
 
