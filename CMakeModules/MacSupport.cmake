@@ -568,11 +568,12 @@ MACRO(CREATE_MAC_PACKAGE_TARGET _TARGET)
     IF(NOT PACKAGE_NAME)
       SET(PACKAGE_NAME "${PRODUCT_FIXED}")
     ENDIF()
-      
+
+    SET(_APP ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PACKAGE_NAME}.app)
     SET(_PKG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PACKAGE_NAME}-${VERSION}-osx.pkg)
 
     ADD_CUSTOM_TARGET(packages
-      COMMAND productbuild --identifier "${MACOSX_BUNDLE_GUI_IDENTIFIER}" --version "${VERSION}" --component ${PACKAGE_NAME}.app /Applications ${_PKG}
+      COMMAND productbuild --identifier "${MACOSX_BUNDLE_GUI_IDENTIFIER}" --version "${VERSION}" --component ${_APP} /Applications ${_PKG}
       COMMENT "Creating OS X package..."
       SOURCES ${MAC_ITUNESARTWORK}
       VERBATIM)
