@@ -428,6 +428,15 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
               TARGET_LINK_LIBRARIES(${_TARGET} ${WINSDK_LIBRARY_DIR}/strmiids.lib)
             ELSEIF(APPLE)
               LINK_QT_PLUGIN(${_TARGET} audio qtaudio_coreaudio)
+
+              FIND_LIBRARY(COREAUDIO_FRAMEWORK CoreAudio)
+              FIND_LIBRARY(AUDIOUNIT_FRAMEWORK AudioUnit)
+              FIND_LIBRARY(AUDIOTOOLBOX_FRAMEWORK AudioToolbox)
+
+              TARGET_LINK_LIBRARIES(${_TARGET}
+                ${AUDIOUNIT_FRAMEWORK}
+                ${COREAUDIO_FRAMEWORK}
+                ${AUDIOTOOLBOX_FRAMEWORK})
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Widgets")
@@ -619,7 +628,7 @@ ENDMACRO()
 
 MACRO(INSTALL_QT_MISC _TARGET)
 # Not needed anymore because qt_menu.nib is included in Qt resources
-#  IF(USE_QT4 AND QT_STATIC)
+# IF(USE_QT4 AND QT_STATIC)
     # Copying qt_menu.nib to bundle
 #    IF(APPLE AND MAC_RESOURCES_DIR)
 #      ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp -R ARGS ${MAC_RESOURCES_DIR}/qt_menu.nib ${RESOURCES_DIR})
