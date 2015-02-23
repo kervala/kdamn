@@ -896,6 +896,11 @@ MACRO(SET_TARGET_FLAGS name)
 ENDMACRO()
 
 MACRO(INSTALL_RESOURCES _TARGET _DIR)
+  IF(NOT IS_ABSOLUTE _DIR)
+    # transform relative path to absolute one
+    SET(_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${_DIR})
+  ENDIF()
+
   INSTALL_RESOURCES_MAC(${_TARGET} ${_DIR})
 
   # Common code for Unix and Windows
