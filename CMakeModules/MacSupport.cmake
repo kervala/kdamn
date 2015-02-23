@@ -154,6 +154,10 @@ MACRO(INIT_BUNDLE _TARGET)
     IF(NOT MACOSX_BUNDLE_COPYRIGHT)
       SET(MACOSX_BUNDLE_COPYRIGHT "Copyright ${YEAR} ${AUTHOR}")
     ENDIF()
+    
+    IF(NOT CPACK_BUNDLE_NAME)
+      SET(CPACK_BUNDLE_NAME "${PRODUCT_FIXED}")
+    ENDIF()
 
     # Make sure the 'Resources' Directory is correctly created before we build
     ADD_CUSTOM_COMMAND(TARGET ${_TARGET} PRE_BUILD COMMAND mkdir -p ${RESOURCES_DIR})
@@ -428,6 +432,7 @@ MACRO(INSTALL_MAC_RESOURCES _TARGET)
     ENDIF()
 
     SET_TARGET_PROPERTIES(${_TARGET} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${MAC_INFO_PLIST})
+    SET(CPACK_BUNDLE_PLIST ${MAC_INFO_PLIST})
 
     IF(NOT XCODE)
       ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp ARGS ${MAC_RESOURCES_DIR}/PkgInfo ${CONTENTS_DIR})
@@ -441,6 +446,10 @@ MACRO(INSTALL_MAC_RESOURCES _TARGET)
       IF(NOT IOS AND NOT MACOSX_BUNDLE_ICON_FILE)
         GET_FILENAME_COMPONENT(_ICNS_NAME ${_ICNS} NAME)
         SET(MACOSX_BUNDLE_ICON_FILE ${_ICNS_NAME})
+      ENDIF()
+      IF(NOT CPACK_BUNDLE_ICON)
+        SET(CPACK_BUNDLE_ICON ${_ICNS})
+        SET(CPACK_PACKAGE_ICON ${_ICNS})
       ENDIF()
       IF(NOT XCODE)
         ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp ARGS ${_ICNS} ${RESOURCES_DIR})
@@ -550,6 +559,38 @@ MACRO(CREATE_IOS_PACKAGE_TARGET _TARGET)
       ADD_DEPENDENCIES(packages ${_TARGET})
       SET_TARGET_LABEL(packages "PACKAGE")
     ENDIF()
+  ENDIF()
+ENDMACRO()
+
+MACRO(CREATE_MAC_PACKAGE_TARGET _TARGET)
+  IF(APPLE AND NOT IOS)
+    # Creating .ipa package
+    IF(NOT PACKAGE_NAME)
+      SET(PACKAGE_NAME "${PRODUCT_FIXED}")
+    ENDIF()
+      
+    SET(_PKG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PACKAGE_NAME}-${VERSION}-osx.pkg)
+
+    SET(_COMMANDS)
+
+#productbuild --identifier "${MACOSX_BUNDLE_GUI_IDENTIFIER}" --version "${VERSION}" --product kdAmn.app/Contents/Info.plist --component ${PACKAGE_NAME}.app /Applications ${_PKG}
+
+    ADD_CUSTOM_TARGET(packages
+      COMMAND rm -rf "${OUTPUT_DIR}/Contents"
+      COMMAND mkdir -p "${IPA_DIR}/Payload"
+      COMMAND strip "${CONTENTS_DIR}/${PRODUCT_FIXED}"
+      COMMAND security unlock-keychain -p "${KEYCHAIN_PASSWORD}"
+      COMMAND CODESIGN_ALLOCATE=${CMAKE_IOS_DEVELOPER_ROOT}/usr/bin/codesign_allocate codesign -fs "${IOS_DISTRIBUTION}" "--resource-rules=${CONTENTS_DIR}/ResourceRules.plist" --entitlements "${CMAKE_BINARY_DIR}/application.xcent" "${CONTENTS_DIR}"
+      COMMAND cp -R "${OUTPUT_DIR}" "${IPA_DIR}/Payload"
+      COMMAND cp "${MAC_ITUNESARTWORK}" "${IPA_DIR}/iTunesArtwork"
+      ${_COMMANDS}
+      COMMAND ditto -c -k "${IPA_DIR}" "${IPA}"
+      COMMAND rm -rf "${IPA_DIR}"
+      COMMENT "Creating IPA archive..."
+      SOURCES ${MAC_ITUNESARTWORK}
+      VERBATIM)
+    ADD_DEPENDENCIES(packages ${_TARGET})
+    SET_TARGET_LABEL(packages "PACKAGE")
   ENDIF()
 ENDMACRO()
 
