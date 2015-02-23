@@ -571,22 +571,9 @@ MACRO(CREATE_MAC_PACKAGE_TARGET _TARGET)
       
     SET(_PKG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PACKAGE_NAME}-${VERSION}-osx.pkg)
 
-    SET(_COMMANDS)
-
-#productbuild --identifier "${MACOSX_BUNDLE_GUI_IDENTIFIER}" --version "${VERSION}" --product kdAmn.app/Contents/Info.plist --component ${PACKAGE_NAME}.app /Applications ${_PKG}
-
     ADD_CUSTOM_TARGET(packages
-      COMMAND rm -rf "${OUTPUT_DIR}/Contents"
-      COMMAND mkdir -p "${IPA_DIR}/Payload"
-      COMMAND strip "${CONTENTS_DIR}/${PRODUCT_FIXED}"
-      COMMAND security unlock-keychain -p "${KEYCHAIN_PASSWORD}"
-      COMMAND CODESIGN_ALLOCATE=${CMAKE_IOS_DEVELOPER_ROOT}/usr/bin/codesign_allocate codesign -fs "${IOS_DISTRIBUTION}" "--resource-rules=${CONTENTS_DIR}/ResourceRules.plist" --entitlements "${CMAKE_BINARY_DIR}/application.xcent" "${CONTENTS_DIR}"
-      COMMAND cp -R "${OUTPUT_DIR}" "${IPA_DIR}/Payload"
-      COMMAND cp "${MAC_ITUNESARTWORK}" "${IPA_DIR}/iTunesArtwork"
-      ${_COMMANDS}
-      COMMAND ditto -c -k "${IPA_DIR}" "${IPA}"
-      COMMAND rm -rf "${IPA_DIR}"
-      COMMENT "Creating IPA archive..."
+      COMMAND productbuild --identifier "${MACOSX_BUNDLE_GUI_IDENTIFIER}" --version "${VERSION}" --component ${PACKAGE_NAME}.app /Applications ${_PKG}
+      COMMENT "Creating OS X package..."
       SOURCES ${MAC_ITUNESARTWORK}
       VERBATIM)
     ADD_DEPENDENCIES(packages ${_TARGET})
