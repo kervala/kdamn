@@ -31,10 +31,12 @@
 
 #ifdef Q_OS_WIN32
 	Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
+	Q_IMPORT_PLUGIN(QWindowsAudioPlugin)
 #endif
 	
 #ifdef Q_OS_MAC
 	Q_IMPORT_PLUGIN(QCocoaIntegrationPlugin)
+	Q_IMPORT_PLUGIN(CoreAudioPlugin)
 #endif
 
 	Q_IMPORT_PLUGIN(QSvgPlugin)
