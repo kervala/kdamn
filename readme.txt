@@ -4,137 +4,167 @@ What is it?
 -----------
 
 kdAmn is a dAmn (deviantART Messaging Network) client written in C++ and
-using Qt framework.
+using Qt framework published under GPLv3 license.
 
-- dAmn protocol
-- tablumps (own DA format syntax) to HTML conversion
-- all DA specific code (icon, dev, thumb, emotes, etc...)
-- download of thumbnails/icons/avatars
-- channel management
-- users management
-- privilege classes management
-- DA and OAuth2 authentication
-- display of time before the message
-- users auto-completion with 
-- multi-lines messages
-- save channels and connection parameters in an INI file
-- tray icon
-- class to manage settings
-- tray icon/tab color change when a user writes in a channel or talk to you
-- compilation under GNU/Linux
-- list of known channels
-- choice between OAuth2 and DA login
-- log files in html or raw text for each channel
-- drag and drop to upload a file to stash
-- update OAuth2 token before it expires
-- supports both Qt 4 and 5
-- progress bar in window task bar under Windows 7 while uploading a file to stash
-- auto save settings
-- Debian packages
-- allows to upload a screenshot on stash
-- double-click on a user opens up his DA homepage (thanks to :iconsymilde: for the suggestion :D)
+Features
+--------
 
-To implement :
-
-- contextual menus on users list and main window
-- details on a user (connections to other channels, idle time, online time, avatar, group, etc...)
-- admin dialog to manage a channel
-- private chats
-- multiple selection for users (allows private chat)
-
+* Implements dAmn protocol and some DiFi commands
+* Multi-platform (Windows, GNU/Linux, OS X and possibly all other platforms supported by Qt)
+* Download of thumbnails/icons/avatars/etc...
+* oEmbed support for several sites, when a link is detected it displays a thumbnail
+* OAuth2 authentication
+* Timestamp display
+* Users and commands auto-completion
+* Multi-lines messages
+* Save channels and connection parameters in an INI file
+* System tray icon with notifications when someone mention our name or talks
+* Log files in HTML or test for each channel
+* Drag and drop to upload a file to Stash
+* Upload screenshot to Stash
+* Encode all HTML special characters because DA chat only supports ASCII
+* Download and install new versions when detected
+* Sound notification
+* Support animated images
+* Allow to create custom CSS for chat
+* Check regularly for notes
+* Display and send notes
+* English and French translations
 
 The Latest Version
 ------------------
 
-Details of the latest version can be found on the Apache HTTP
-server project page under http://httpd.apache.org/.
+* Windows and OS X version can be downloaded from:
 
-Documentation
--------------
+http://dev.kervala.net/projects/kdamn/files
 
-The documentation available as of the date of this release is
-included in HTML format in the docs/manual/ directory.  The most
-up-to-date documentation can be found at
-http://httpd.apache.org/docs/trunk/.
+* Debian/Ubuntu version can be installed from PPA:
 
-Installation
-------------
+https://launchpad.net/~kervala/+archive/ubuntu/ppa
 
-Please see the file called INSTALL.  Platform specific notes can be
-found in README.platforms.
+Install kdamn package from PPA ppa:kervala/ppa
+
+You can add in your sources:
+ppa:kervala/ppa
+
+Or type:
+sudo add-apt-repository ppa:kervala
+
+apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 5E354EB2
+deb http://ppa.launchpad.net/kervala/ppa/ubuntu trusty main
+
+And install kdamn package.
+
+* Sources
+
+Official repository (Mercurial): http://hg.kervala./kdamn
+Bitbucket mirror (Mercurial): https://bitbucket.org/kervala/kdamn
+Github mirror (Git): https://github.com/kervala/kdamn
+
+Contributes
+-----------
+
+If you want to fill bug reports, send patches, etc... you can go on tracker:
+http://dev.kervala.net/projects/kdamn/
+
+If you want to contribute new translations, you can connect to Transifex service:
+https://www.transifex.com/organization/kervala/dashboard/kdamn
+
+Compilation
+-----------
+
+kdAmn is using Qt framework (4 and 5 are supported) and CMake
+to manage projects files.
+
+Last version of CMake can be downloaded from:
+http://www.cmake.org/download/
+
+Last version of Qt can be downloaded from:
+http://www.qt.io/download-open-source/
+
+* Windows
+
+Be sure to have a working Visual C++ and you downloaded and installed
+(or compiled) Qt and CMake.
+
+You should install TortoiseHg to download sources :
+http://tortoisehg.bitbucket.org
+
+With TortoiseHg, clone Mercurial repository at:
+http://hg.kervala./kdamn
+
+Launch CMake and fill "Where is the source code" and
+"Where to build the binaries" with directories you put sources and
+where you want to compile.
+
+* Ubuntu, Debian and derived
+
+# install necessary packages 
+sudo apt-get install mecurial debhelper cmake pkg-config qtbase5-dev \
+  qttools5-dev-tools libqt5svg5-dev qttools5-dev qtmultimedia5-dev \
+  libqt5svg5 qt5-image-formats-plugins libxmu-dev
+
+# to download sources
+hg clone http://hg.kervala./kdamn
+
+cd kdamn
+
+# to create a Debian package
+debuild -b
+
+You can also simply build it with :
+
+mkdir build
+cd build
+
+cmake ..
+make -j4
+
+sudo make install
+ 
+* OS X
+
+Be sure to have Mercurial, CMake and Qt 5.x installed from MacPorts or
+official sites as well as Xcode command-line tools.
+
+Type :
+
+# to download sources
+hg clone http://hg.kervala./kdamn
+
+cd kdamn
+mkdir build
+cd build
+
+# to build kdAmn
+cmake -DWITH_STATIC_EXTERNAL=ON -DQTDIR=/usr/local/Qt-5.4.0 ..
+make -j4
+
+# to create a PKG file
+make packages
 
 Licensing
 ---------
 
-Please see the file called LICENSE.
+ kdAmn is a deviantART Messaging Network client
+ Copyright (C) 2013-2015  Cédric OCHS
 
-Cryptographic Software Notice
------------------------------
+ This program is free software: you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation, either version 3 of the License, or
+ (at your option) any later version.
 
-This distribution may include software that has been designed for use
-with cryptographic software.  The country in which you currently reside
-may have restrictions on the import, possession, use, and/or re-export
-to another country, of encryption software.  BEFORE using any encryption
-software, please check your country's laws, regulations and policies
-concerning the import, possession, or use, and re-export of encryption
-software, to see if this is permitted.  See <http://www.wassenaar.org/>
-for more information.
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
 
-The U.S. Government Department of Commerce, Bureau of Industry and
-Security (BIS), has classified this software as Export Commodity 
-Control Number (ECCN) 5D002.C.1, which includes information security
-software using or performing cryptographic functions with asymmetric
-algorithms.  The form and manner of this Apache Software Foundation
-distribution makes it eligible for export under the License Exception
-ENC Technology Software Unrestricted (TSU) exception (see the BIS 
-Export Administration Regulations, Section 740.13) for both object 
-code and source code.
+ You should have received a copy of the GNU General Public License
+ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-The following provides more details on the included files that
-may be subject to export controls on cryptographic software:
-
-Apache httpd 2.0 and later versions include the mod_ssl module under
-   modules/ssl/
-for configuring and listening to connections over SSL encrypted
-network sockets by performing calls to a general-purpose encryption
-library, such as OpenSSL or the operating system's platform-specific
-SSL facilities.
-
-In addition, some versions of apr-util provide an abstract interface
-for symmetrical cryptographic functions that make use of a
-general-purpose encryption library, such as OpenSSL, NSS, or the
-operating system's platform-specific facilities. This interface is
-known as the apr_crypto interface, with implementation beneath the
-/crypto directory. The apr_crypto interface is used by the
-mod_session_crypto module available under
-  modules/session
-for optional encryption of session information.
-
-Some object code distributions of Apache httpd, indicated with the
-word "crypto" in the package name, may include object code for the
-OpenSSL encryption library as distributed in open source form from
-<http://www.openssl.org/source/>.
-
-The above files are optional and may be removed if the cryptographic
-functionality is not desired or needs to be excluded from redistribution.
-Distribution packages of Apache httpd that include the word "nossl"
-in the package name have been created without the above files and are
-therefore not subject to this notice.
+ Please see the file called COPYING.
 
 Contacts
 --------
 
- o If you want to be informed about new code releases, bug fixes,
-   security fixes, general news and information about the Apache server
-   subscribe to the apache-announce mailing list as described under
-   <http://httpd.apache.org/lists.html#http-announce>
-
- o If you want freely available support for running Apache please see the
-   resources at <http://httpd.apache.org/support.html>
-
- o If you have a concrete bug report for Apache please see the instructions
-   for bug reporting at <http://httpd.apache.org/bug_report.html>
-
- o If you want to participate in actively developing Apache please
-   subscribe to the `dev@httpd.apache.org' mailing list as described at
-   <http://httpd.apache.org/lists.html#http-dev>
+Cédric OCHS <kervala@gmail.com>
