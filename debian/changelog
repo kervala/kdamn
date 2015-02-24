@@ -1,3 +1,93 @@
+kdamn (1.1.485~vivid1) vivid; urgency=medium
+
+  * New upstream release (revision 485)
+
+ -- Cédric OCHS <kervala@gmail.com>  Tue, 24 Feb 2015 10:26:49 +0100
+
+kdamn (1.1.485~utopic1) utopic; urgency=medium
+
+  * New upstream release (revision 485)
+
+ -- Cédric OCHS <kervala@gmail.com>  Tue, 24 Feb 2015 10:13:28 +0100
+
+kdamn (1.1.485~trusty1) trusty; urgency=medium
+
+  * New upstream release (revision 485)
+
+ -- Cédric OCHS <kervala@gmail.com>  Tue, 24 Feb 2015 09:47:34 +0100
+
+kdamn (1.1.485~precise1) precise; urgency=medium
+
+  * New upstream release (revision 485)
+
+ -- Cédric OCHS <kervala@gmail.com>  Tue, 24 Feb 2015 09:30:31 +0100
+
+kdamn (1.1.482~trusty1) trusty; urgency=medium
+
+  * New upstream release (revision 482)
+
+ -- Cédric OCHS <kervala@gmail.com>  Mon, 23 Feb 2015 19:50:28 +0100
+
+kdamn (1.1.482~precise1) precise; urgency=medium
+
+  * New upstream release (revision 482)
+
+ -- Cédric OCHS <kervala@gmail.com>  Mon, 23 Feb 2015 19:44:15 +0100
+
+kdamn (1.1.468~stable1) stable; urgency=medium
+
+  * New upstream release (revision 468)
+
+ -- Cédric OCHS <kervala@gmail.com>  Sun, 22 Feb 2015 16:43:56 +0100
+
+kdamn (1.0.468~wheezy1) wheezy; urgency=medium
+
+  * New upstream release (revision 468)
+
+ -- Cédric OCHS <kervala@gmail.com>  Sun, 22 Feb 2015 16:41:18 +0100
+
+kdamn (1.0.432~vivid1) vivid; urgency=medium
+
+  * New upstream release (revision 432)
+
+ -- Cédric OCHS <kervala@gmail.com>  Wed, 11 Feb 2015 10:55:56 +0100
+
+kdamn (1.0.431~utopic1) utopic; urgency=medium
+
+  * New upstream release (revision 431)
+
+ -- Cédric OCHS <kervala@gmail.com>  Wed, 11 Feb 2015 09:42:31 +0100
+
+kdamn (1.0.430~utopic1) utopic; urgency=medium
+
+  * New upstream release (revision 430)
+
+ -- Cédric OCHS <kervala@gmail.com>  Tue, 10 Feb 2015 23:38:29 +0100
+
+kdamn (1.0.430~trusty1) trusty; urgency=medium
+
+  * New upstream release (revision 430)
+
+ -- Cédric OCHS <kervala@gmail.com>  Tue, 10 Feb 2015 23:33:20 +0100
+
+kdamn (1.0.429~trusty1) trusty; urgency=medium
+
+  * New upstream release (revision 429)
+
+ -- Cédric OCHS <kervala@gmail.com>  Tue, 10 Feb 2015 23:27:02 +0100
+
+kdamn (1.0.428~trusty1) trusty; urgency=medium
+
+  * New upstream release (revision 428)
+
+ -- Cédric OCHS <kervala@gmail.com>  Tue, 10 Feb 2015 23:26:14 +0100
+
+kdamn (1.0.427~trusty1) trusty; urgency=medium
+
+  * New upstream release (revision 427)
+
+ -- Cédric OCHS <kervala@gmail.com>  Tue, 10 Feb 2015 23:17:09 +0100
+
 kdamn (0.9.140~saucy1) saucy; urgency=low
 
   * New upstream release (revision 140)
