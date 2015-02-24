@@ -901,23 +901,7 @@ ENDMACRO()
 
 # Only call this macro for executables
 MACRO(INSTALL_RESOURCES _TARGET _DIR)
-  IF(NOT IS_ABSOLUTE _DIR)
-    # transform relative path to absolute one
-    SET(_ABS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${_DIR})
-  ELSE()
-    SET(_ABS_DIR ${_DIR})
-  ENDIF()
-
-  INSTALL_RESOURCES_MAC(${_TARGET} ${_ABS_DIR})
-
-  # Common code for Unix and Windows
-  IF(NOT APPLE)
-    IF(WIN32 OR UNIX)
-      INSTALL(DIRECTORY ${_ABS_DIR}/ DESTINATION ${SHARE_PREFIX})
-    ENDIF()
-  ENDIF()
-
-  # Installing all resources in /usr/share
+  # Installing all UNIX resources in /usr/share
   IF(UNIX AND NOT APPLE)
     IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/res/desktop.in")
       SET(DESKTOP_FILE "${CMAKE_CURRENT_BINARY_DIR}/share/applications/${TARGET}.desktop")
@@ -934,8 +918,8 @@ MACRO(INSTALL_RESOURCES _TARGET _DIR)
     INSTALL(FILES res/icon128x128.png DESTINATION share/icons/hicolor/128x128/apps RENAME ${TARGET}.png OPTIONAL)
     INSTALL(FILES res/icon.svg DESTINATION share/icons/hicolor/scalable/apps RENAME ${TARGET}.svg OPTIONAL)
   ENDIF()
-
-  ## Source Packages
+  
+  # Source Packages
   SET(PACKAGE "${TARGET}-${VERSION}")
 
   IF(WIN32)
@@ -956,7 +940,7 @@ MACRO(INSTALL_RESOURCES _TARGET _DIR)
   # packaging information
   SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${DESCRIPTION})
   SET(CPACK_PACKAGE_VENDOR ${AUTHOR})
-  #SET(CPACK_PACKAGE_DESCRIPTION_FILE ${CMAKE_SOURCE_DIR}/README)
+  SET(CPACK_PACKAGE_DESCRIPTION_FILE ${CMAKE_SOURCE_DIR}/readme.txt)
   SET(CPACK_RESOURCE_FILE_LICENSE ${CMAKE_SOURCE_DIR}/COPYING)
   SET(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
   SET(CPACK_PACKAGE_VERSION_MINOR ${VERSION_MINOR})
@@ -966,6 +950,32 @@ MACRO(INSTALL_RESOURCES _TARGET _DIR)
   SET(CPACK_PACKAGE_EXECUTABLES ${TARGET} ${PRODUCT})
   SET(CPACK_SOURCE_IGNORE_FILES "\\\\.hg" "^${CMAKE_SOURCE_DIR}/debian/")
 
+  # Install documents
+  IF(NOT APPLE)
+    INSTALL(FILES
+        ${CPACK_PACKAGE_DESCRIPTION_FILE}
+        ${CPACK_RESOURCE_FILE_LICENSE}
+      DESTINATION
+        ${SHARE_PREFIX}
+      OPTIONAL)
+  ENDIF()
+  
+  IF(NOT IS_ABSOLUTE _DIR)
+    # transform relative path to absolute one
+    SET(_ABS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${_DIR})
+  ELSE()
+    SET(_ABS_DIR ${_DIR})
+  ENDIF()
+
+  INSTALL_RESOURCES_MAC(${_TARGET} ${_ABS_DIR})
+
+  # Common code for Unix and Windows
+  IF(NOT APPLE)
+    IF(WIN32 OR UNIX)
+      INSTALL(DIRECTORY ${_ABS_DIR}/ DESTINATION ${SHARE_PREFIX})
+    ENDIF()
+  ENDIF()
+  
   # Use NSIS under Windows
   IF(WIN32)
     IF(TARGET_X64)
