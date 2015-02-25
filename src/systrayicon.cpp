@@ -57,22 +57,13 @@ bool SystrayIcon::create()
 {
 	if (!QSystemTrayIcon::isSystemTrayAvailable()) return false;
 
-/*
-	Unity hack:
+	QWidget *parentW = qobject_cast<QWidget*>(parent());
 
-	gsettings get com.canonical.Unity.Panel systray-whitelist // will print allowed applications in JSON list
-	gsettings set com.canonical.Unity.Panel systray-whitelist <whitelist> // set whitelist
-
-	Example if current list ["Dropbox", "Foo"] – and we want to add "Bar" application:
-
-	gsettings set com.canonical.Unity.Panel systray-whitelist "['Dropbox', 'Foo', 'Bar']"
-*/
-
-	m_icon = new QSystemTrayIcon(QIcon(":/icons/icon.svg"), this);
+	m_icon = new QSystemTrayIcon(QIcon(":/icons/icon.svg"), parentW);
 
 	connect(m_icon, SIGNAL(messageClicked()), this, SLOT(onMessageClicked()));
 
-	QMenu *menu = new QMenu(qobject_cast<QWidget*>(parent()));
+	QMenu *menu = new QMenu(parentW);
 
 	QAction *restoreAction = menu->addAction(tr("Restore"));
 //	connect(restoreAction, SIGNAL(triggered()), this, SLOT(trayActivated()));

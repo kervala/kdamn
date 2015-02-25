@@ -75,6 +75,8 @@ MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false), m_mustLogin
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
 	connect(actionAboutQt, SIGNAL(triggered()), this, SLOT(onAboutQt()));
 
+	new SystrayIcon(this);
+
 	QSize size = ConfigFile::getInstance()->getWindowSize();
 	if (!size.isNull()) resize(size);
 
@@ -99,14 +101,9 @@ MainWindow::~MainWindow()
 
 void MainWindow::showEvent(QShowEvent *e)
 {
-	if (SystrayIcon::getInstance() == NULL)
-	{
-		new SystrayIcon(this);
-
 #ifdef Q_OS_WIN32
-		m_button->setWindow(windowHandle());
+	m_button->setWindow(windowHandle());
 #endif
-	}
 
 	e->accept();
 }
