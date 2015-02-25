@@ -37,7 +37,7 @@ class SystrayIcon : public QObject
 	Q_OBJECT
 
 public:
-	SystrayIcon(QObject* parent);
+	SystrayIcon(QWidget* parent);
 	virtual ~SystrayIcon();
 
 	static SystrayIcon* getInstance() { return s_instance; }

@@ -41,7 +41,7 @@ extern "C"
 
 SystrayIcon* SystrayIcon::s_instance = NULL;
 
-SystrayIcon::SystrayIcon(QObject* parent):QObject(parent), m_status(StatusNormal), m_icon(NULL)
+SystrayIcon::SystrayIcon(QWidget* parent):QObject(parent), m_status(StatusNormal), m_icon(NULL)
 {
 	if (!s_instance) s_instance = this;
 
@@ -72,13 +72,14 @@ bool SystrayIcon::create()
 
 	connect(m_icon, SIGNAL(messageClicked()), this, SLOT(onMessageClicked()));
 
-//	QMenu *trayMenu = new QMenu(m_trayIcon);
-//	QAction *restoreAction = trayMenu->addAction(tr("Restore"));
+	QMenu *menu = new QMenu(qobject_cast<QWidget*>(parent()));
+
+	QAction *restoreAction = menu->addAction(tr("Restore"));
 //	connect(restoreAction, SIGNAL(triggered()), this, SLOT(trayActivated()));
-//	QAction *quitAction = trayMenu->addAction(tr("Quit"));
+	QAction *quitAction = menu->addAction(tr("Quit"));
 //	connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
 
-//	m_trayIcon->setContextMenu(trayMenu);
+	m_icon->setContextMenu(menu);
 //	connect(m_icon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayActivated(QSystemTrayIcon::ActivationReason)));
 	m_icon->show();
 
