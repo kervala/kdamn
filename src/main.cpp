@@ -42,7 +42,6 @@
 	Q_IMPORT_PLUGIN(QMngPlugin)
 	Q_IMPORT_PLUGIN(QSvgPlugin)
 	Q_IMPORT_PLUGIN(QSvgIconPlugin)
-	Q_IMPORT_PLUGIN(QWebpPlugin)
 #endif
 
 #ifdef DEBUG_NEW
