@@ -404,8 +404,12 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
               LINK_QT_PLUGIN(${_TARGET} platforms qcocoa)
             ENDIF()
 
+            LINK_QT_PLUGIN(${_TARGET} imageformats qgif)
+            LINK_QT_PLUGIN(${_TARGET} imageformats qicns)
             LINK_QT_PLUGIN(${_TARGET} imageformats qico)
+            LINK_QT_PLUGIN(${_TARGET} imageformats qjpeg)
             LINK_QT_PLUGIN(${_TARGET} imageformats qmng)
+            LINK_QT_PLUGIN(${_TARGET} imageformats qwebp)
 
             # harfbuzz is needed since Qt 5.3
             IF(APPLE)
@@ -585,9 +589,12 @@ MACRO(INSTALL_QT_LIBRARIES)
           ENDIF()
 
           IF(_MODULE STREQUAL "Gui")
-            INSTALL_QT_PLUGIN(imageformats qico)
             INSTALL_QT_PLUGIN(imageformats qgif)
+            INSTALL_QT_PLUGIN(imageformats qicns)
+            INSTALL_QT_PLUGIN(imageformats qico)
             INSTALL_QT_PLUGIN(imageformats qjpeg)
+            INSTALL_QT_PLUGIN(imageformats qmng)
+            INSTALL_QT_PLUGIN(imageformats qwebp)
           ENDIF()
 
           IF(_MODULE STREQUAL "Widgets")
