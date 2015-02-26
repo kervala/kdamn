@@ -357,7 +357,7 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
                 ${WINSDK_LIBRARY_DIR}/WS2_32.Lib)
             ENDIF()
           ENDIF()
-          IF(_MODULE STREQUAL Gui)
+          IF(_MODULE STREQUAL "Gui")
             FIND_PACKAGE(MyPNG REQUIRED)
             FIND_PACKAGE(JPEG REQUIRED)
 
