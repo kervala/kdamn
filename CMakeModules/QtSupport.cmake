@@ -345,6 +345,19 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
 
         FOREACH(_MODULE ${QT_MODULES_USED})
           IF(_MODULE STREQUAL "Core")
+            IF(APPLE)
+              FIND_LIBRARY(PCRE_LIBRARY pcre16 pcre)
+
+              FIND_LIBRARY(FOUNDATION_FRAMEWORK Foundation)
+              FIND_LIBRARY(CARBON_FRAMEWORK Carbon)
+              FIND_LIBRARY(SECURITY_FRAMEWORK Security)
+
+              TARGET_LINK_LIBRARIES(${_TARGET}
+                ${PCRE_LIBRARY}
+                ${FOUNDATION_FRAMEWORK}
+                ${CARBON_FRAMEWORK}
+                ${SECURITY_FRAMEWORK})
+            ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Network")
             FIND_PACKAGE(OpenSSL REQUIRED)
@@ -373,8 +386,6 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
                 ${WINSDK_LIBRARY_DIR}/WinMM.Lib)
               LINK_QT_PLUGIN(${_TARGET} platforms qwindows)
             ELSEIF(APPLE)
-              FIND_LIBRARY(PCRE_LIBRARY pcre16 pcre)
-
               # Cups needs .dylib
               SET(OLD_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
               SET(CMAKE_FIND_LIBRARY_SUFFIXES .dylib)
@@ -382,21 +393,14 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
               SET(CMAKE_FIND_LIBRARY_SUFFIXES ${OLD_CMAKE_FIND_LIBRARY_SUFFIXES})
 
               FIND_LIBRARY(IOKIT_FRAMEWORK IOKit)
-              FIND_LIBRARY(FOUNDATION_FRAMEWORK Foundation)
               FIND_LIBRARY(COCOA_FRAMEWORK Cocoa)
-              FIND_LIBRARY(CARBON_FRAMEWORK Carbon)
               FIND_LIBRARY(SYSTEMCONFIGURATION_FRAMEWORK SystemConfiguration)
-              FIND_LIBRARY(SECURITY_FRAMEWORK Security)
               FIND_LIBRARY(OPENGL_FRAMEWORK NAMES OpenGL)
 
               TARGET_LINK_LIBRARIES(${_TARGET}
                 ${CUPS_LIBRARY}
-                ${PCRE_LIBRARY}
-                ${FOUNDATION_FRAMEWORK}
                 ${COCOA_FRAMEWORK}
-                ${CARBON_FRAMEWORK}
                 ${SYSTEMCONFIGURATION_FRAMEWORK}
-                ${SECURITY_FRAMEWORK}
                 ${IOKIT_FRAMEWORK}
                 ${OPENGL_FRAMEWORK})
 
@@ -468,7 +472,7 @@ ENDMACRO()
 
 MACRO(INSTALL_QT_TRANSLATIONS _TARGET)
   IF(QT_QMS)
-    IF(APPLE)
+    IF(APPLE AND RESOURCES_DIR)
       ADD_CUSTOM_COMMAND(TARGET ${_TARGET} PRE_BUILD COMMAND mkdir -p ${RESOURCES_DIR}/translations)
 
       # Copying all Qt translations to bundle
@@ -492,7 +496,7 @@ MACRO(INSTALL_QT_TRANSLATIONS _TARGET)
         IF(EXISTS ${LANG_FILE})
           IF(WIN32)
             INSTALL(FILES ${LANG_FILE} DESTINATION ${SHARE_PREFIX}/translations)
-          ELSE()
+          ELSEIF(APPLE AND RESOURCES_DIR)
             ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp ARGS ${LANG_FILE} ${RESOURCES_DIR}/translations)
           ENDIF()
         ENDIF()
@@ -635,7 +639,7 @@ ENDMACRO()
 
 MACRO(INSTALL_QT_MISC _TARGET)
 # Not needed anymore because qt_menu.nib is included in Qt resources
-# IF(USE_QT4 AND QT_STATIC)
+#  IF(USE_QT4 AND QT_STATIC)
     # Copying qt_menu.nib to bundle
 #    IF(APPLE AND MAC_RESOURCES_DIR)
 #      ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp -R ARGS ${MAC_RESOURCES_DIR}/qt_menu.nib ${RESOURCES_DIR})
