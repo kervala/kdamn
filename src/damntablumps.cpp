@@ -294,10 +294,13 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 							// request image info using oembed
 							if (OEmbed::getInstance()->request(image.remoteUrl, oembedSite))
 							{
-								OEmbed::getInstance()->commentUrl(url, url);
+								QString formattedUrl = url;
+
+								// comment URL to know we're will fix it later
+								OEmbed::getInstance()->commentUrl(formattedUrl, url);
 
 								// URL will be replaced by HTML code later
-								html += url;
+								html += formattedUrl;
 
 								if (!images.contains(image)) images << image;
 							}
@@ -310,6 +313,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 
 						if (oembedSite.isEmpty())
 						{
+							// normal link (not oEmbed)
 							html += QString("<a href=\"%1\">%1</a>").arg(url);
 						}
 					}
