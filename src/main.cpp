@@ -65,21 +65,16 @@ int main(int argc, char *argv[])
 
 	QLocale locale = QLocale::system();
 
+	// load application translations
 	QTranslator localTranslator;
 	if (localTranslator.load(locale, TARGET, "_", ConfigFile::getInstance()->getTranslationsDirectory()))
 	{
 		QApplication::installTranslator(&localTranslator);
 	}
 
-	QString qtbaseFilename;
-#ifdef USE_QT5
-	qtbaseFilename = "qtbase";
-#else
-	qtbaseFilename = "qt";
-#endif
-
+	// load Qt default translations
 	QTranslator qtTranslator;
-	if (qtTranslator.load(locale, qtbaseFilename, "_", ConfigFile::getInstance()->getQtTranslationsDirectory()))
+	if (qtTranslator.load(locale, "qt", "_", ConfigFile::getInstance()->getQtTranslationsDirectory()))
 	{
 		QApplication::installTranslator(&qtTranslator);
 	}
