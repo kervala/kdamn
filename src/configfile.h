@@ -139,6 +139,7 @@ DECLARE_QSTRING_VAR(LogStyle, logStyle);
 DECLARE_BOOL_VAR(EnableSound, enableSound);
 DECLARE_QSTRING_VAR(NameMentionedSound, nameMentionedSound);
 DECLARE_QSTRING_VAR(NoteReceivedSound, noteReceivedSound);
+DECLARE_BOOL_VAR(UseSystray, useSystray);
 
 public slots:
 	bool load();

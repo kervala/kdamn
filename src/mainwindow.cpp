@@ -26,7 +26,6 @@
 #include "configfile.h"
 #include "roomsdialog.h"
 #include "roomframe.h"
-#include "systrayicon.h"
 #include "oauth2.h"
 #include "capturedialog.h"
 #include "utils.h"
@@ -75,8 +74,6 @@ MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false), m_mustLogin
 	connect(actionAbout, SIGNAL(triggered()), this, SLOT(onAbout()));
 	connect(actionAboutQt, SIGNAL(triggered()), this, SLOT(onAboutQt()));
 
-	new SystrayIcon(this);
-
 	QSize size = ConfigFile::getInstance()->getWindowSize();
 	if (!size.isNull()) resize(size);
 
@@ -87,6 +84,13 @@ MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false), m_mustLogin
 	connect(OAuth2::getInstance(), SIGNAL(newVersionDetected(QString, QString, uint, QString)), this, SLOT(onNewVersion(QString, QString, uint, QString)));
 	connect(OAuth2::getInstance(), SIGNAL(noNewVersionDetected()), this, SLOT(onNoNewVersion()));
 	connect(OAuth2::getInstance(), SIGNAL(uploadProgress(qint64, qint64)), this, SLOT(onProgress(qint64, qint64)));
+
+	// Systray
+	SystrayIcon *systray = new SystrayIcon(this);
+	connect(systray, SIGNAL(requestMinimize()), this, SLOT(onMinimize()));
+	connect(systray, SIGNAL(requestRestore()), this, SLOT(onRestore()));
+	connect(systray, SIGNAL(requestClose()), this, SLOT(close()));
+	connect(systray, SIGNAL(requestAction(SystrayIcon::SystrayAction)), this, SLOT(onSystrayAction(SystrayIcon::SystrayAction)));
 
 	// auto connect to chat server
 	autoConnect();
@@ -167,6 +171,37 @@ void MainWindow::onAbout()
 void MainWindow::onAboutQt()
 {
 	QMessageBox::aboutQt(this);
+}
+
+void MainWindow::onMinimize()
+{
+	// only hide window if using systray
+	if (isVisible() && ConfigFile::getInstance()->getUseSystray())
+	{
+		hide();
+	}
+}
+
+void MainWindow::onRestore()
+{
+	if (!isVisible())
+	{
+		if (isMaximized())
+		{
+			showMaximized();
+		}
+		else if (isMinimized())
+		{
+			showNormal();
+		}
+	}
+
+	raise();
+	activateWindow();
+}
+
+void MainWindow::onSystrayAction(SystrayIcon::SystrayAction action)
+{
 }
 
 void MainWindow::onConnect()
@@ -321,10 +356,6 @@ void MainWindow::onSendNote()
 	OAuth2::getInstance()->prepareNote();
 }
 
-void MainWindow::trayActivated(QSystemTrayIcon::ActivationReason reseaon)
-{
-}
-
 void MainWindow::autoConnect()
 {
 	QString login = ConfigFile::getInstance()->getLogin();
@@ -358,15 +389,23 @@ bool MainWindow::event(QEvent *e)
 	{
 		roomsWidget->onRoomFocus(-1);
 	}
+	else if (e->type() == QEvent::LanguageChange)
+	{
+		retranslateUi(this);
+	}
+	else if (e->type() == QEvent::WindowStateChange)
+	{
+		if (windowState() & Qt::WindowMinimized)
+		{
+			QTimer::singleShot(250, this, SLOT(onMinimize()));
+		}
+	}
 
 	return QMainWindow::event(e);
 }
 
 void MainWindow::onLoggedOut(bool reconnect)
 {
-	// only close window if already hidden (when close button pressed)
-	if (isHidden()) close();
-
 	if (reconnect)
 	{
 		if (m_mustLoginAfterLogout)
@@ -375,6 +414,11 @@ void MainWindow::onLoggedOut(bool reconnect)
 		}
 
 		roomsWidget->login();
+	}
+	else
+	{
+		// only close window if already hidden (when close button pressed)
+		if (isHidden()) close();
 	}
 }
 

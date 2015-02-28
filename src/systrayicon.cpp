@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "systrayicon.h"
+#include "configfile.h"
 
 #ifdef USE_QT5
 
@@ -41,7 +42,8 @@ extern "C"
 
 SystrayIcon* SystrayIcon::s_instance = NULL;
 
-SystrayIcon::SystrayIcon(QWidget* parent):QObject(parent), m_status(StatusNormal), m_icon(NULL)
+SystrayIcon::SystrayIcon(QWidget* parent):QObject(parent), m_status(StatusNormal), m_icon(NULL), m_action(ActionNone),
+	m_minimizeAction(NULL), m_restoreAction(NULL), m_quitAction(NULL)
 {
 	if (!s_instance) s_instance = this;
 
@@ -55,7 +57,7 @@ SystrayIcon::~SystrayIcon()
 
 bool SystrayIcon::create()
 {
-	if (!QSystemTrayIcon::isSystemTrayAvailable()) return false;
+	if (!QSystemTrayIcon::isSystemTrayAvailable() || !ConfigFile::getInstance()->getUseSystray()) return false;
 
 	QWidget *parentW = qobject_cast<QWidget*>(parent());
 
@@ -65,14 +67,22 @@ bool SystrayIcon::create()
 
 	QMenu *menu = new QMenu(parentW);
 
-	QAction *restoreAction = menu->addAction(tr("Restore"));
-//	connect(restoreAction, SIGNAL(triggered()), this, SLOT(trayActivated()));
-	QAction *quitAction = menu->addAction(tr("Quit"));
-//	connect(quitAction, SIGNAL(triggered()), this, SLOT(close()));
+	m_minimizeAction = menu->addAction(tr("Minimize"));
+	m_restoreAction = menu->addAction(tr("Restore"));
+	m_quitAction = menu->addAction(tr("Quit"));
 
 	m_icon->setContextMenu(menu);
-//	connect(m_icon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(trayActivated(QSystemTrayIcon::ActivationReason)));
-	m_icon->show();
+
+	connect(m_minimizeAction, SIGNAL(triggered()), this, SIGNAL(requestMinimize()));
+	connect(m_restoreAction, SIGNAL(triggered()), this, SIGNAL(requestRestore()));
+	connect(m_quitAction, SIGNAL(triggered()), this, SIGNAL(requestClose()));
+
+	connect(m_icon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(onTrayActivated(QSystemTrayIcon::ActivationReason)));
+	connect(m_icon, SIGNAL(visibilityChanged(bool)), this, SLOT(onTrayActivated(QSystemTrayIcon::ActivationReason)));
+
+//	visibilityChanged(bool visible)
+
+	updateStatus();
 
 	return true;
 }
@@ -90,20 +100,36 @@ void SystrayIcon::updateStatus()
 		++it;
 	}
 
-	QString icon;
+	QString iconImage;
 
 	switch(status)
 	{
-		case StatusNormal: icon = ":/icons/icon.svg"; break;
-		case StatusTalkOther: icon = ":/icons/icon_blue.svg"; break;
-		case StatusTalkMe: icon = ":/icons/icon_red.svg"; break;
-		default: break;
+		case StatusTalkOther:
+		iconImage = ":/icons/icon_blue.svg";
+		break;
+
+		case StatusTalkMe:
+		iconImage = ":/icons/icon_red.svg";
+		break;
+
+		case StatusNormal:
+		default:
+		iconImage = ":/icons/icon.svg";
+		break;
 	}
 
-	if (m_icon) m_icon->setIcon(QIcon(icon));
+	QIcon icon(iconImage);
+
+	QApplication::setWindowIcon(icon);
+
+	if (m_icon)
+	{
+		m_icon->setIcon(icon);
+		m_icon->show();
+	}
 }
 
-SystrayStatus SystrayIcon::getStatus(const QString &room) const
+SystrayIcon::SystrayStatus SystrayIcon::getStatus(const QString &room) const
 {
 	SystrayStatusesConstIterator it = m_rooms.find(room);
 
@@ -119,13 +145,18 @@ void SystrayIcon::setStatus(const QString &room, SystrayStatus status)
 	updateStatus();
 }
 
-void SystrayIcon::displayMessage(const QString &message, const QString &url)
+void SystrayIcon::displayMessage(const QString &message, SystrayAction action)
 {
-	m_url = url;
+	m_action = action;
 	m_icon->showMessage("", message, QSystemTrayIcon::NoIcon);
 }
 
 void SystrayIcon::onMessageClicked()
 {
-	if (!m_url.isEmpty()) QDesktopServices::openUrl(m_url);
+	if (m_action != ActionNone) emit requestAction(m_action);
+}
+
+void SystrayIcon::onTrayActivated(QSystemTrayIcon::ActivationReason reason)
+{
+	if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick) emit requestRestore();
 }

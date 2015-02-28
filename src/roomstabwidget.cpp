@@ -353,7 +353,7 @@ void RoomsTabWidget::onReceiveNotes(int count)
 			// display message in system tab
 			updateSystrayIcon("", "", ConfigFile::getInstance()->getLogin().toLower());
 
-			SystrayIcon::getInstance()->displayMessage(tr("You received %n note(s), click to read them", "", count), "https://www.deviantart.com/messages/notes/");
+			SystrayIcon::getInstance()->displayMessage(tr("You received %n note(s), click to read them", "", count), SystrayIcon::ActionReadLastNote);
 		}
 
 		lastCount = count;
@@ -662,7 +662,7 @@ void RoomsTabWidget::onRoomFocus(int index)
 
 			if (focused)
 			{
-				SystrayIcon::getInstance()->setStatus(frame->getRoom(), StatusNormal);
+				SystrayIcon::getInstance()->setStatus(frame->getRoom(), SystrayIcon::StatusNormal);
 				tabBar()->setTabTextColor(i, QColor(QColor::Invalid));
 			}
 		}
@@ -670,7 +670,7 @@ void RoomsTabWidget::onRoomFocus(int index)
 		{
 			if (focused)
 			{
-				SystrayIcon::getInstance()->setStatus("", StatusNormal);
+				SystrayIcon::getInstance()->setStatus("", SystrayIcon::StatusNormal);
 				tabBar()->setTabTextColor(i, QColor(QColor::Invalid));
 			}
 		}
@@ -717,10 +717,10 @@ void RoomsTabWidget::updateSystrayIcon(const QString &room, const QString &user,
 	// don't alert if we talk to ourself
 	if (login == user.toLower()) return;
 
-	SystrayStatus oldStatus = SystrayIcon::getInstance()->getStatus(room);
-	SystrayStatus newStatus = m_formatText->searchUser(login, text) ? StatusTalkMe:StatusTalkOther;
+	SystrayIcon::SystrayStatus oldStatus = SystrayIcon::getInstance()->getStatus(room);
+	SystrayIcon::SystrayStatus newStatus = m_formatText->searchUser(login, text) ? SystrayIcon::StatusTalkMe:SystrayIcon::StatusTalkOther;
 
-	if (newStatus == StatusTalkMe)
+	if (newStatus == SystrayIcon::StatusTalkMe)
 	{
 		playSound(ConfigFile::getInstance()->getNameMentionedSound());
 	}
@@ -728,7 +728,7 @@ void RoomsTabWidget::updateSystrayIcon(const QString &room, const QString &user,
 	if (newStatus > oldStatus)
 	{
 		SystrayIcon::getInstance()->setStatus(room, newStatus);
-		tabBar()->setTabTextColor(index, newStatus == StatusTalkMe ? Qt::red:Qt::blue);
+		tabBar()->setTabTextColor(index, newStatus == SystrayIcon::StatusTalkMe ? Qt::red:Qt::blue);
 	}
 }
 

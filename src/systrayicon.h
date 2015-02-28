@@ -20,23 +20,29 @@
 #ifndef SYSTRAYICON_H
 #define SYSTRAYICON_H
 
-enum SystrayStatus
-{
-	StatusUndefined,
-	StatusNormal,
-	StatusTalkOther,
-	StatusTalkMe
-};
-
-typedef QMap<QString, SystrayStatus> SystrayStatuses;
-typedef SystrayStatuses::iterator SystrayStatusesIterator;
-typedef SystrayStatuses::const_iterator SystrayStatusesConstIterator;
-
 class SystrayIcon : public QObject
 {
 	Q_OBJECT
 
 public:
+	enum SystrayStatus
+	{
+		StatusUndefined,
+		StatusNormal,
+		StatusTalkOther,
+		StatusTalkMe
+	};
+
+	typedef QMap<QString, SystrayStatus> SystrayStatuses;
+	typedef SystrayStatuses::iterator SystrayStatusesIterator;
+	typedef SystrayStatuses::const_iterator SystrayStatusesConstIterator;
+
+	enum SystrayAction
+	{
+		ActionNone,
+		ActionReadLastNote
+	};
+
 	SystrayIcon(QWidget* parent);
 	virtual ~SystrayIcon();
 
@@ -45,10 +51,17 @@ public:
 	SystrayStatus getStatus(const QString &room) const;
 	void setStatus(const QString &room, SystrayStatus status);
 
-	void displayMessage(const QString &message, const QString &url);
+	void displayMessage(const QString &message, SystrayAction action);
+
+signals:
+	void requestMinimize();
+	void requestRestore();
+	void requestClose();
+	void requestAction(SystrayIcon::SystrayAction action);
 
 public slots:
 	void onMessageClicked();
+	void onTrayActivated(QSystemTrayIcon::ActivationReason reason);
 
 private:
 	bool create();
@@ -59,7 +72,11 @@ private:
 	SystrayStatuses m_rooms;
 	SystrayStatus m_status;
 	QSystemTrayIcon *m_icon;
-	QString m_url;
+	SystrayAction m_action;
+
+	QAction *m_minimizeAction;
+	QAction *m_restoreAction;
+	QAction *m_quitAction;
 };
 
 #endif

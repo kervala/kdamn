@@ -84,6 +84,7 @@ ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::I
 	m_enableTextLogs = true;
 	m_enableHtmlLogs = true;
 	m_enableSound = false;
+	m_useSystray = false;
 
 	if (!s_instance) s_instance = this;
 
@@ -592,3 +593,4 @@ IMPLEMENT_QSTRING_VAR(LogStyle, logStyle);
 IMPLEMENT_BOOL_VAR(EnableSound, enableSound);
 IMPLEMENT_QSTRING_VAR(NameMentionedSound, nameMentionedSound);
 IMPLEMENT_QSTRING_VAR(NoteReceivedSound, noteReceivedSound);
+IMPLEMENT_BOOL_VAR(UseSystray, useSystray);

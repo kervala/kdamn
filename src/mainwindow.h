@@ -21,6 +21,7 @@
 #define MAINWINDOW_H
 
 #include "ui_mainwindow.h"
+#include "systrayicon.h"
 
 class QWinTaskbarButton;
 
@@ -60,7 +61,9 @@ public slots:
 	void onAboutQt();
 
 	// other
-	void trayActivated(QSystemTrayIcon::ActivationReason reseaon);
+	void onMinimize();
+	void onRestore();
+	void onSystrayAction(SystrayIcon::SystrayAction action);
 
 	// signals from OAuth2
 	void onLoggedOut(bool reconnect);
