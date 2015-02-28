@@ -2,7 +2,7 @@ set UPLOADER="C:\Program Files\RedmineUploader\redmineuploader.exe"
 
 call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64
 
-set QTDIR=D:/External/vc10/qt-5.4.0-static-64
+set QTDIR=D:/External/vc10/qt-5.4.1-static-64
 
 rmdir /s /q package_x64
 
@@ -21,7 +21,7 @@ rem pause
 
 call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x86
 
-set QTDIR=D:/External/vc10/qt-5.4.0-static-32
+set QTDIR=D:/External/vc10/qt-5.4.1-static-32
 
 rmdir /s /q package_x32
 
