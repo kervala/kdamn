@@ -32,19 +32,19 @@ DAmnUser::~DAmnUser()
 {
 }
 
-void DAmnUser::setName(const QString &name)
-{
-	m_name = name;
-}
-
 QString DAmnUser::getName() const
 {
 	return m_name;
 }
 
-bool DAmnUser::hasSameName(const QString &name)
+void DAmnUser::setName(const QString &name)
 {
-	return name.toLower() == m_name.toLower();
+	m_name = name;
+}
+
+int DAmnUser::getUserIcon() const
+{
+	return m_usericon;
 }
 
 void DAmnUser::setUserIcon(int usericon)
@@ -52,9 +52,19 @@ void DAmnUser::setUserIcon(int usericon)
 	m_usericon = usericon;
 }
 
+QChar DAmnUser::getSymbol() const
+{
+	return m_symbol;
+}
+
 void DAmnUser::setSymbol(const QChar &symbol)
 {
 	m_symbol = symbol;
+}
+
+QString DAmnUser::getRealName() const
+{
+	return m_realname;
 }
 
 void DAmnUser::setRealName(const QString &realname)
@@ -62,9 +72,24 @@ void DAmnUser::setRealName(const QString &realname)
 	m_realname = realname;
 }
 
+QString DAmnUser::getGPC() const
+{
+	return m_gpc;
+}
+
 void DAmnUser::setGPC(const QString &gpc)
 {
 	m_gpc = gpc;
+}
+
+DAmnConnections DAmnUser::getConnections() const
+{
+	return m_connections;
+}
+
+bool DAmnUser::hasSameName(const QString &name)
+{
+	return name.toLower() == m_name.toLower();
 }
 
 bool DAmnUser::setConnection(const DAmnConnection &connection)

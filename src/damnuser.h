@@ -38,15 +38,24 @@ public:
 	DAmnUser(const QString &name, QObject *parent);
 	virtual ~DAmnUser();
 
-	void setName(const QString &name);
 	QString getName() const;
+	void setName(const QString &name);
+
+	int getUserIcon() const;
+	void setUserIcon(int usericon);
+
+	QChar getSymbol() const;
+	void setSymbol(const QChar &symbol);
+
+	QString getRealName() const;
+	void setRealName(const QString &realname);
+
+	QString getGPC() const;
+	void setGPC(const QString &gpc);
+
+	DAmnConnections getConnections() const;
 
 	bool hasSameName(const QString &name);
-
-	void setUserIcon(int usericon);
-	void setSymbol(const QChar &symbol);
-	void setRealName(const QString &realname);
-	void setGPC(const QString &gpc);
 
 	bool setConnection(const DAmnConnection &connection);
 	void removeConnections();
