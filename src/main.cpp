@@ -63,10 +63,10 @@ int main(int argc, char *argv[])
 
 	new ConfigFile(qApp);
 
-	QString locale = QLocale::system().name();
+	QLocale locale = QLocale::system();
 
 	QTranslator localTranslator;
-	if (localTranslator.load(QString("%1_%2").arg(TARGET).arg(locale), ConfigFile::getInstance()->getTranslationsDirectory()))
+	if (localTranslator.load(locale, TARGET, "_", ConfigFile::getInstance()->getTranslationsDirectory()))
 	{
 		QApplication::installTranslator(&localTranslator);
 	}
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 #endif
 
 	QTranslator qtTranslator;
-	if (qtTranslator.load(QString("%1_%2").arg(qtbaseFilename).arg(locale), ConfigFile::getInstance()->getQtTranslationsDirectory()))
+	if (qtTranslator.load(locale, qtbaseFilename, "_", ConfigFile::getInstance()->getQtTranslationsDirectory()))
 	{
 		QApplication::installTranslator(&qtTranslator);
 	}
