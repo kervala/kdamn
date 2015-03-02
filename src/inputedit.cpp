@@ -388,36 +388,16 @@ bool InputEdit::cycleUser(const QString &user, QString &res) const
 
 void InputEdit::completeCommand()
 {
-	static const QString sCommands[] =
-	{
-		"me",
-		"part",
-		"whois",
-		"topic",
-		"title",
-		"join",
-		"part",
-		"demote",
-		"promote",
-		"kick",
-		"ban",
-		"unban",
-		"admin",
-		"clear",
-		"stats",
-		"raw",
-		"waiting",
-		""
-	};
-
 	// whole string without "/"
 	QString str = text().mid(1);
 
-	for(int i = 0; !sCommands[i].isEmpty(); ++i)
+	QStringList commands = DAmn::getInstance()->getCommands();
+
+	foreach(const QString &command, commands)
 	{
-		if (str == sCommands[i].left(str.length()))
+		if (str == command.left(str.length()))
 		{
-			QString cmd = QString("/%1 ").arg(sCommands[i]);
+			QString cmd = QString("/%1 ").arg(command);
 
 			setText(cmd);
 			setCursorPosition(cmd.length());

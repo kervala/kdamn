@@ -54,6 +54,8 @@ public:
 	void updateCssScreen(const QString &css);
 	void updateCssFile(const QString &css);
 
+	void setAfk(bool enabled);
+
 public slots:
 	// when user press enter
 	void onSend();

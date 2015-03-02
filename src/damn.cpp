@@ -31,7 +31,7 @@
 
 DAmn *DAmn::s_instance = NULL;
 
-DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_lastError(OK), m_connected(false)
+DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_lastError(OK), m_connected(false), m_afk(false)
 {
 	if (s_instance == NULL) s_instance = this;
 

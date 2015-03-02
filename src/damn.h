@@ -161,6 +161,13 @@ public:
 	bool disconnect();
 	bool kill(const QString &username, const QString &reason);
 
+	// new damn commands
+	bool stats();
+	bool waiting();
+	bool raw(const QString &msg);
+	bool afk(bool enabled, const QString &message = "");
+	bool help(const QString &command);
+
 	// implemented
 	bool send(const QString &room, const QString &text);
 	bool send(const QString &room, const QStringList &lines);
@@ -170,6 +177,11 @@ public:
 	bool getWaitingImageFromRemoteUrl(const QString &url, DAmnImage* &image);
 
 	DAmnUser* getUser(const QString &user);
+
+	QStringList getCommands() const;
+
+	bool isAfk() const;
+	bool sendAfkMessage(const QString &room, const QString &user);
 
 public slots:
 	void onConnected();
@@ -200,6 +212,7 @@ signals:
 	void userKicked(const QString &room, const QString &user, const QString &by);
 	void usersReceived(const QString &room, const QStringList &users);
 	void errorReceived(const QString &error);
+	void afkChanged(bool on);
 
 private:
 	void sendChat(const QString &room);
@@ -273,6 +286,8 @@ private:
 
 	EDAmnError m_lastError;
 	bool m_connected;
+	bool m_afk;
+	QString m_afkMessage;
 
 	QStringList m_delayedImages;
 

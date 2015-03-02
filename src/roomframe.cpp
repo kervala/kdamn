@@ -117,6 +117,12 @@ void RoomFrame::onSend()
 	if (DAmn::getInstance()->send(m_room, lines))
 	{
 		inputEdit->validate();
+
+		// leave AFK mode if send a message that is not a command
+		if (lines.size() > 0 && !lines.front().startsWith("/"))
+		{
+			DAmn::getInstance()->afk(false);
+		}
 	}
 }
 
@@ -285,4 +291,9 @@ void RoomFrame::updateCssScreen(const QString &css)
 void RoomFrame::updateCssFile(const QString &css)
 {
 	m_htmlFile.setCss(css);
+}
+
+void RoomFrame::setAfk(bool enabled)
+{
+	outputBrowser->setEnabled(enabled);
 }

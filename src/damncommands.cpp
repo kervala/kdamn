@@ -234,81 +234,37 @@ bool DAmn::send(const QString &room, const QString &text)
 	// check if text is a command
 	if (!text.isEmpty() && text[0] == '/')
 	{
-		QRegExp reg("([a-zA-Z]+)( (.*))?");
+		QRegExp reg("([a-zA-Z]+)( (.+))?");
 
 		if (reg.indexIn(text, 1) == 1)
 		{
 			QString cmd(reg.cap(1));
 			QString msg(reg.cap(3));
 
+			QStringList options = msg.split(" ");
+
+			// damn commands
 			if (cmd == "me") return sendAction(room, msg);
 			if (cmd == "part") return part(room);
-			if (cmd == "whois") return getUserInfo(msg);
 			if (cmd == "topic") return setChatProperty(room, "topic", msg);
 			if (cmd == "title") return setChatProperty(room, "title", msg);
 			if (cmd == "join") return join(msg);
 			if (cmd == "part") return part(msg.isEmpty() ? room:msg);
-			if (cmd == "demote") return demote(room, msg); // TODO: parse 3rd parameter
-			if (cmd == "promote") return promote(room, msg); // TODO: parse 3rd parameter
-			if (cmd == "kick") return kick(room, msg); // TODO: parse 3rd parameter
+			if (cmd == "demote") return demote(room, msg, options.length() > 1 ? options[1]:"");
+			if (cmd == "promote") return promote(room, msg, options.length() > 1 ? options[1]:"");
+			if (cmd == "kick") return kick(room, msg);
 			if (cmd == "ban") return ban(room, msg);
 			if (cmd == "unban") return unban(room, msg);
 			if (cmd == "admin") return admin(room, msg);
+
+			// new commands
+			if (cmd == "whois") return getUserInfo(msg);
 			if (cmd == "clear") return true;
-
-			if (cmd == "stats")
-			{
-				QMap<QString, int>::const_iterator it = m_stats.begin();
-
-				while(it != m_stats.end())
-				{
-					emit textReceived("", "", MessageText, QString("%1=%2").arg(it.key()).arg(it.value()), true);
-
-					++it;
-				}
-
-				return true;
-			}
-
-			if (cmd == "waiting")
-			{
-				QString room, user;
-
-				emit textReceived(room, user, MessageText, tr("Waiting messages:"), true);
-
-				QMutexLocker lock(&m_waitingMessagesMutex);
-
-				foreach(const WaitingMessages &msgs, m_waitingMessages)
-				{
-					emit textReceived(room, user, MessageText, tr("- Room %1").arg(msgs.room), true);
-
-					foreach(WaitingMessage *msg, msgs.messages)
-					{
-						QStringList images;
-
-						foreach(const DAmnImage &img, msg->images)
-						{
-							images << img.remoteUrl;
-						}
-
-						emit textReceived(room, user, MessageText, QString("  * %1").arg(images.join(", ")), true);
-					}
-				}
-
-				return true;
-			}
-
-			if (cmd == "raw")
-			{
-				// use \\n because \n is escaped
-				QStringList lines = msg.split("\\n");
-
-				begin();
-				foreach(const QString &line, lines) writeLine(line);
-				end();
-
-				return true;
-			}
+			if (cmd == "stats") return stats();
+			if (cmd == "waiting") return waiting();
+			if (cmd == "raw") return raw(msg);
+			if (cmd == "afk") return afk(!m_afk, msg);
+			if (cmd == "help") return help(msg);
 
 			// help note
 			// /admin show users [GroupName]
@@ -317,6 +273,129 @@ bool DAmn::send(const QString &room, const QString &text)
 	}
 
 	return sendMessage(room, text);
+}
+
+bool DAmn::stats()
+{
+	QMap<QString, int>::const_iterator it = m_stats.begin();
+
+	while(it != m_stats.end())
+	{
+		emit textReceived("", "", MessageText, QString("%1=%2").arg(it.key()).arg(it.value()), true);
+
+		++it;
+	}
+
+	return true;
+}
+
+bool DAmn::waiting()
+{
+	QString room, user;
+
+	emit textReceived(room, user, MessageText, tr("Waiting messages:"), true);
+
+	QMutexLocker lock(&m_waitingMessagesMutex);
+
+	foreach(const WaitingMessages &msgs, m_waitingMessages)
+	{
+		emit textReceived(room, user, MessageText, tr("- Room %1").arg(msgs.room), true);
+
+		foreach(WaitingMessage *msg, msgs.messages)
+		{
+			QStringList images;
+
+			foreach(const DAmnImage &img, msg->images)
+			{
+				images << img.remoteUrl;
+			}
+
+			emit textReceived(room, user, MessageText, QString("  * %1").arg(images.join(", ")), true);
+		}
+	}
+
+	return true;
+}
+
+bool DAmn::raw(const QString &msg)
+{
+	// use \\n because \n is escaped
+	QStringList lines = msg.split("\\n");
+
+	begin();
+	foreach(const QString &line, lines) writeLine(line);
+	end();
+
+	return true;
+}
+
+bool DAmn::afk(bool enabled, const QString &message)
+{
+	if (enabled != m_afk)
+	{
+		m_afk = enabled;
+
+		emit afkChanged(m_afk);
+	}
+
+	if (!message.isEmpty())
+	{
+		m_afkMessage = message;
+	}
+	else
+	{
+		m_afkMessage = tr("I'm currently away from keyboard, but I'll reply you when I'm back");
+	}
+
+	return true;
+}
+
+bool DAmn::help(const QString &command)
+{
+	return true;
+}
+
+QStringList DAmn::getCommands() const
+{
+	static QStringList sCommands;
+
+	if (sCommands.isEmpty())
+	{
+		sCommands
+			<< "afk"
+			<< "me"
+			<< "part"
+			<< "whois"
+			<< "topic"
+			<< "title"
+			<< "join"
+			<< "part"
+			<< "demote"
+			<< "promote"
+			<< "kick"
+			<< "ban"
+			<< "unban"
+			<< "admin"
+			<< "clear"
+			<< "stats"
+			<< "raw"
+			<< "help"
+			<< "waiting";
+	}
+
+	return sCommands;
+}
+
+bool DAmn::isAfk() const
+{
+	return m_afk;
+}
+
+bool DAmn::sendAfkMessage(const QString &room, const QString &user)
+{
+	if (!m_afk) return false;
+	
+	return send(room, QString("%1: %2").arg(user).arg(m_afkMessage));
 }
 
 bool DAmn::send(const QString &room, const QStringList &lines)

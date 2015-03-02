@@ -61,6 +61,7 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 	connect(damn, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
 //	connect(damn, SIGNAL(authenticationFailedWrongLogin()), this, SLOT(onRequestDAmnToken()));
 	connect(damn, SIGNAL(authenticationFailedWrongToken()), this, SLOT(onRequestDAmnToken()));
+	connect(damn, SIGNAL(afkChanged(bool)), this, SLOT(onAfk(bool)));
 
 	OAuth2 *oauth = OAuth2::getInstance();
 	connect(oauth, SIGNAL(foldersReceived()), this, SLOT(onReceiveFolders()));
@@ -638,6 +639,22 @@ void RoomsTabWidget::onError(const QString &error)
 	updateSystrayIcon("", "", "");
 }
 
+void RoomsTabWidget::onAfk(bool enabled)
+{
+	// TODO: send afk message
+
+	for(int i = 0; i < count(); ++i)
+	{
+		RoomFrame *roomFrame = qobject_cast<RoomFrame*>(widget(i));
+
+		if (roomFrame)
+		{
+			roomFrame->setAfk(enabled);
+			roomFrame->appendHtml(m_formatHtml->formatLineSystem(tr("AFK mode %1").arg(enabled ? tr("enabled"):tr("disabled"))));
+		}
+	}
+}
+
 void RoomsTabWidget::setServer(const QString &text)
 {
 	ServerFrame *frame = getServerFrame();
@@ -707,10 +724,8 @@ void RoomsTabWidget::updateSystrayIcon(const QString &room, const QString &user,
 	{
 		if (index == currentIndex()) return;
 	}
-	else
-	{
-		if (frame && frame->getFocus()) return;
-	}
+
+	bool focus = frame && frame->getFocus();
 
 	QString login = ConfigFile::getInstance()->getLogin().toLower();
 
@@ -722,10 +737,13 @@ void RoomsTabWidget::updateSystrayIcon(const QString &room, const QString &user,
 
 	if (newStatus == SystrayIcon::StatusTalkMe)
 	{
-		playSound(ConfigFile::getInstance()->getNameMentionedSound());
+		if (!focus) playSound(ConfigFile::getInstance()->getNameMentionedSound());
+
+		// afk mode
+		DAmn::getInstance()->sendAfkMessage(room, user);
 	}
 
-	if (newStatus > oldStatus)
+	if (!focus && (newStatus > oldStatus))
 	{
 		SystrayIcon::getInstance()->setStatus(room, newStatus);
 		tabBar()->setTabTextColor(index, newStatus == SystrayIcon::StatusTalkMe ? Qt::red:Qt::blue);
