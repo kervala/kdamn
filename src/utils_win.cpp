@@ -180,7 +180,7 @@ static BOOL CALLBACK EnumWindowsProc(HWND hWnd, LPARAM inst)
 	{
 		LONG style = GetWindowLong(hWnd, GWL_STYLE);
 
-		if (style & (WS_THICKFRAME|WS_DLGFRAME))
+		if (style & (WS_THICKFRAME|WS_DLGFRAME|WS_POPUP))
 		{
 			wchar_t WindowName[80];
 
