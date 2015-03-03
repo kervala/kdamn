@@ -148,7 +148,8 @@ void SystrayIcon::setStatus(const QString &room, SystrayStatus status)
 void SystrayIcon::displayMessage(const QString &message, SystrayAction action)
 {
 	m_action = action;
-	m_icon->showMessage("", message, QSystemTrayIcon::NoIcon);
+	
+	if (m_icon) m_icon->showMessage("", message, QSystemTrayIcon::NoIcon);
 }
 
 void SystrayIcon::onMessageClicked()
