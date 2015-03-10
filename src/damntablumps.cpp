@@ -212,35 +212,83 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 							post = tokens[1];
 						}
 
-						if (width > 150 || height > 150)
-						{
-							url = QString("http://th%1.deviantart.net/%2/150/%3");
+						bool useOEmbed = pre.startsWith("s3");
 
-							if (height > width)
+						if (!useOEmbed)
+						{
+							if (width > 150 || height > 150)
 							{
-								width = width * 150 / height;
-								height = 150;
+								url = QString("http://th%1.deviantart.net/%2/150/%3");
+
+								if (height > width)
+								{
+									width = width * 150 / height;
+									height = 150;
+								}
+								else
+								{
+									height = height * 150 / width;
+									width = 150;
+								}
 							}
 							else
 							{
-								height = height * 150 / width;
-								width = 150;
+								url = QString("http://fc%1.deviantart.net/%2/%3");
 							}
+
+							url = url.arg(tnserver, 2, '0').arg(pre).arg(post);
+
+							DAmnImage image;
+							image.remoteUrl = url;
+							image.oembed = false;
+
+							if (downloadImage(image) && !images.contains(image)) images << image;
+
+							html += QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" local=\"%6\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(image.remoteUrl).arg(link).arg(width).arg(height).arg(image.localUrl);
 						}
 						else
 						{
-							url = QString("http://fc%1.deviantart.net/%2/%3");
+							url = QString("http://www.deviantart.com/deviation/%1").arg(number);
+
+							QString oembedSite;
+
+							// check if we should use oembed
+							if (OEmbed::getInstance()->isUrlSupported(url, &oembedSite))
+							{
+								DAmnImage image;
+								image.remoteUrl = url;
+								image.oembed = true;
+								image.oembedSite = oembedSite;
+
+								// to check if duplicated
+								image.md5 = url;
+
+								// request image info using oembed
+								if (OEmbed::getInstance()->request(image.remoteUrl, oembedSite))
+								{
+									QString formattedUrl = url;
+
+									// comment URL to know we're will fix it later
+									OEmbed::getInstance()->commentUrl(formattedUrl, url);
+
+									// URL will be replaced by HTML code later
+									html += formattedUrl;
+
+									if (!images.contains(image)) images << image;
+								}
+								else
+								{
+									// to process normally
+									oembedSite.clear();
+								}
+							}
+
+							if (oembedSite.isEmpty())
+							{
+								// normal link (not oEmbed)
+								html += QString("<a href=\"%1\">%1</a>").arg(url);
+							}
 						}
-
-						url = url.arg(tnserver, 2, '0').arg(pre).arg(post);
-
-						DAmnImage image;
-						image.remoteUrl = url;
-						image.oembed = false;
-
-						if (downloadImage(image) && !images.contains(image)) images << image;
-
-						html += QString("<a href=\"%3\"><img alt=\"%1\" title=\"%1\" src=\"%2\" local=\"%6\" width=\"%4\" height=\"%5\"/></a>").arg(title).arg(image.remoteUrl).arg(link).arg(width).arg(height).arg(image.localUrl);
 					}
 
 					text += QString(":thumb%1:").arg(number);
