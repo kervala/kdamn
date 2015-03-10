@@ -40,7 +40,8 @@ public:
 	enum SystrayAction
 	{
 		ActionNone,
-		ActionReadLastNote
+		ActionReadLastNote,
+		ActionOpenURL
 	};
 
 	SystrayIcon(QWidget* parent);

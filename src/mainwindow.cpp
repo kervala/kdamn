@@ -67,6 +67,8 @@ MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false), m_mustLogin
 	// Notes menu
 	connect(actionDisplayNotes, SIGNAL(triggered()), this, SLOT(onDisplayNotes()));
 	connect(actionSendNote, SIGNAL(triggered()), this, SLOT(onSendNote()));
+	connect(actionCheckUrlChanges, SIGNAL(triggered()), this, SLOT(onCheckUrlChanges()));
+	connect(actionStopCheckUrlChanges, SIGNAL(triggered()), this, SLOT(onStopCheckUrlChanges()));
 
 	// Help menu
 	connect(actionLogs, SIGNAL(triggered()), this, SLOT(onLogs()));
@@ -84,6 +86,7 @@ MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false), m_mustLogin
 	connect(OAuth2::getInstance(), SIGNAL(newVersionDetected(QString, QString, uint, QString)), this, SLOT(onNewVersion(QString, QString, uint, QString)));
 	connect(OAuth2::getInstance(), SIGNAL(noNewVersionDetected()), this, SLOT(onNoNewVersion()));
 	connect(OAuth2::getInstance(), SIGNAL(uploadProgress(qint64, qint64)), this, SLOT(onProgress(qint64, qint64)));
+	connect(OAuth2::getInstance(), SIGNAL(urlChecked(QString, QString)), this, SLOT(onUrlChecked(QString, QString)));
 
 	// Systray
 	SystrayIcon *systray = new SystrayIcon(this);
@@ -202,6 +205,19 @@ void MainWindow::onRestore()
 
 void MainWindow::onSystrayAction(SystrayIcon::SystrayAction action)
 {
+	switch(action)
+	{
+		case SystrayIcon::ActionOpenURL:
+		if (!m_urlToCheck.isEmpty()) QDesktopServices::openUrl(m_urlToCheck);
+		break;
+
+		case SystrayIcon::ActionReadLastNote:
+		QDesktopServices::openUrl(QUrl("https://www.deviantart.com/messages/notes/"));
+		break;
+
+		default:
+		break;
+	}
 }
 
 void MainWindow::onConnect()
@@ -356,6 +372,24 @@ void MainWindow::onSendNote()
 	OAuth2::getInstance()->prepareNote();
 }
 
+void MainWindow::onCheckUrlChanges()
+{
+	QString url = QInputDialog::getText(this, tr("URL changes check"), tr("Enter URL to check:"), QLineEdit::Normal, m_urlToCheck);
+
+	if (!url.isEmpty())
+	{
+		m_urlToCheck = url;
+
+		checkUrlChanges();
+	}
+}
+
+void MainWindow::onStopCheckUrlChanges()
+{
+	m_urlToCheck.clear();
+	m_md5.clear();
+}
+
 void MainWindow::autoConnect()
 {
 	QString login = ConfigFile::getInstance()->getLogin();
@@ -480,4 +514,26 @@ void MainWindow::onProgress(qint64 readBytes, qint64 totalBytes)
 #else
 	// TODO: for other OSes
 #endif
+}
+
+void MainWindow::onUrlChecked(const QString &url, const QString &md5)
+{
+	if (m_urlToCheck == url)
+	{
+		if (!m_md5.isEmpty() && md5 != m_md5)
+		{
+			// changed
+			SystrayIcon::getInstance()->setStatus("", SystrayIcon::StatusTalkMe);
+			SystrayIcon::getInstance()->displayMessage(tr("Url %1 changed, click here to open it").arg(url), SystrayIcon::ActionOpenURL);
+		}
+
+		m_md5 = md5;
+
+		QTimer::singleShot(5000, this, SLOT(checkUrlChanges()));
+	}
+}
+
+void MainWindow::checkUrlChanges()
+{
+	if (!m_urlToCheck.isEmpty()) OAuth2::getInstance()->checkUrlChanges(m_urlToCheck);
 }

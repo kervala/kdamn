@@ -256,6 +256,11 @@ bool OAuth2::prepareNote()
 	return get(NOTES_URL);
 }
 
+bool OAuth2::checkUrlChanges(const QString &url)
+{
+	return getFilename(url, url);
+}
+
 bool OAuth2::sendNote(const Note &note)
 {
 	if (m_noteForm.hashes.isEmpty()) return false;
@@ -518,8 +523,15 @@ void OAuth2::onReply(QNetworkReply *reply)
 		}
 		else
 		{
-			// content and no redirection (ignore errors because content can be parsed)
-			processContent(content, url, filename);
+			if (url == filename)
+			{
+				processUrlChanges(content, url);
+			}
+			else
+			{
+				// content and no redirection (ignore errors because content can be parsed)
+				processContent(content, url, filename);
+			}
 		}
 	}
 }
@@ -766,6 +778,26 @@ void OAuth2::processContent(const QByteArray &content, const QString &url, const
 
 		qDebug() << content;
 	}
+}
+
+void OAuth2::processUrlChanges(const QByteArray &content, const QString &url)
+{
+	QString html = QString::fromUtf8(content);
+
+	// remove minor changes from HTML
+	html.remove(QRegExp("dwaitdatex(_|-)[0-9a-f]+"));
+	html.remove(QRegExp("549m[0-9a-f]+"));
+	html.remove(QRegExp("\"script\", [0-9]+\\);"));
+	html.remove(QRegExp("<span title=\"[^\"]*\">"));
+
+	QString md5 = QCryptographicHash::hash(html.toUtf8(), QCryptographicHash::Md5).toHex();
+
+	if (file.open(QFile::WriteOnly))
+	{
+		file.write(html.toUtf8());
+	}
+
+	emit urlChecked(url, md5);
 }
 
 void OAuth2::processRedirection(const QString &redirection, const QString &url)

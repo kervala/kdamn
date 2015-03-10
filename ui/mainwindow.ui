@@ -86,6 +86,8 @@
     </property>
     <addaction name="actionDisplayNotes"/>
     <addaction name="actionSendNote"/>
+    <addaction name="actionCheckUrlChanges"/>
+    <addaction name="actionStopCheckUrlChanges"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuRoom"/>
@@ -193,6 +195,16 @@
   <action name="actionSendNote">
    <property name="text">
     <string>&amp;Send note...</string>
+   </property>
+  </action>
+  <action name="actionCheckUrlChanges">
+   <property name="text">
+    <string>Check URL changes</string>
+   </property>
+  </action>
+  <action name="actionStopCheckUrlChanges">
+   <property name="text">
+    <string>Stop check URL changes</string>
    </property>
   </action>
  </widget>

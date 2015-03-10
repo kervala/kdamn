@@ -53,6 +53,8 @@ public slots:
 	// notes menu
 	void onDisplayNotes();
 	void onSendNote();
+	void onCheckUrlChanges();
+	void onStopCheckUrlChanges();
 
 	// help menu
 	void onLogs();
@@ -64,12 +66,14 @@ public slots:
 	void onMinimize();
 	void onRestore();
 	void onSystrayAction(SystrayIcon::SystrayAction action);
+	void checkUrlChanges();
 
 	// signals from OAuth2
 	void onLoggedOut(bool reconnect);
 	void onNewVersion(const QString &url, const QString &date, uint size, const QString &version);
 	void onNoNewVersion();
 	void onProgress(qint64 readBytes, qint64 totalBytes);
+	void onUrlChecked(const QString &url, const QString &md5);
 
 protected:
 	void showEvent(QShowEvent *e);
@@ -81,6 +85,9 @@ protected:
 	QWinTaskbarButton *m_button;
 	bool m_manualCheckUpdates;
 	bool m_mustLoginAfterLogout;
+
+	QString m_urlToCheck;
+	QString m_md5;
 };
 
 #endif

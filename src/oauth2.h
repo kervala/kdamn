@@ -141,6 +141,7 @@ public:
 	static QString getUserAgent();
 
 	bool checkUpdates();
+	bool checkUrlChanges(const QString &url);
 
 	bool get(const QString &url, const QString &referer = "");
 	bool getFilename(const QString &url, const QString &filename);
@@ -169,6 +170,7 @@ signals:
 	void uploadProgress(qint64 readBytes, qint64 totalBytes);
 	void noteSent(const QString &id);
 	void notePrepared();
+	void urlChecked(const QString &url, const QString &md5);
 
 	// DiFi signals
 	void foldersReceived();
@@ -214,6 +216,7 @@ private:
 
 	void redirect(const QString &url, const QString &referer);
 	void processContent(const QByteArray &content, const QString &url, const QString &filename);
+	void processUrlChanges(const QByteArray &content, const QString &url);
 	void processRedirection(const QString &redirection, const QString &url);
 	void processDiFi(const QByteArray &content);
 	void processJson(const QByteArray &content, const QString &path, const QString &filename);
