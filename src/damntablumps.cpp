@@ -299,8 +299,6 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 					QString width = tokens[2];
 					QString height = tokens[3];
 
-//					html += QString("<iframe src=\"%1\" width=\"%2\" height=\"%3\">").arg(url).arg(width).arg(height);
-//					html += QString("<embed src=\"%1\" width=\"%2\" height=\"%3\">").arg(url).arg(width).arg(height);
 					html += QString("<a href=\"%1\">%1").arg(url);
 					text += url;
 				}

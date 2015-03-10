@@ -641,8 +641,6 @@ void RoomsTabWidget::onError(const QString &error)
 
 void RoomsTabWidget::onAfk(bool enabled)
 {
-	// TODO: send afk message
-
 	for(int i = 0; i < count(); ++i)
 	{
 		RoomFrame *roomFrame = qobject_cast<RoomFrame*>(widget(i));
