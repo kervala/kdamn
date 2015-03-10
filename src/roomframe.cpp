@@ -229,8 +229,7 @@ void RoomFrame::updateSplitter()
 
 	foreach(const QString &user, users)
 	{
-//		int width = usersView->fontMetrics().boundingRect(member.name).width();
-		int width = usersView->fontMetrics().width(user)+10;
+		int width = usersView->fontMetrics().boundingRect(user).width()+10;
 
 		if (width < min) min = width;
 		if (width > max) max = width;
