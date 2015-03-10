@@ -830,8 +830,8 @@ void RoomsTabWidget::updateScreenCss()
 	colorsMap["darker_text_color"] = average(colorsMap["normal_text_color"], colorsMap["normal_window_color"], 0.75);
 	colorsMap["darkest_text_color"] = average(colorsMap["normal_text_color"], colorsMap["normal_window_color"], 0.5);
 
-	colorsMap["highlight_color"] = average(colorsMap["normal_text_color"], ConfigFile::getInstance()->getHighlightColor(), 0.5); // blue
-	colorsMap["error_color"] = average(colorsMap["normal_text_color"], ConfigFile::getInstance()->getErrorColor(), 0.5); // red
+	colorsMap["highlight_color"] = ConfigFile::getInstance()->getHighlightColor();
+	colorsMap["error_color"] = ConfigFile::getInstance()->getErrorColor();
 
 	// replace named colors
 	QMap<QString, QColor>::const_iterator it = colorsMap.begin(), iend = colorsMap.end();
