@@ -672,9 +672,10 @@ void OAuth2::processContent(const QByteArray &content, const QString &url, const
 	QUrl query = urlTemp;
 #endif
 
-	bool isJson = content.indexOf("{") == 0 || query.hasQueryItem("access_token") || query.hasQueryItem("grant_type") || query.hasQueryItem("url");
+	bool isJson = content.startsWith("{");
+	bool isHtml = content.startsWith("<");
 
-	if (url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1)
+	if (!isHtml && !isJson /* url.indexOf(QRegExp("\\." + OAuth2::getSupportedImageFormatsFilter() + "(\\?([0-9]+))?$")) > -1 */)
 	{
 		processImage(url, content);
 	}
