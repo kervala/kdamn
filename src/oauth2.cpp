@@ -793,11 +793,6 @@ void OAuth2::processUrlChanges(const QByteArray &content, const QString &url)
 
 	QString md5 = QCryptographicHash::hash(html.toUtf8(), QCryptographicHash::Md5).toHex();
 
-	if (file.open(QFile::WriteOnly))
-	{
-		file.write(html.toUtf8());
-	}
-
 	emit urlChecked(url, md5);
 }
 
