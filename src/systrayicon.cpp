@@ -23,17 +23,6 @@
 
 #ifdef USE_QT5
 
-#ifdef UNITY_HACK
-#undef signals
-
-extern "C"
-{
-	#include <libappindicator/app-indicator.h>
-}
-
-#define signals public
-#endif
-
 #endif
 
 #ifdef DEBUG_NEW
@@ -47,7 +36,7 @@ SystrayIcon::SystrayIcon(QWidget* parent):QObject(parent), m_status(StatusNormal
 {
 	if (!s_instance) s_instance = this;
 
-	create();
+	update();
 }
 
 SystrayIcon::~SystrayIcon()
@@ -57,11 +46,12 @@ SystrayIcon::~SystrayIcon()
 
 bool SystrayIcon::create()
 {
-	if (!QSystemTrayIcon::isSystemTrayAvailable() || !ConfigFile::getInstance()->getUseSystray()) return false;
+	if (m_icon) return true;
 
 	QWidget *parentW = qobject_cast<QWidget*>(parent());
 
 	m_icon = new QSystemTrayIcon(QIcon(":/icons/icon.svg"), parentW);
+	m_icon->setToolTip(QApplication::applicationName());
 
 	connect(m_icon, SIGNAL(messageClicked()), this, SLOT(onMessageClicked()));
 
@@ -78,11 +68,20 @@ bool SystrayIcon::create()
 	connect(m_quitAction, SIGNAL(triggered()), this, SIGNAL(requestClose()));
 
 	connect(m_icon, SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this, SLOT(onTrayActivated(QSystemTrayIcon::ActivationReason)));
-	connect(m_icon, SIGNAL(visibilityChanged(bool)), this, SLOT(onTrayActivated(QSystemTrayIcon::ActivationReason)));
-
-//	visibilityChanged(bool visible)
 
 	updateStatus();
+
+	return true;
+}
+
+bool SystrayIcon::release()
+{
+	if (m_icon)
+	{
+		m_icon->contextMenu()->deleteLater();
+		m_icon->deleteLater();
+		m_icon = NULL;
+	}
 
 	return true;
 }
@@ -150,6 +149,18 @@ void SystrayIcon::displayMessage(const QString &message, SystrayAction action)
 	m_action = action;
 	
 	if (m_icon) m_icon->showMessage("", message, QSystemTrayIcon::NoIcon);
+}
+
+void SystrayIcon::update()
+{
+	if (!QSystemTrayIcon::isSystemTrayAvailable() || !ConfigFile::getInstance()->getUseSystray())
+	{
+		release();
+	}
+	else
+	{
+		create();
+	}
 }
 
 void SystrayIcon::onMessageClicked()

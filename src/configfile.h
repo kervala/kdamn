@@ -140,6 +140,7 @@ DECLARE_BOOL_VAR(EnableSound, enableSound);
 DECLARE_QSTRING_VAR(NameMentionedSound, nameMentionedSound);
 DECLARE_QSTRING_VAR(NoteReceivedSound, noteReceivedSound);
 DECLARE_BOOL_VAR(UseSystray, useSystray);
+DECLARE_BOOL_VAR(HideMinimizedWindow, hideMinimizedWindow);
 
 public slots:
 	bool load();

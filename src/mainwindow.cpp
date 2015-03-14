@@ -178,8 +178,8 @@ void MainWindow::onAboutQt()
 
 void MainWindow::onMinimize()
 {
-	// only hide window if using systray
-	if (isVisible() && ConfigFile::getInstance()->getUseSystray())
+	// only hide window if using systray and enabled hide minized window
+	if (isVisible() && ConfigFile::getInstance()->getUseSystray() && ConfigFile::getInstance()->getHideMinimizedWindow())
 	{
 		hide();
 	}
@@ -246,6 +246,9 @@ void MainWindow::onSettings()
 	if (dialog.exec())
 	{
 		roomsWidget->updateConfig();
+
+		// update systray
+		SystrayIcon::getInstance()->update();
 	}
 }
 
@@ -313,8 +316,7 @@ void MainWindow::onUploadScreenshot()
 
 	minimized = RestoreMinimizedWindow(id);
 
-	if (!minimized && !IsUsingComposition())
-		PutForegroundWindow(id);
+	if (!minimized && !IsUsingComposition()) PutForegroundWindow(id);
 
 #ifdef USE_QT5
 	QPixmap pixmap = QGuiApplication::primaryScreen()->grabWindow(id);
@@ -502,6 +504,10 @@ void MainWindow::onProgress(qint64 readBytes, qint64 totalBytes)
 	}
 	else if (readBytes == 0)
 	{
+//		TODO: see why it doesn't work
+//		m_button->setOverlayIcon(style()->standardIcon(QStyle::SP_MediaPlay) /* QIcon(":/icons/upload.svg") */);
+//		m_button->setOverlayAccessibleDescription(tr("Upload"));
+
 		// beginning
 		progress->show();
 		progress->setRange(0, totalBytes);

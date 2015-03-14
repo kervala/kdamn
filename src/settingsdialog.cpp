@@ -57,6 +57,9 @@ SettingsDialog::SettingsDialog(QWidget* parent):QDialog(parent, Qt::Dialog | Qt:
 
 	// chat
 	displayTimestampsCheckBox->setChecked(ConfigFile::getInstance()->getDisplayTimestamps());
+	useSystemTrayCheckBox->setChecked(ConfigFile::getInstance()->getUseSystray());
+	hideWindowCheckBox->setChecked(ConfigFile::getInstance()->getHideMinimizedWindow());
+
 	highlightColorButton->setUserData(0, new StringUserData(ConfigFile::getInstance()->getHighlightColor().name()));
 	errorColorButton->setUserData(0, new StringUserData(ConfigFile::getInstance()->getErrorColor().name()));
 	chatStyleComboBox->setModel(model);
@@ -103,6 +106,8 @@ void SettingsDialog::accept()
 	config->setErrorColor(((StringUserData*)errorColorButton->userData(0))->text);
 	config->setScreenStyle(chatStyleComboBox->currentIndex() == 0 ? "":chatStyleComboBox->currentText());
 	config->setDisplayTimestamps(displayTimestampsCheckBox->isChecked());
+	ConfigFile::getInstance()->setUseSystray(useSystemTrayCheckBox->isChecked());
+	ConfigFile::getInstance()->setHideMinimizedWindow(hideWindowCheckBox->isChecked());
 
 	// logs
 	config->setEnableLogs(logsGroupBox->isChecked());

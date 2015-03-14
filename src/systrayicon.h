@@ -53,6 +53,7 @@ public:
 	void setStatus(const QString &room, SystrayStatus status);
 
 	void displayMessage(const QString &message, SystrayAction action);
+	void update();
 
 signals:
 	void requestMinimize();
@@ -66,6 +67,8 @@ public slots:
 
 private:
 	bool create();
+	bool release();
+
 	void updateStatus();
 
 	static SystrayIcon* s_instance;

@@ -8,7 +8,7 @@
     <x>0</x>
     <y>0</y>
     <width>361</width>
-    <height>484</height>
+    <height>530</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="mainLayout">
@@ -88,6 +88,20 @@
         </property>
        </widget>
       </item>
+      <item row="6" column="0">
+       <widget class="QCheckBox" name="useSystemTrayCheckBox">
+        <property name="text">
+         <string>Use system tray icon</string>
+        </property>
+       </widget>
+      </item>
+      <item row="7" column="0">
+       <widget class="QCheckBox" name="hideWindowCheckBox">
+        <property name="text">
+         <string>Hide window when minimized</string>
+        </property>
+       </widget>
+      </item>
      </layout>
     </widget>
    </item>
@@ -144,12 +158,6 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>32</width>
-            <height>16777215</height>
-           </size>
           </property>
           <property name="text">
            <string>...</string>
@@ -220,7 +228,7 @@
    <item>
     <widget class="QGroupBox" name="enableSoundGroupBox">
      <property name="title">
-      <string>Enable sound</string>
+      <string>Enable sounds</string>
      </property>
      <property name="checkable">
       <bool>true</bool>
@@ -243,18 +251,6 @@
         </item>
         <item>
          <widget class="QPushButton" name="nameMentionedSoundBrowseButton">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>32</width>
-            <height>16777215</height>
-           </size>
-          </property>
           <property name="text">
            <string>...</string>
           </property>
@@ -284,12 +280,6 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
-          </property>
-          <property name="maximumSize">
-           <size>
-            <width>32</width>
-            <height>16777215</height>
-           </size>
           </property>
           <property name="text">
            <string>...</string>

@@ -85,6 +85,7 @@ ConfigFile::ConfigFile(QObject* parent):QObject(parent), m_settings(QSettings::I
 	m_enableHtmlLogs = true;
 	m_enableSound = false;
 	m_useSystray = false;
+	m_hideMinimizedWindow = false;
 
 	if (!s_instance) s_instance = this;
 
@@ -172,6 +173,8 @@ bool ConfigFile::loadVersion2()
 	m_enableAnimations = m_settings.value("enable_animations", true).toBool();
 	m_animationFrameDelay = m_settings.value("animation_frame_delay", 100).toInt();
 	m_displayTimestamps = m_settings.value("display_timestamps", true).toBool();
+	m_useSystray = m_settings.value("use_systray", false).toBool();
+	m_hideMinimizedWindow = m_settings.value("hide_minimized_windows", false).toBool();
 	m_enableOembedThumbnail = m_settings.value("enable_oembed_thumbnail", true).toBool();
 	m_highlightColor = m_settings.value("highlight_color", "").toString();
 	m_errorColor = m_settings.value("error_color", "").toString();
@@ -211,10 +214,10 @@ bool ConfigFile::loadVersion2()
 
 	m_settings.endGroup();
 
-	// sound parameters
-	m_settings.beginGroup("sound");
+	// sounds parameters
+	m_settings.beginGroup("sounds");
 
-	m_enableSound = m_settings.value("enable_sound", true).toBool();
+	m_enableSound = m_settings.value("enable_sounds", true).toBool();
 	m_nameMentionedSound = m_settings.value("name_mentioned_sound", "").toString();
 	m_noteReceivedSound = m_settings.value("note_received_sound", "").toString();
 
@@ -268,6 +271,8 @@ bool ConfigFile::save()
 	m_settings.setValue("enable_animations", m_enableAnimations);
 	m_settings.setValue("animation_frame_delay", m_animationFrameDelay);
 	m_settings.setValue("display_timestamps", m_displayTimestamps);
+	m_settings.setValue("use_systray", m_useSystray);
+	m_settings.setValue("hide_minimized_windows", m_hideMinimizedWindow);
 	m_settings.setValue("enable_oembed_thumbnail", m_enableOembedThumbnail);
 	m_settings.setValue("highlight_color", m_highlightColor == Qt::blue ? "":m_highlightColor.name());
 	m_settings.setValue("error_color", m_errorColor == Qt::red ? "":m_errorColor.name());
@@ -307,10 +312,10 @@ bool ConfigFile::save()
 
 	m_settings.endGroup();
 
-	// sound parameters
-	m_settings.beginGroup("sound");
+	// sounds parameters
+	m_settings.beginGroup("sounds");
 
-	m_settings.setValue("enable_sound", m_enableSound);
+	m_settings.setValue("enable_sounds", m_enableSound);
 	m_settings.setValue("name_mentioned_sound", m_nameMentionedSound);
 	m_settings.setValue("note_received_sound", m_noteReceivedSound);
 
@@ -594,3 +599,4 @@ IMPLEMENT_BOOL_VAR(EnableSound, enableSound);
 IMPLEMENT_QSTRING_VAR(NameMentionedSound, nameMentionedSound);
 IMPLEMENT_QSTRING_VAR(NoteReceivedSound, noteReceivedSound);
 IMPLEMENT_BOOL_VAR(UseSystray, useSystray);
+IMPLEMENT_BOOL_VAR(HideMinimizedWindow, hideMinimizedWindow);
