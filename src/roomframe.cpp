@@ -303,5 +303,5 @@ void RoomFrame::updateCssFile(const QString &css)
 
 void RoomFrame::setAfk(bool enabled)
 {
-	outputBrowser->setEnabled(enabled);
+	outputBrowser->setEnabled(!enabled);
 }
