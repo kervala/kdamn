@@ -212,7 +212,7 @@ signals:
 	void userKicked(const QString &room, const QString &user, const QString &by);
 	void usersReceived(const QString &room, const QStringList &users);
 	void errorReceived(const QString &error);
-	void afkChanged(bool on);
+	void afkChanged(bool on, const QString &message);
 
 private:
 	void sendChat(const QString &room);

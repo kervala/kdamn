@@ -334,8 +334,6 @@ bool DAmn::afk(bool enabled, const QString &message)
 	if (enabled != m_afk)
 	{
 		m_afk = enabled;
-
-		emit afkChanged(m_afk);
 	}
 
 	if (!message.isEmpty())
@@ -346,6 +344,8 @@ bool DAmn::afk(bool enabled, const QString &message)
 	{
 		m_afkMessage = tr("I'm currently away from keyboard, but I'll reply you when I'm back");
 	}
+
+	emit afkChanged(m_afk, m_afkMessage);
 
 	return true;
 }

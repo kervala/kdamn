@@ -61,7 +61,7 @@ RoomsTabWidget::RoomsTabWidget(QWidget *parent):QTabWidget(parent), m_messagesTi
 	connect(damn, SIGNAL(errorReceived(QString)), this, SLOT(onError(QString)));
 //	connect(damn, SIGNAL(authenticationFailedWrongLogin()), this, SLOT(onRequestDAmnToken()));
 	connect(damn, SIGNAL(authenticationFailedWrongToken()), this, SLOT(onRequestDAmnToken()));
-	connect(damn, SIGNAL(afkChanged(bool)), this, SLOT(onAfk(bool)));
+	connect(damn, SIGNAL(afkChanged(bool, QString)), this, SLOT(onAfk(bool, QString)));
 
 	OAuth2 *oauth = OAuth2::getInstance();
 	connect(oauth, SIGNAL(foldersReceived()), this, SLOT(onReceiveFolders()));
@@ -639,7 +639,7 @@ void RoomsTabWidget::onError(const QString &error)
 	updateSystrayIcon("", "", "");
 }
 
-void RoomsTabWidget::onAfk(bool enabled)
+void RoomsTabWidget::onAfk(bool enabled, const QString &message)
 {
 	for(int i = 0; i < count(); ++i)
 	{
@@ -648,7 +648,7 @@ void RoomsTabWidget::onAfk(bool enabled)
 		if (roomFrame)
 		{
 			roomFrame->setAfk(enabled);
-			roomFrame->appendHtml(m_formatHtml->formatLineSystem(tr("AFK mode %1").arg(enabled ? tr("enabled"):tr("disabled"))));
+			roomFrame->appendHtml(m_formatHtml->formatLineSystem(tr("AFK mode %1 with message: %2").arg(enabled ? tr("enabled"):tr("disabled")).arg(message)));
 		}
 	}
 }
