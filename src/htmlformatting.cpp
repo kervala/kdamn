@@ -124,6 +124,10 @@ QString HtmlFormatting::formatMessageAction(const QString &user, const QString &
 				// hightlight username in HTML code
 				formattedText = highlightUser(login, text);
 			}
+			else
+			{
+				formattedText = text;
+			}
 		}
 		else
 		{
