@@ -331,21 +331,17 @@ bool DAmn::raw(const QString &msg)
 
 bool DAmn::afk(bool enabled, const QString &message)
 {
+	// don't do anything if AFK mode already disabled
+	if (!enabled && !m_afk && m_afkMessage == message) return true;
+
 	if (enabled != m_afk)
 	{
 		m_afk = enabled;
 	}
 
-	if (!message.isEmpty())
-	{
-		m_afkMessage = message;
-	}
-	else
-	{
-		m_afkMessage = tr("I'm currently away from keyboard, but I'll reply you when I'm back");
-	}
+	m_afkMessage = message;
 
-	emit afkChanged(m_afk, m_afkMessage);
+	emit afkChanged(m_afk, m_afkMessage.isEmpty() ? tr("I'm currently away from keyboard, but I'll reply you when I'm back"):m_afkMessage);
 
 	return true;
 }
