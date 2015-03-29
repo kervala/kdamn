@@ -305,7 +305,11 @@ bool DAmn::onUpdateWaitingMessages(const QString &md5, bool found)
 
 						if (!found)
 						{
-							OEmbed::getInstance()->replaceCommentedUrlByLink(msg->html, it->remoteUrl);
+							OEmbed::replaceCommentedUrlByLink(msg->html, it->originalUrl);
+						}
+						else
+						{
+							OEmbed::replaceCommentedUrlByHtml(msg->html, it->originalUrl, it->htmlLink);
 						}
 					}
 

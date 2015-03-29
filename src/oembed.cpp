@@ -296,7 +296,8 @@ bool OEmbed::applyData(Data &data)
 				// replace commented URL by HTML code
 				if (buildHtml(data, it->localUrl))
 				{
-					replaceCommentedUrlByHtml(message->html, data.url, data.html);
+					// create HTML links
+					it->htmlLink = data.html;
 				}
 			}
 

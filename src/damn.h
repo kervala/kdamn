@@ -67,9 +67,11 @@ enum EDAmnReason
 struct DAmnImage
 {
 	QString md5;
+	QString originalUrl;
 	QString remoteUrl;
 	QString localUrl;
 	QString filename;
+	QString htmlLink;
 	bool downloaded;
 	bool valid;
 	bool oembed;

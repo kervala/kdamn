@@ -125,6 +125,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 					QString url = "http://e.deviantart.net/emoticons/" + tokens[5];
 
 					DAmnImage image;
+					image.originalUrl = url;
 					image.remoteUrl = url;
 					image.oembed = false;
 
@@ -149,6 +150,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 					QString url = getAvatarUrl(name.toLower(), usericon);
 
 					DAmnImage image;
+					image.originalUrl = url;
 					image.remoteUrl = url;
 					image.oembed = false;
 
@@ -239,6 +241,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 							url = url.arg(tnserver, 2, '0').arg(pre).arg(post);
 
 							DAmnImage image;
+							image.originalUrl = url;
 							image.remoteUrl = url;
 							image.oembed = false;
 
@@ -256,6 +259,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 							if (OEmbed::getInstance()->isUrlSupported(url, &oembedSite))
 							{
 								DAmnImage image;
+								image.originalUrl = url;
 								image.remoteUrl = url;
 								image.oembed = true;
 								image.oembedSite = oembedSite;
@@ -309,6 +313,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 					QString height = tokens[3];
 
 					DAmnImage image;
+					image.originalUrl = url;
 					image.remoteUrl = url;
 					image.oembed = false;
 
@@ -330,6 +335,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 						if (OEmbed::getInstance()->isUrlSupported(url, &oembedSite))
 						{
 							DAmnImage image;
+							image.originalUrl = url;
 							image.remoteUrl = url;
 							image.oembed = true;
 							image.oembedSite = oembedSite;
