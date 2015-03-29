@@ -269,7 +269,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 									QString formattedUrl = url;
 
 									// comment URL to know we're will fix it later
-									OEmbed::getInstance()->commentUrl(formattedUrl, url);
+									OEmbed::commentUrl(formattedUrl, url);
 
 									// URL will be replaced by HTML code later
 									html += formattedUrl;
@@ -343,7 +343,7 @@ bool DAmn::replaceTablumps(const QString &data, QString &html, QString &text, DA
 								QString formattedUrl = url;
 
 								// comment URL to know we're will fix it later
-								OEmbed::getInstance()->commentUrl(formattedUrl, url);
+								OEmbed::commentUrl(formattedUrl, url);
 
 								// URL will be replaced by HTML code later
 								html += formattedUrl;

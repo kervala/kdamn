@@ -119,22 +119,13 @@ bool OEmbed::request(const QString &url, const QString &siteId)
 	return OAuth2::getInstance()->getFilename(requestUrl, url);
 }
 
-bool OEmbed::commentUrl(QString &content, const QString &url) const
+bool OEmbed::commentUrl(QString &content, const QString &url)
 {
 	int before = content.length();
 	content.replace(url, QString("<!-- %1 -->").arg(url));
 	int after = content.length();
 
 	return after > before;
-}
-
-bool OEmbed::uncommentUrl(QString &content, const QString &url) const
-{
-	int before = content.length();
-	content.replace(QString("<!-- %1 -->").arg(url), url);
-	int after = content.length();
-
-	return after < before;
 }
 
 bool OEmbed::replaceCommentedUrlByHtml(QString &content, const QString &url, const QString &html)
