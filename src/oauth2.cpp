@@ -417,8 +417,8 @@ bool OAuth2::processImage(const QString &url, const QByteArray &content)
 		}
 		else
 		{
-			// only retry 5 times
-			if (image->retries < 5)
+			// only retry 10 times
+			if (image->retries < 10)
 			{
 				error = false;
 
