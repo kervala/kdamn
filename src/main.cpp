@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	QApplication::setApplicationVersion(VERSION);
 	QApplication::setWindowIcon(QIcon(":/icons/icon.svg"));
 
-	new ConfigFile(qApp);
+	ConfigFile *config = new ConfigFile();
 
 	QLocale locale = QLocale::system();
 
@@ -84,5 +84,9 @@ int main(int argc, char *argv[])
 	mainWindow.show();
 
 	// only memory leaks are from plugins
-	return QApplication::exec();
+	int res = QApplication::exec();
+
+	delete config;
+
+	return res;
 }
