@@ -299,18 +299,15 @@ bool DAmn::onUpdateWaitingMessages(const QString &md5, bool found)
 
 				if (md5 == it->md5)
 				{
-					if (!it->downloaded)
-					{
-						it->downloaded = true;
+					it->downloaded = true;
 
-						if (!found)
-						{
-							OEmbed::replaceCommentedUrlByLink(msg->html, it->originalUrl);
-						}
-						else
-						{
-							OEmbed::replaceCommentedUrlByHtml(msg->html, it->originalUrl, it->htmlLink);
-						}
+					if (!found)
+					{
+						OEmbed::replaceCommentedUrlByLink(msg->html, it->originalUrl);
+					}
+					else
+					{
+						OEmbed::replaceCommentedUrlByHtml(msg->html, it->originalUrl, it->htmlLink);
 					}
 
 					if (!rooms.contains(msg->room)) rooms << msg->room;
