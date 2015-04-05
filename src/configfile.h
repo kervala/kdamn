@@ -93,7 +93,7 @@ class ConfigFile : public QObject
 	Q_OBJECT
 
 public:
-	ConfigFile(QObject* parent);
+	ConfigFile(QObject* parent = NULL);
 	virtual ~ConfigFile();
 
 	static ConfigFile* getInstance() { return s_instance; }
