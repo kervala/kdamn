@@ -482,8 +482,8 @@ void OAuth2::onReply(QNetworkReply *reply)
 	if (errorCode != QNetworkReply::NoError) qDebug() << "HTTP" << statusCode << "error" << errorCode << errorString;
 #endif
 
-	// if status code 302 (redirection) or 404 (not found), we can clear content
-	if (statusCode == 302 || statusCode == 404) content.clear();
+	// if status code 302 (redirection), 404 (not found) or 401 (unauthorized), we can clear content
+	if (statusCode == 302 || statusCode == 404 || statusCode == 401) content.clear();
 
 	if (content.isEmpty())
 	{
@@ -506,7 +506,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 
 			if (displayError)
 			{
-				emit errorReceived(tr("Network error: %1 (%2) (HTTP %3)").arg(errorString).arg(errorCode).arg(statusCode));
+				emit errorReceived(tr("Network error: %1 (HTTP %2)").arg(errorString).arg(statusCode));
 
 				emit imageDownloaded(filename, false);
 			}
