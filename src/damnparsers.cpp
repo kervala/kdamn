@@ -293,7 +293,7 @@ bool DAmn::parseText(const QString &room, const QString &from, EMessageType type
 
 	DAmnImages images;
 
-	if (replaceTablumps(lines[i], html, text, images) && m_waitingMessages[room].messages.isEmpty())
+	if (replaceTablumps(lines[i], html, text, images))
 	{
 		emit textReceived(room, from, type, html, true);
 	}
