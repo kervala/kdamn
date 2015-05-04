@@ -341,11 +341,12 @@ QString OAuth2::getUserAgent()
 			case QSysInfo::WV_4_0: system += "NT 4.0"; break; // Windows NT 4
 			case QSysInfo::WV_5_0: system += "NT 5.0"; break; // Windows 2000
 			case QSysInfo::WV_5_1: system += "NT 5.1"; break; // Windows XP
-			case QSysInfo::WV_5_2: system += "NT 5.2"; break; // Windows Vista
-			case QSysInfo::WV_6_0: system += "NT 6.0"; break; // Windows 7
-			case QSysInfo::WV_6_1: system += "NT 6.1"; break; // Windows 8
-			case QSysInfo::WV_6_2: system += "NT 6.2"; break; // Windows 8.1
-			case QSysInfo::WV_6_3: system += "NT 6.3"; break;
+			case QSysInfo::WV_5_2: system += "NT 5.2"; break; // Windows XP 64bits
+			case QSysInfo::WV_6_0: system += "NT 6.0"; break; // Windows Vista
+			case QSysInfo::WV_6_1: system += "NT 6.1"; break; // Windows 7
+			case QSysInfo::WV_6_2: system += "NT 6.2"; break; // Windows 8
+			case QSysInfo::WV_6_3: system += "NT 6.3"; break; // Windows 8.1
+//			case QSysInfo::WV_10_0: system += "NT 10.0"; break; // Windows 10
 			case QSysInfo::WV_NT_based: system += "NT"; break;
 
 			case QSysInfo::WV_CE: system += "CE"; break;
