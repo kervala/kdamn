@@ -191,13 +191,13 @@ MACRO(PARSE_VERSION_OTHER FILENAME)
   IF(EXISTS ${FILENAME})
     SET(_FILTER_ARRAY ${ARGN})
     JOIN("${_FILTER_ARRAY}" "|" _FILTER_REGEX)
-    FILE(STRINGS ${FILENAME} _FILE REGEX "(${_FILTER_REGEX})[ \t=\(\)\"]+([0-9.]+)")
+    FILE(STRINGS ${FILENAME} _FILE REGEX "(${_FILTER_REGEX})[: \t=\(\)\"]+([0-9.]+)")
 
     IF(_FILE)
       FOREACH(_LINE ${_FILE})
         FOREACH(_VAR ${_FILTER_ARRAY})
           IF(NOT ${_VAR})
-            STRING(REGEX REPLACE "^.*${_VAR}[ \t=\(\)\"]+([0-9.]+).*$" "\\1" ${_VAR} "${_LINE}")
+            STRING(REGEX REPLACE "^.*${_VAR}[: \t=\(\)\"]+([0-9.]+).*$" "\\1" ${_VAR} "${_LINE}")
             IF(${_VAR} STREQUAL "${_LINE}")
               SET(${_VAR})
             ELSE()
@@ -513,6 +513,8 @@ MACRO(SET_TARGET_LIB name)
   SET(MISC_FILES)
   SET(_RCS)
   SET(_DEFS)
+  SET(_LIBRARIES_TO_MERGE)
+  SET(_LIBRARIES_TO_LINK)
 
   INIT_QT()
   INIT_MAC()
@@ -529,6 +531,14 @@ MACRO(SET_TARGET_LIB name)
       SET(IS_PRIVATE ON)
     ELSEIF(ARG STREQUAL "NO_GROUPS")
       SET(_NO_GROUPS ON)
+    ELSEIF(TARGET "${ARG}")
+      IF(WIN32)
+        GET_FINAL_FILENAME_FULLPATH_WITH_EXTENSION(${ARG} _OUTPUT_PATH "lib")
+
+        SET(_LIBRARIES_TO_MERGE "${_LIBRARIES_TO_MERGE} ${_OUTPUT_PATH}")
+      ENDIF()
+
+      LIST(APPEND _LIBRARIES_TO_LINK ${ARG})
     ELSEIF(ARG MATCHES "\\.rc$")
       LIST(APPEND _SOURCES_SHARED ${ARG})
       LIST(APPEND _RCS ${ARG})
@@ -624,26 +634,45 @@ MACRO(SET_TARGET_LIB name)
     SET(_OUTPUT_NAME_RELEASE ${${name}_OUTPUT_NAME_RELEASE})
   ENDIF()
 
+  SET(_STATIC_LIB_TARGET)
+  SET(_SHARED_LIB_TARGET)
+  
   # If library mode is not specified, prepend it
   IF(IS_SHARED)
     ADD_LIBRARY(${name} SHARED ${_SOURCES_SHARED} ${_HEADERS} ${QT_SOURCES} ${_RESOURCES})
+    SET(_SHARED_LIB_TARGET ${name})
     IF(IS_STATIC)
-      ADD_LIBRARY(${name}_static STATIC ${_SOURCES_STATIC} ${_HEADERS} ${QT_SOURCES} ${_RESOURCES})
+      SET(_STATIC_LIB_TARGET ${name}_static)
       SET(STATIC_LIB ON)
-      IF(NOT WIN32)
-        SET_TARGET_PROPERTIES(${name}_static PROPERTIES
-          OUTPUT_NAME_DEBUG ${_OUTPUT_NAME_DEBUG}
-          OUTPUT_NAME_RELEASE ${_OUTPUT_NAME_RELEASE})
-      ENDIF()
     ENDIF()
   ELSEIF(IS_STATIC)
-    ADD_LIBRARY(${name} STATIC ${_SOURCES_STATIC} ${_HEADERS} ${QT_SOURCES} ${_RESOURCES})
+    SET(_STATIC_LIB_TARGET ${name})
+  ENDIF()
+
+  IF(_STATIC_LIB_TARGET)
+    ADD_LIBRARY(${_STATIC_LIB_TARGET} STATIC ${_SOURCES_STATIC} ${_HEADERS} ${QT_SOURCES} ${_RESOURCES})
+  ENDIF()
+
+  IF(_LIBRARIES_TO_MERGE AND IS_STATIC)
+    SET_PROPERTY(TARGET ${_STATIC_LIB_TARGET} APPEND PROPERTY STATIC_LIBRARY_FLAGS "${_LIBRARIES_TO_MERGE}")
+  ENDIF()
+    
+  IF(_LIBRARIES_TO_LINK AND IS_SHARED)
+     TARGET_LINK_LIBRARIES(${_SHARED_LIB_TARGET} ${_LIBRARIES_TO_LINK})
   ENDIF()
 
   SET_TARGET_PROPERTIES(${name} PROPERTIES
     OUTPUT_NAME_DEBUG ${_OUTPUT_NAME_DEBUG}
     OUTPUT_NAME_RELEASE ${_OUTPUT_NAME_RELEASE})
 
+  IF(STATIC_LIB)
+    IF(NOT WIN32)
+      SET_TARGET_PROPERTIES(${_STATIC_LIB_TARGET} PROPERTIES
+        OUTPUT_NAME_DEBUG ${_OUTPUT_NAME_DEBUG}
+        OUTPUT_NAME_RELEASE ${_OUTPUT_NAME_RELEASE})
+    ENDIF()
+  ENDIF()
+    
   IF(IS_SHARED)
     SIGN_FILE(${name})
   ENDIF()
@@ -653,7 +682,7 @@ MACRO(SET_TARGET_LIB name)
     IF(MSVC AND WITH_PREFIX_LIB)
       SET_TARGET_PROPERTIES(${name} PROPERTIES PREFIX "lib" IMPORT_PREFIX "lib")
       IF(STATIC_LIB)
-        SET_TARGET_PROPERTIES(${name}_static PROPERTIES PREFIX "lib")
+        SET_TARGET_PROPERTIES(${_STATIC_LIB_TARGET} PROPERTIES PREFIX "lib")
       ENDIF()
     ENDIF()
 
@@ -661,7 +690,7 @@ MACRO(SET_TARGET_LIB name)
   ENDIF()
 
   IF(STATIC_LIB)
-    SET_TARGET_FLAGS(${name}_static)
+    SET_TARGET_FLAGS(${_STATIC_LIB_TARGET})
   ENDIF()
 
   IF(IS_STATIC OR IS_SHARED)
@@ -677,12 +706,12 @@ MACRO(SET_TARGET_LIB name)
       IF(WITH_INSTALL_LIBRARIES)
         INSTALL(TARGETS ${name} RUNTIME DESTINATION ${BIN_PREFIX} LIBRARY DESTINATION ${LIBRARY_DEST} ARCHIVE DESTINATION ${LIB_PREFIX})
         IF(STATIC_LIB)
-          INSTALL(TARGETS ${name}_static RUNTIME DESTINATION ${BIN_PREFIX} LIBRARY DESTINATION ${LIBRARY_DEST} ARCHIVE DESTINATION ${LIB_PREFIX})
+          INSTALL(TARGETS ${_STATIC_LIB_TARGET} RUNTIME DESTINATION ${BIN_PREFIX} LIBRARY DESTINATION ${LIBRARY_DEST} ARCHIVE DESTINATION ${LIB_PREFIX})
         ENDIF()
       ELSE()
         INSTALL(TARGETS ${name} RUNTIME DESTINATION ${BIN_PREFIX} LIBRARY DESTINATION ${LIBRARY_DEST})
         IF(STATIC_LIB)
-          INSTALL(TARGETS ${name}_static RUNTIME DESTINATION ${BIN_PREFIX} LIBRARY DESTINATION ${LIBRARY_DEST})
+          INSTALL(TARGETS ${_STATIC_LIB_TARGET} RUNTIME DESTINATION ${BIN_PREFIX} LIBRARY DESTINATION ${LIBRARY_DEST})
         ENDIF()
       ENDIF()
 
@@ -923,23 +952,23 @@ MACRO(INSTALL_RESOURCES _TARGET _DIR)
   # Installing all UNIX resources in /usr/share
   IF(UNIX AND NOT APPLE)
     IF(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/res/desktop.in")
-      SET(DESKTOP_FILE "${CMAKE_CURRENT_BINARY_DIR}/share/applications/${TARGET}.desktop")
+      SET(DESKTOP_FILE "${CMAKE_CURRENT_BINARY_DIR}/share/applications/${_TARGET}.desktop")
       CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/res/desktop.in" ${DESKTOP_FILE})
       INSTALL(FILES ${DESKTOP_FILE} DESTINATION share/applications)
     ENDIF()
 
-    INSTALL(FILES res/icon.xpm DESTINATION share/pixmaps RENAME ${TARGET}.png OPTIONAL)
-    INSTALL(FILES res/icon16x16.png DESTINATION share/icons/hicolor/16x16/apps RENAME ${TARGET}.png OPTIONAL)
-    INSTALL(FILES res/icon22x22.png DESTINATION share/icons/hicolor/22x22/apps RENAME ${TARGET}.png OPTIONAL)
-    INSTALL(FILES res/icon24x24.png DESTINATION share/icons/hicolor/24x24/apps RENAME ${TARGET}.png OPTIONAL)
-    INSTALL(FILES res/icon32x32.png DESTINATION share/icons/hicolor/32x32/apps RENAME ${TARGET}.png OPTIONAL)
-    INSTALL(FILES res/icon48x48.png DESTINATION share/icons/hicolor/48x48/apps RENAME ${TARGET}.png OPTIONAL)
-    INSTALL(FILES res/icon128x128.png DESTINATION share/icons/hicolor/128x128/apps RENAME ${TARGET}.png OPTIONAL)
-    INSTALL(FILES res/icon.svg DESTINATION share/icons/hicolor/scalable/apps RENAME ${TARGET}.svg OPTIONAL)
+    INSTALL(FILES res/icon.xpm DESTINATION share/pixmaps RENAME ${_TARGET}.png OPTIONAL)
+    INSTALL(FILES res/icon16x16.png DESTINATION share/icons/hicolor/16x16/apps RENAME ${_TARGET}.png OPTIONAL)
+    INSTALL(FILES res/icon22x22.png DESTINATION share/icons/hicolor/22x22/apps RENAME ${_TARGET}.png OPTIONAL)
+    INSTALL(FILES res/icon24x24.png DESTINATION share/icons/hicolor/24x24/apps RENAME ${_TARGET}.png OPTIONAL)
+    INSTALL(FILES res/icon32x32.png DESTINATION share/icons/hicolor/32x32/apps RENAME ${_TARGET}.png OPTIONAL)
+    INSTALL(FILES res/icon48x48.png DESTINATION share/icons/hicolor/48x48/apps RENAME ${_TARGET}.png OPTIONAL)
+    INSTALL(FILES res/icon128x128.png DESTINATION share/icons/hicolor/128x128/apps RENAME ${_TARGET}.png OPTIONAL)
+    INSTALL(FILES res/icon.svg DESTINATION share/icons/hicolor/scalable/apps RENAME ${_TARGET}.svg OPTIONAL)
   ENDIF()
   
   # Source Packages
-  SET(PACKAGE "${TARGET}-${VERSION}")
+  SET(PACKAGE "${_TARGET}-${VERSION}")
 
   IF(WIN32)
     IF(TARGET_X64)
@@ -1386,7 +1415,19 @@ MACRO(INIT_BUILD_FLAGS)
     # Ignore default include paths
     ADD_PLATFORM_FLAGS("/X")
 
-    IF(MSVC11)
+    IF(MSVC14)
+      ADD_PLATFORM_FLAGS("/Gy-")
+      # /Ox is working with VC++ 2010, but custom optimizations don't exist
+      SET(RELEASE_CFLAGS "/Ox /GF /GS- ${RELEASE_CFLAGS}")
+      # without inlining it's unusable, use custom optimizations again
+      SET(DEBUG_CFLAGS "/Od /Ob1 /GF- ${DEBUG_CFLAGS}")
+    ELSEIF(MSVC12)
+      ADD_PLATFORM_FLAGS("/Gy-")
+      # /Ox is working with VC++ 2010, but custom optimizations don't exist
+      SET(RELEASE_CFLAGS "/Ox /GF /GS- ${RELEASE_CFLAGS}")
+      # without inlining it's unusable, use custom optimizations again
+      SET(DEBUG_CFLAGS "/Od /Ob1 /GF- ${DEBUG_CFLAGS}")
+    ELSEIF(MSVC11)
       ADD_PLATFORM_FLAGS("/Gy-")
       # /Ox is working with VC++ 2010, but custom optimizations don't exist
       SET(RELEASE_CFLAGS "/Ox /GF /GS- ${RELEASE_CFLAGS}")
@@ -1484,105 +1525,7 @@ MACRO(INIT_BUILD_FLAGS)
     ENDIF()
     
     INIT_BUILD_FLAGS_MAC()
-
-    IF(ANDROID)
-      ADD_PLATFORM_FLAGS("--sysroot=${PLATFORM_ROOT}")
-      ADD_PLATFORM_FLAGS("-ffunction-sections -funwind-tables -no-canonical-prefixes")
-      ADD_PLATFORM_FLAGS("-DANDROID")
-      ADD_PLATFORM_FLAGS("-I${STL_INCLUDE_DIR} -I${STL_INCLUDE_CPU_DIR}")
-
-      IF(CLANG)
-        IF(TARGET_ARM64)
-          SET(LLVM_TRIPLE "aarch64-none-linux-android")
-        ELSEIF(TARGET_ARMV7)
-          SET(LLVM_TRIPLE "armv7-none-linux-androideabi")
-        ELSEIF(TARGET_ARMV5)
-          SET(LLVM_TRIPLE "armv5te-none-linux-androideabi")
-        ELSEIF(TARGET_X64)
-          SET(LLVM_TRIPLE "x86_64-none-linux-android")
-        ELSEIF(TARGET_X86)
-          SET(LLVM_TRIPLE "i686-none-linux-android")
-        ELSEIF(TARGET_MIPS64)
-          SET(LLVM_TRIPLE "mips64el-none-linux-android")
-        ELSEIF(TARGET_MIPS)
-          SET(LLVM_TRIPLE "mipsel-none-linux-android")
-        ELSE()
-          MESSAGE(FATAL_ERROR "Unspported architecture ${TARGET_CPU}")
-        ENDIF()
-
-        ADD_PLATFORM_FLAGS("-gcc-toolchain ${GCC_TOOLCHAIN_ROOT}")
-        SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -gcc-toolchain ${GCC_TOOLCHAIN_ROOT}")
-
-        ADD_PLATFORM_FLAGS("-target ${LLVM_TRIPLE}") # -emit-llvm -fPIC ?
-        SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -target ${LLVM_TRIPLE}")
-      ELSE()
-        ADD_PLATFORM_FLAGS("-Wa,--noexecstack")
-      ENDIF()
-
-      IF(TARGET_ARM)
-        ADD_PLATFORM_FLAGS("-fpic -fstack-protector")
-        ADD_PLATFORM_FLAGS("-D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__")
-
-        IF(CLANG)
-          ADD_PLATFORM_FLAGS("-fno-integrated-as")
-        ENDIF()
-
-        IF(TARGET_ARMV7)
-          ADD_PLATFORM_FLAGS("-march=armv7-a -mfpu=vfpv3-d16")
-
-          SET(ARMV7_HARD_FLOAT OFF)
-
-          IF(ARMV7_HARD_FLOAT)
-            ADD_PLATFORM_FLAGS("-mhard-float -D_NDK_MATH_NO_SOFTFP=1")
-            SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -Wl,--no-warn-mismatch -lm_hard")
-          ELSE()
-            ADD_PLATFORM_FLAGS("-mfloat-abi=softfp")
-          ENDIF()
-
-          IF(NOT CLANG)
-            SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -march=armv7-a")
-          ENDIF()
-          
-          SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -Wl,--fix-cortex-a8")
-        ELSEIF(TARGET_ARMV5)
-          ADD_PLATFORM_FLAGS("-march=armv5te -mtune=xscale -msoft-float")
-        ENDIF()
-
-        SET(TARGET_THUMB ON)
-
-        IF(TARGET_THUMB)
-          IF(NOT CLANG)
-            ADD_PLATFORM_FLAGS("-finline-limit=64")
-          ENDIF()
-
-          SET(DEBUG_CFLAGS "${DEBUG_CFLAGS} -marm")
-          SET(RELEASE_CFLAGS "${RELEASE_CFLAGS} -mthumb")
-        ELSE()
-          IF(NOT CLANG)
-            ADD_PLATFORM_FLAGS("-funswitch-loops -finline-limit=300")
-          ENDIF()
-        ENDIF()
-      ELSEIF(TARGET_X86)
-        # Same options for x86 and x86_64
-        IF(CLANG)
-          ADD_PLATFORM_FLAGS("-fPIC")
-        ELSE()
-          ADD_PLATFORM_FLAGS("-funswitch-loops -finline-limit=300")
-          # Optimizations for Intel Atom
-#          ADD_PLATFORM_FLAGS("-march=i686 -mtune=atom -mstackrealign -msse3 -mfpmath=sse -m32 -flto -ffast-math -funroll-loops")
-        ENDIF()
-        ADD_PLATFORM_FLAGS("-fstack-protector")
-      ELSEIF(TARGET_MIPS)
-        # Same options for mips and mips64
-        IF(NOT CLANG)
-          ADD_PLATFORM_FLAGS("-frename-registers -fno-inline-functions-called-once -fgcse-after-reload -frerun-cse-after-loop")
-          SET(RELEASE_CFLAGS "${RELEASE_CFLAGS} -funswitch-loops -finline-limit=300")
-        ENDIF()
-        ADD_PLATFORM_FLAGS("-fpic -finline-functions -fmessage-length=0")
-      ENDIF()
-      SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -no-canonical-prefixes")
-      SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -L${PLATFORM_ROOT}/usr/lib")
-    ENDIF()
+    INIT_BUILD_FLAGS_ANDROID()
 
     IF(NOT APPLE)
       IF(HOST_CPU STREQUAL "x86_64" AND TARGET_CPU STREQUAL "x86")
@@ -1926,6 +1869,7 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
   SET(_IS_RELEASE OFF)
   SET(_IS_DEBUG OFF)
   SET(_IS_SUFFIXES OFF)
+  SET(_IS_VERBOSE OFF)
   
   IF(_PARAMS)
     FOREACH(_PARAM ${_PARAMS})
@@ -1946,6 +1890,8 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
         SET(_IS_DEBUG OFF)
         SET(_IS_SUFFIXES OFF)
         SET(${NAME}_FIND_QUIETLY ON)
+      ELSEIF(_PARAM STREQUAL "VERBOSE")
+        SET(_IS_VERBOSE ON)
       ELSEIF(_PARAM STREQUAL "REQUIRED")
         SET(_IS_RELEASE OFF)
         SET(_IS_DEBUG OFF)
@@ -2026,7 +1972,7 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
   ENDIF()
 
   # Search for include directory
-  FIND_PATH(${_UPNAME_FIXED}_INCLUDE_DIR 
+  FIND_PATH(${_UPNAME_FIXED}_INCLUDE_DIR
     ${INCLUDE}
     HINTS ${PKG_${_NAME_FIXED}_INCLUDE_DIRS}
     PATHS
@@ -2040,6 +1986,14 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
     ${_SUFFIXES}
   )
 
+  IF(_IS_VERBOSE)
+    IF(${_UPNAME_FIXED}_INCLUDE_DIR)
+      MESSAGE(STATUS "${INCLUDE} found in ${${_UPNAME_FIXED}_INCLUDE_DIR}")
+    ELSE()
+      MESSAGE(STATUS "${INCLUDE} not found")
+    ENDIF()
+  ENDIF()
+  
   # Append environment variables XXX_DIR
   LIST(APPEND _LIBRARY_PATHS
     $ENV{${_UPNAME}_DIR}/lib${LIB_SUFFIX}
@@ -2105,6 +2059,14 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
     NO_CMAKE_SYSTEM_PATH
   )
 
+  IF(_IS_VERBOSE)
+    IF(${_UPNAME_FIXED}_LIBRARY_RELEASE)
+      MESSAGE(STATUS "${NAME} release library found: ${${_UPNAME_FIXED}_LIBRARY_RELEASE}")
+    ELSE()
+      MESSAGE(STATUS "${NAME} release library not found")
+    ENDIF()
+  ENDIF()
+  
   # Search for debug library
   FIND_LIBRARY(${_UPNAME_FIXED}_LIBRARY_DEBUG
     NAMES
@@ -2116,29 +2078,37 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
     NO_CMAKE_SYSTEM_PATH
   )
 
+  IF(_IS_VERBOSE)
+    IF(${_UPNAME_FIXED}_LIBRARY_DEBUG)
+      MESSAGE(STATUS "${NAME} debug library found: ${${_UPNAME_FIXED}_LIBRARY_DEBUG}")
+    ELSE()
+      MESSAGE(STATUS "${NAME} debug library not found")
+    ENDIF()
+  ENDIF()
+
   SET(${_UPNAME_FIXED}_FOUND OFF)
 
   IF(${_UPNAME_FIXED}_INCLUDE_DIR)
     # Set also _INCLUDE_DIRS
     SET(${_UPNAME_FIXED}_INCLUDE_DIRS ${${_UPNAME_FIXED}_INCLUDE_DIR})
+  ENDIF()
 
-    # Library has been found if at least only one library and include are found
-    IF(${_UPNAME_FIXED}_LIBRARY_RELEASE AND ${_UPNAME_FIXED}_LIBRARY_DEBUG)
-      # Release and debug libraries found
-      SET(${_UPNAME_FIXED}_FOUND ON)
-      SET(${_UPNAME_FIXED}_LIBRARIES optimized ${${_UPNAME_FIXED}_LIBRARY_RELEASE} debug ${${_UPNAME_FIXED}_LIBRARY_DEBUG})
-      SET(${_UPNAME_FIXED}_LIBRARY ${${_UPNAME_FIXED}_LIBRARY_RELEASE})
-    ELSEIF(${_UPNAME_FIXED}_LIBRARY_RELEASE)
-      # Release library found
-      SET(${_UPNAME_FIXED}_FOUND ON)
-      SET(${_UPNAME_FIXED}_LIBRARIES ${${_UPNAME_FIXED}_LIBRARY_RELEASE})
-      SET(${_UPNAME_FIXED}_LIBRARY ${${_UPNAME_FIXED}_LIBRARY_RELEASE})
-    ELSEIF(${_UPNAME_FIXED}_LIBRARY_DEBUG)
-      # Debug library found
-      SET(${_UPNAME_FIXED}_FOUND ON)
-      SET(${_UPNAME_FIXED}_LIBRARIES ${${_UPNAME_FIXED}_LIBRARY_DEBUG})
-      SET(${_UPNAME_FIXED}_LIBRARY ${${_UPNAME_FIXED}_LIBRARY_DEBUG})
-    ENDIF()
+  # Library has been found if at least only one library and include are found
+  IF(${_UPNAME_FIXED}_LIBRARY_RELEASE AND ${_UPNAME_FIXED}_LIBRARY_DEBUG)
+    # Release and debug libraries found
+    SET(${_UPNAME_FIXED}_FOUND ON)
+    SET(${_UPNAME_FIXED}_LIBRARIES optimized ${${_UPNAME_FIXED}_LIBRARY_RELEASE} debug ${${_UPNAME_FIXED}_LIBRARY_DEBUG})
+    SET(${_UPNAME_FIXED}_LIBRARY ${${_UPNAME_FIXED}_LIBRARY_RELEASE})
+  ELSEIF(${_UPNAME_FIXED}_LIBRARY_RELEASE)
+    # Release library found
+    SET(${_UPNAME_FIXED}_FOUND ON)
+    SET(${_UPNAME_FIXED}_LIBRARIES ${${_UPNAME_FIXED}_LIBRARY_RELEASE})
+    SET(${_UPNAME_FIXED}_LIBRARY ${${_UPNAME_FIXED}_LIBRARY_RELEASE})
+  ELSEIF(${_UPNAME_FIXED}_LIBRARY_DEBUG)
+    # Debug library found
+    SET(${_UPNAME_FIXED}_FOUND ON)
+    SET(${_UPNAME_FIXED}_LIBRARIES ${${_UPNAME_FIXED}_LIBRARY_DEBUG})
+    SET(${_UPNAME_FIXED}_LIBRARY ${${_UPNAME_FIXED}_LIBRARY_DEBUG})
   ENDIF()
 
   IF(${_UPNAME_FIXED}_FOUND)
