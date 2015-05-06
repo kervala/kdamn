@@ -163,6 +163,7 @@ QPixmap associatedIcon( const QString &path )
 	// http://www.codeguru.com/Cpp/COM-Tech/shell/article.php/c4511/
 
 	SHFILEINFOW file_info;
+	memset(&file_info, 0, sizeof(file_info));
 	::SHGetFileInfoW((wchar_t*)path.utf16(), FILE_ATTRIBUTE_NORMAL, &file_info, sizeof(SHFILEINFOW), SHGFI_USEFILEATTRIBUTES | SHGFI_ICON | SHGFI_LARGEICON );
 
 	return pixmap( file_info.hIcon );
@@ -332,6 +333,7 @@ bool RestoreMinimizedWindow(WId &id)
 	if (id)
 	{
 		WINDOWPLACEMENT placement;
+		memset(&placement, 0, sizeof(placement));
 
 		if (GetWindowPlacement((HWND)id, &placement))
 		{
@@ -405,15 +407,20 @@ bool IsOS64bits()
 	// IsWow64Process is not available on all supported versions of Windows.
 	// Use GetModuleHandle to get a handle to the DLL that contains the function
 	// and GetProcAddress to get a pointer to the function if available.
-	LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS) GetProcAddress(GetModuleHandleA("kernel32"), "IsWow64Process");
+	HMODULE module = GetModuleHandleA("kernel32");
 
-	if (fnIsWow64Process)
+	if (module)
 	{
-		BOOL bIsWow64 = FALSE;
+		LPFN_ISWOW64PROCESS fnIsWow64Process = (LPFN_ISWOW64PROCESS)GetProcAddress(module, "IsWow64Process");
 
-		if (fnIsWow64Process(GetCurrentProcess(), &bIsWow64))
+		if (fnIsWow64Process)
 		{
-			res = bIsWow64 == TRUE;
+			BOOL bIsWow64 = FALSE;
+
+			if (fnIsWow64Process(GetCurrentProcess(), &bIsWow64))
+			{
+				res = bIsWow64 == TRUE;
+			}
 		}
 	}
 #endif
