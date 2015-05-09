@@ -323,9 +323,9 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 	{
 		if (status == "success")
 		{
-			qint64 stashId = (qint64)map["stashid"].toDouble();
+			qint64 itemId = (qint64)map["itemid"].toDouble();
 			QString folder = map["folder"].toString();
-//			qint64 folderId = (qint64)map["folderid"].toDouble();
+//			qint64 stackId = (qint64)map["stackid"].toDouble();
 
 			if (!m_filesToUpload.isEmpty())
 			{
@@ -356,13 +356,20 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 
 					m_filesToUpload.removeAt(index);
 
-					QString stashUrl = QString("http://sta.sh/0%1").arg(base36enc(stashId));
+					if (itemId > 0)
+					{
+						QString stashUrl = QString("http://sta.sh/0%1").arg(base36enc(itemId));
 
-					emit imageUploaded(file.room, stashUrl);
+						emit imageUploaded(file.room, stashUrl);
+					}
+					else
+					{
+						emit errorReceived(tr("Invalid ID for uploaded item"));
+					}
 				}
 				else
 				{
-					qDebug() << "File not found in stash";
+					emit errorReceived(tr("File not found in files to upload to Stash"));
 				}
 			}
 
