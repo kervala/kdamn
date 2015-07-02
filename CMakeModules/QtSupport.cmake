@@ -59,7 +59,7 @@ MACRO(INIT_QT)
   SET(QT_QRCS_CPPS)
   SET(QT_TSS)
   SET(QT_QMS)
-  
+
   # Regex filter for Qt files
   SET(QT_FILES_FILTER "\\.(ts|qrc|ui)$")
 
@@ -76,6 +76,11 @@ MACRO(ADD_QT5_DEPENDENCIES)
       # Depends on Positioning since Qt 5.3.0
       IF("${Qt5Core_VERSION_STRING}" VERSION_GREATER "5.2.9")
         LIST(APPEND QT_MODULES_WANTED Positioning)
+      ENDIF()
+
+      # Depends on WebChannel since Qt 5.4.2
+      IF("${Qt5Core_VERSION_STRING}" VERSION_GREATER "5.4.1")
+        LIST(APPEND QT_MODULES_WANTED WebChannel)
       ENDIF()
     ELSEIF(_MODULE STREQUAL "WebKitWidgets")
       LIST(APPEND QT_MODULES_WANTED MultimediaWidgets OpenGL PrintSupport)
@@ -127,7 +132,7 @@ MACRO(USE_QT_MODULES)
 
     IF(Qt5Core_FOUND)
       ADD_QT5_DEPENDENCIES()
-      
+
       # To be sure a 2nd stage dependency is right
       ADD_QT5_DEPENDENCIES()
 
@@ -181,8 +186,9 @@ MACRO(USE_QT_MODULES)
     # Check if we are using Qt static or shared libraries
     GET_TARGET_PROPERTY(_FILE Qt5::Core IMPORTED_LOCATION_RELEASE)
 
-    SET(_VERSION "${Qt5Core_VERSION_STRING}")
-    
+    SET(QT_VERSION "${Qt5Core_VERSION_STRING}")
+    SET(_VERSION "${QT_VERSION}")
+
     IF(_FILE MATCHES "\\.(lib|a)$")
       SET(QT_STATIC ON)
       SET(_VERSION "${_VERSION} static version")
@@ -575,12 +581,12 @@ MACRO(INSTALL_QT_LIBRARIES)
         ELSEIF(USE_QT4)
           SET(_MODULE_NAME "Qt${_MODULE}4")
         ENDIF()
-        
+
         # Library
         IF(EXISTS ${QT_BINARY_DIR}/${_MODULE_NAME}.dll)
           INSTALL(FILES "${QT_BINARY_DIR}/${_MODULE_NAME}.dll" DESTINATION ${BIN_PREFIX})
         ENDIF()
-        
+
         # Plugins
         IF(USE_QT4)
           IF(_MODULE STREQUAL "Gui")
@@ -607,6 +613,9 @@ MACRO(INSTALL_QT_LIBRARIES)
             INSTALL_LIBRARY(icuin52)
             INSTALL_LIBRARY(icuuc52)
             INSTALL_LIBRARY(icudt52)
+            INSTALL_LIBRARY(icuin53)
+            INSTALL_LIBRARY(icuuc53)
+            INSTALL_LIBRARY(icudt53)
             INSTALL_QT_PLUGIN(platforms qwindows)
           ENDIF()
 

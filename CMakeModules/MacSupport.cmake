@@ -58,7 +58,7 @@ MACRO(INIT_MAC)
   SET(MAC_ITUNESARTWORK)
   SET(MAC_ITUNESARTWORK2X)
   SET(MAC_MOBILEPRIVISION)
-  
+
   # Regex filter for Mac files
   SET(MAC_FILES_FILTER "(\\.(xib|strings|icns|plist|framework|mobileprovision)|iTunesArtwork.*\\.png|\\.lproj/.*)$")
 ENDMACRO()
@@ -172,13 +172,28 @@ MACRO(INIT_BUNDLE _TARGET)
     IF(NOT MACOSX_BUNDLE_COPYRIGHT)
       SET(MACOSX_BUNDLE_COPYRIGHT "Copyright ${YEAR} ${AUTHOR}")
     ENDIF()
-    
+
     IF(NOT CPACK_BUNDLE_NAME)
       SET(CPACK_BUNDLE_NAME "${PRODUCT_FIXED}")
+    ENDIF()
+    
+    IF(NOT MACOSX_BUNDLE_EXECUTABLE_NAME)
+      SET(MACOSX_BUNDLE_EXECUTABLE_NAME "${PRODUCT_FIXED}")
     ENDIF()
 
     # Make sure the 'Resources' Directory is correctly created before we build
     ADD_CUSTOM_COMMAND(TARGET ${_TARGET} PRE_BUILD COMMAND mkdir -p ${RESOURCES_DIR})
+
+    # Manage Info.plist ourself
+    IF(NOT XCODE)
+      # Configure Info.plist
+      CONFIGURE_FILE(${MAC_INFO_PLIST} ${CMAKE_BINARY_DIR}/Info-${_TARGET}.plist)
+
+      # Copy right Info.plist to right location
+      ADD_CUSTOM_COMMAND(TARGET ${_TARGET} PRE_BUILD
+        COMMAND mkdir -p ${OUTPUT_DIR}/Contents/MacOS
+        COMMAND cp ${CMAKE_BINARY_DIR}/Info-${_TARGET}.plist ${CONTENTS_DIR}/Info.plist)
+    ENDIF()
 ENDMACRO()
 
 MACRO(SET_TARGET_FLAGS_XCODE _TARGET)
@@ -395,7 +410,10 @@ MACRO(INIT_BUILD_FLAGS_MAC)
 
             ADD_PLATFORM_FLAGS("${XARCH}-isysroot${CMAKE_IOS_SIMULATOR_SYSROOT}")
             ADD_PLATFORM_FLAGS("${XARCH}-mios-simulator-version-min=${IOS_VERSION}")
-            SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} ${XARCH}-Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
+
+            IF(CMAKE_OSX_DEPLOYMENT_TARGET)
+              SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} ${XARCH}-Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
+            ENDIF()
           ENDIF()
 
           IF(TARGET_X86)
@@ -405,13 +423,18 @@ MACRO(INIT_BUILD_FLAGS_MAC)
 
             ADD_PLATFORM_FLAGS("${XARCH}-isysroot${CMAKE_IOS_SIMULATOR_SYSROOT}")
             ADD_PLATFORM_FLAGS("${XARCH}-mios-simulator-version-min=${IOS_VERSION}")
-            SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} ${XARCH}-Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
+
+            IF(CMAKE_OSX_DEPLOYMENT_TARGET)
+              SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} ${XARCH}-Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
+            ENDIF()
           ENDIF()
         ENDIF()
       ELSE()
         # Always force -mmacosx-version-min to override environement variable
         # __MAC_OS_X_VERSION_MIN_REQUIRED
-        SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
+        IF(CMAKE_OSX_DEPLOYMENT_TARGET)
+          SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
+        ENDIF()
       ENDIF()
     ENDIF()
   ENDIF()
@@ -454,6 +477,7 @@ MACRO(INSTALL_MAC_RESOURCES _TARGET)
 
     IF(NOT XCODE)
       ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp ARGS ${MAC_RESOURCES_DIR}/PkgInfo ${CONTENTS_DIR})
+      ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp ARGS ${CMAKE_BINARY_DIR}/archived-expanded-entitlements-${_TARGET}.xcent ${CONTENTS_DIR}/archived-expanded-entitlements.xcent)
     ENDIF()
   ENDIF()
 
@@ -497,7 +521,7 @@ MACRO(INSTALL_RESOURCES_MAC _TARGET _DIR)
     IF(CPACK_PACKAGE_DESCRIPTION_FILE)
       ADD_CUSTOM_COMMAND(TARGET ${_TARGET} PRE_BUILD COMMAND cp ARGS ${CPACK_PACKAGE_DESCRIPTION_FILE} ${RESOURCES_DIR})
     ENDIF()
-    
+
     IF(CPACK_RESOURCE_FILE_LICENSE)
       ADD_CUSTOM_COMMAND(TARGET ${_TARGET} PRE_BUILD COMMAND cp ARGS ${CPACK_RESOURCE_FILE_LICENSE} ${RESOURCES_DIR})
     ENDIF()
@@ -523,7 +547,7 @@ MACRO(COMPILE_MAC_XIBS _TARGET)
         ENDIF()
         GET_FILENAME_COMPONENT(NIB_OUTPUT_DIR ${RESOURCES_DIR}/${NIB} PATH)
         ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD
-          COMMAND ${IBTOOL} --errors --warnings --notices --output-format human-readable-text
+          COMMAND ${IBTOOL} --target-device iphone --target-device ipad --errors --warnings --notices --module "${PRODUCT}" --minimum-deployment-target ${IOS_VERSION} --auto-activate-custom-fonts --output-format human-readable-text
             --compile ${RESOURCES_DIR}/${NIB}
             ${XIB}
             --sdk ${CMAKE_IOS_SDK_ROOT}
@@ -536,14 +560,14 @@ ENDMACRO()
 MACRO(FIX_IOS_BUNDLE _TARGET)
   # Fixing Bundle files for iOS
   IF(IOS)
+    IF(XCODE)
+      ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD
+      COMMAND mv ${OUTPUT_DIR}/Contents/Info.plist ${OUTPUT_DIR})
+    ENDIF()
+
     ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD
       COMMAND mv ${OUTPUT_DIR}/Contents/MacOS/* ${OUTPUT_DIR}
-      COMMAND mv ${OUTPUT_DIR}/Contents/Info.plist ${OUTPUT_DIR}
       COMMAND rm -rf ${OUTPUT_DIR}/Contents)
-
-    # Adding other needed files
-    ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD
-      COMMAND cp ARGS ${CMAKE_IOS_SDK_ROOT}/ResourceRules.plist ${CONTENTS_DIR})
   ENDIF()
 ENDMACRO()
 
@@ -552,15 +576,16 @@ MACRO(CREATE_IOS_PACKAGE_TARGET _TARGET)
     # Creating .ipa package
     IF(MAC_ITUNESARTWORK)
       IF(APPSTORE)
-        CONFIGURE_FILE(${MAC_RESOURCES_DIR}/application_store.xcent ${CMAKE_BINARY_DIR}/application.xcent)
+        CONFIGURE_FILE(${MAC_RESOURCES_DIR}/application_store.xcent ${CMAKE_BINARY_DIR}/application-${_TARGET}.xcent)
       ELSE()
-        CONFIGURE_FILE(${MAC_RESOURCES_DIR}/application.xcent ${CMAKE_BINARY_DIR}/application.xcent)
+        CONFIGURE_FILE(${MAC_RESOURCES_DIR}/application.xcent ${CMAKE_BINARY_DIR}/application-${_TARGET}.xcent)
+        CONFIGURE_FILE(${MAC_RESOURCES_DIR}/archived-expanded-entitlements.xcent ${CMAKE_BINARY_DIR}/archived-expanded-entitlements-${_TARGET}.xcent)
       ENDIF()
 
       IF(NOT PACKAGE_NAME)
         SET(PACKAGE_NAME "${PRODUCT_FIXED}")
       ENDIF()
-      
+
       SET(IPA_DIR ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PACKAGE_NAME}_ipa)
       SET(IPA ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PACKAGE_NAME}-${VERSION}.ipa)
 
@@ -570,12 +595,12 @@ MACRO(CREATE_IOS_PACKAGE_TARGET _TARGET)
         LIST(APPEND _COMMANDS COMMAND cp "${MAC_ITUNESARTWORK2X}" "${IPA_DIR}/iTunesArtwork@2x")
       ENDIF()
 
-      ADD_CUSTOM_TARGET(packages
+      ADD_CUSTOM_TARGET(${_TARGET}_package
         COMMAND rm -rf "${OUTPUT_DIR}/Contents"
         COMMAND mkdir -p "${IPA_DIR}/Payload"
         COMMAND strip "${CONTENTS_DIR}/${PRODUCT_FIXED}"
         COMMAND security unlock-keychain -p "${KEYCHAIN_PASSWORD}"
-        COMMAND CODESIGN_ALLOCATE=${CMAKE_IOS_DEVELOPER_ROOT}/usr/bin/codesign_allocate codesign -fs "${IOS_DISTRIBUTION}" "--resource-rules=${CONTENTS_DIR}/ResourceRules.plist" --entitlements "${CMAKE_BINARY_DIR}/application.xcent" "${CONTENTS_DIR}"
+        COMMAND CODESIGN_ALLOCATE=${CMAKE_IOS_DEVELOPER_ROOT}/usr/bin/codesign_allocate codesign -fs "${IOS_DISTRIBUTION}" --entitlements "${CMAKE_BINARY_DIR}/application-${_TARGET}.xcent" "${CONTENTS_DIR}"
         COMMAND cp -R "${OUTPUT_DIR}" "${IPA_DIR}/Payload"
         COMMAND cp "${MAC_ITUNESARTWORK}" "${IPA_DIR}/iTunesArtwork"
         ${_COMMANDS}
@@ -584,8 +609,14 @@ MACRO(CREATE_IOS_PACKAGE_TARGET _TARGET)
         COMMENT "Creating IPA archive..."
         SOURCES ${MAC_ITUNESARTWORK}
         VERBATIM)
-      ADD_DEPENDENCIES(packages ${_TARGET})
-      SET_TARGET_LABEL(packages "PACKAGE")
+      ADD_DEPENDENCIES(${_TARGET}_package ${_TARGET})
+      SET_TARGET_LABEL(${_TARGET}_package "${_TARGET} PACKAGE")
+
+      IF(NOT TARGET packages)
+        ADD_CUSTOM_TARGET(packages)
+      ENDIF()
+
+      ADD_DEPENDENCIES(packages ${_TARGET}_package)
     ENDIF()
   ENDIF()
 ENDMACRO()
