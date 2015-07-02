@@ -282,7 +282,17 @@ bool DAmn::parsePing(const QStringList &lines)
 
 	if (!parsePacket("ping", lines, i, p)) return false;
 
-	m_lastPing = QDateTime::currentDateTime();
+	if (!m_lastPing.isNull())
+	{
+		QDateTime previousLastPing = m_lastPing;
+
+		m_lastPing = QDateTime::currentDateTime();
+
+		qint64 interval = previousLastPing.msecsTo(m_lastPing);
+
+		// add a 5 seconds delay
+		m_pingTimer.start(interval + 5000);
+	}
 
 	return pong();
 }

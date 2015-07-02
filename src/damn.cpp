@@ -48,6 +48,10 @@ DAmn::DAmn(QObject *parent):QObject(parent), m_socket(NULL), m_lastError(OK), m_
 	OAuth2 *oauth = new OAuth2(this);
 
 	connect(oauth, SIGNAL(imageDownloaded(QString, bool)), this, SLOT(onUpdateWaitingMessages(QString, bool)));
+
+	connect(&m_pingTimer, SIGNAL(timeout()), this, SLOT(onPingTimerTimeout()));
+
+	m_pingTimer.setSingleShot(true);
 }
 
 DAmn::~DAmn()
@@ -423,4 +427,10 @@ DAmnUser* DAmn::getUser(const QString &user)
 	foreach(DAmnUser *u, m_users) if (u->hasSameName(user)) return u;
 
 	return NULL;
+}
+
+void DAmn::onPingTimerTimeout()
+{
+	// disconnected notify application
+	onDisconnected();
 }

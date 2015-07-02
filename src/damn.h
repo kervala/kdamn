@@ -197,6 +197,8 @@ public slots:
 	bool onUpdateWaitingMessages(const QString &md5, bool found);
 	void onDownloadImageDelayed();
 
+	void onPingTimerTimeout();
+
 signals:
 	void authenticationFailedWrongLogin();
 	void authenticationFailedWrongToken();
@@ -292,6 +294,8 @@ private:
 	QString m_afkMessage;
 
 	QStringList m_delayedImages;
+
+	QTimer m_pingTimer;
 
 	static DAmn *s_instance;
 };
