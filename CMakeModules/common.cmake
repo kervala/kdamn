@@ -174,7 +174,7 @@ MACRO(GEN_VERSION_H)
 
   IF(WITH_INSTALL_LIBRARIES AND _FILE)
     STRING(TOUPPER ${TARGET} UPTARGET)
- 
+
     SET(_DST ${CMAKE_CURRENT_BINARY_DIR}/include/${TARGET}_version.h)
     CONFIGURE_FILE(${_FILE} ${_DST})
     INSTALL(FILES ${_DST} DESTINATION include/${TARGET} COMPONENT headers)
@@ -196,11 +196,10 @@ MACRO(PARSE_VERSION_OTHER FILENAME)
     IF(_FILE)
       FOREACH(_LINE ${_FILE})
         FOREACH(_VAR ${_FILTER_ARRAY})
-          IF(NOT ${_VAR})
+          IF("${${_VAR}}" STREQUAL "")
             STRING(REGEX REPLACE "^.*${_VAR}[: \t=\(\)\"]+([0-9.]+).*$" "\\1" ${_VAR} "${_LINE}")
             IF(${_VAR} STREQUAL "${_LINE}")
               SET(${_VAR})
-            ELSE()
             ENDIF()
             IF(NOT ${_VAR} AND NOT STREQUAL "0")
               SET(${_VAR} 0)
@@ -301,7 +300,7 @@ MACRO(CREATE_SOURCE_GROUPS DIR FILES)
         ENDIF()
       ENDIF()
     ENDIF()
-    
+
     IF(NOT _NAME)
       SET(_NAME "ROOT")
     ENDIF()
@@ -443,7 +442,7 @@ MACRO(SET_TARGET_EXECUTABLE _TYPE name)
       FIX_IOS_BUNDLE(${name})
       CREATE_IOS_PACKAGE_TARGET(${name})
       CREATE_IOS_RUN_TARGET(${name})
-      
+
       # for OS X
       CREATE_MAC_PACKAGE_TARGET(${name})
     ENDIF()
@@ -518,7 +517,7 @@ MACRO(SET_TARGET_LIB name)
 
   INIT_QT()
   INIT_MAC()
-  
+
   # If user specify STATIC or SHARED, override project default
   FOREACH(ARG ${ARGN})
     IF(ARG STREQUAL "STATIC")
@@ -603,12 +602,12 @@ MACRO(SET_TARGET_LIB name)
   ENDIF()
 
   SET_QT_SOURCES()
-  
+
   IF(NOT _NO_GROUPS)
     CREATE_SOURCE_GROUPS(include "${_HEADERS}")
     CREATE_SOURCE_GROUPS(src "${_SOURCES_SHARED}")
   ENDIF()
-  
+
   IF(_RCS)
     SOURCE_GROUP("res" FILES ${_RCS})
   ENDIF()
@@ -625,7 +624,7 @@ MACRO(SET_TARGET_LIB name)
 
   SET(_OUTPUT_NAME_DEBUG ${new_name})
   SET(_OUTPUT_NAME_RELEASE ${new_name})
-  
+
   IF(DEFINED ${name}_OUTPUT_NAME_DEBUG)
     SET(_OUTPUT_NAME_DEBUG ${${name}_OUTPUT_NAME_DEBUG})
   ENDIF()
@@ -636,7 +635,7 @@ MACRO(SET_TARGET_LIB name)
 
   SET(_STATIC_LIB_TARGET)
   SET(_SHARED_LIB_TARGET)
-  
+
   # If library mode is not specified, prepend it
   IF(IS_SHARED)
     ADD_LIBRARY(${name} SHARED ${_SOURCES_SHARED} ${_HEADERS} ${QT_SOURCES} ${_RESOURCES})
@@ -656,7 +655,7 @@ MACRO(SET_TARGET_LIB name)
   IF(_LIBRARIES_TO_MERGE AND IS_STATIC)
     SET_PROPERTY(TARGET ${_STATIC_LIB_TARGET} APPEND PROPERTY STATIC_LIBRARY_FLAGS "${_LIBRARIES_TO_MERGE}")
   ENDIF()
-    
+
   IF(_LIBRARIES_TO_LINK AND IS_SHARED)
      TARGET_LINK_LIBRARIES(${_SHARED_LIB_TARGET} ${_LIBRARIES_TO_LINK})
   ENDIF()
@@ -672,7 +671,7 @@ MACRO(SET_TARGET_LIB name)
         OUTPUT_NAME_RELEASE ${_OUTPUT_NAME_RELEASE})
     ENDIF()
   ENDIF()
-    
+
   IF(IS_SHARED)
     SIGN_FILE(${name})
   ENDIF()
@@ -966,7 +965,7 @@ MACRO(INSTALL_RESOURCES _TARGET _DIR)
     INSTALL(FILES res/icon128x128.png DESTINATION share/icons/hicolor/128x128/apps RENAME ${_TARGET}.png OPTIONAL)
     INSTALL(FILES res/icon.svg DESTINATION share/icons/hicolor/scalable/apps RENAME ${_TARGET}.svg OPTIONAL)
   ENDIF()
-  
+
   # Source Packages
   SET(PACKAGE "${_TARGET}-${VERSION}")
 
@@ -1027,7 +1026,7 @@ MACRO(INSTALL_RESOURCES _TARGET _DIR)
       ENDIF()
     ENDIF()
   ENDIF()
-  
+
   # Use NSIS under Windows
   IF(WIN32)
     CREATE_NSIS_PACKAGE(${_TARGET})
@@ -1099,7 +1098,7 @@ MACRO(ADD_OPTION NAME DESCRIPTION)
   ELSE()
     SET(${NAME}_DEFAULT OFF)
   ENDIF()
-  
+
   OPTION(${NAME} ${DESCRIPTION} ${${NAME}_DEFAULT})
 ENDMACRO()
 
@@ -1250,7 +1249,7 @@ MACRO(INIT_BUILD_FLAGS)
   ELSEIF(HOST_CPU MATCHES "i.86")
     SET(HOST_CPU "x86")
   ENDIF()
-  
+
   # Determine target CPU
 
   # If not specified, use the same CPU as host
@@ -1523,7 +1522,7 @@ MACRO(INIT_BUILD_FLAGS)
         ADD_PLATFORM_FLAGS("-nobuiltininc")
       ENDIF()
     ENDIF()
-    
+
     INIT_BUILD_FLAGS_MAC()
     INIT_BUILD_FLAGS_ANDROID()
 
@@ -1828,7 +1827,7 @@ ENDMACRO()
 MACRO(FIX_PACKAGE_OPTIONS OLDNAME NEWNAME)
   # append other options if needed
   SET(_OPTIONS COMPONENTS REQUIRED QUIETLY)
-  
+
   # process each options
   FOREACH(_OPTION ${_OPTIONS})
     SET(OLD_OPTION ${OLDNAME}_FIND_${_OPTION})
@@ -1865,12 +1864,12 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
   SET(_RELEASE_LIBRARIES)
   SET(_DEBUG_LIBRARIES)
   SET(_SUFFIXES)
-  
+
   SET(_IS_RELEASE OFF)
   SET(_IS_DEBUG OFF)
   SET(_IS_SUFFIXES OFF)
   SET(_IS_VERBOSE OFF)
-  
+
   IF(_PARAMS)
     FOREACH(_PARAM ${_PARAMS})
       IF(_PARAM STREQUAL "RELEASE")
@@ -1911,7 +1910,7 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
     ENDFOREACH()
   ENDIF()
 
-  # Fixes names if invalid characters are found  
+  # Fixes names if invalid characters are found
   IF("${NAME}" MATCHES "^[a-zA-Z0-9]+$")
     SET(_NAME_FIXED ${NAME})
   ELSE()
@@ -1993,7 +1992,7 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
       MESSAGE(STATUS "${INCLUDE} not found")
     ENDIF()
   ENDIF()
-  
+
   # Append environment variables XXX_DIR
   LIST(APPEND _LIBRARY_PATHS
     $ENV{${_UPNAME}_DIR}/lib${LIB_SUFFIX}
@@ -2066,7 +2065,7 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
       MESSAGE(STATUS "${NAME} release library not found")
     ENDIF()
   ENDIF()
-  
+
   # Search for debug library
   FIND_LIBRARY(${_UPNAME_FIXED}_LIBRARY_DEBUG
     NAMES

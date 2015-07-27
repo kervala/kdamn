@@ -112,7 +112,7 @@ MACRO(USE_QT_MODULES)
   SET(USE_QT5 OFF)
 
   # Qt shared modules
-  SET(QT_SHARED_MODULES CLucene Core Declarative Gui Help Multimedia Network OpenGL Qml Script ScriptTools Sql Svg Test WebKit Xml XmlPatterns)
+  SET(QT_SHARED_MODULES AxBase AxContainer AxServer CLucene Core Declarative Designer Gui Help Multimedia Network OpenGL Qml Script ScriptTools Sql Svg Test WebKit Xml XmlPatterns)
 
   # Qt 4 modules
   SET(QT4_MODULES ${QT_SHARED_MODULES} Main)
@@ -447,6 +447,26 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
             ENDIF()
             IF(EXISTS ${HB_LIB})
               TARGET_LINK_LIBRARIES(${_TARGET} ${HB_LIB})
+            ENDIF()
+
+            # freetype is needed since Qt 5.5
+            IF(APPLE)
+              SET(FREETYPE_LIB "${QT_LIBRARY_DIR}/libqtfreetype.a")
+            ELSEIF(WIN32)
+              SET(FREETYPE_LIB "${QT_LIBRARY_DIR}/qtfreetype.lib")
+            ENDIF()
+            IF(EXISTS ${FREETYPE_LIB})
+              TARGET_LINK_LIBRARIES(${_TARGET} ${FREETYPE_LIB})
+            ENDIF()
+
+            # pcre is needed since Qt 5.5
+            IF(APPLE)
+              SET(PCRE_LIB "${QT_LIBRARY_DIR}/libqtpcre.a")
+            ELSEIF(WIN32)
+              SET(PCRE_LIB "${QT_LIBRARY_DIR}/qtpcre.lib")
+            ENDIF()
+            IF(EXISTS ${PCRE_LIB})
+              TARGET_LINK_LIBRARIES(${_TARGET} ${PCRE_LIB})
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Multimedia")
