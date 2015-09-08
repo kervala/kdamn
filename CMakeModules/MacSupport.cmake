@@ -191,12 +191,13 @@ MACRO(INIT_BUNDLE _TARGET)
     # Manage Info.plist ourself
     IF(NOT XCODE)
       # Configure Info.plist
-      CONFIGURE_FILE(${MAC_INFO_PLIST} ${CMAKE_BINARY_DIR}/Info-${_TARGET}.plist)
-
-      # Copy right Info.plist to right location
-      ADD_CUSTOM_COMMAND(TARGET ${_TARGET} PRE_BUILD
-        COMMAND mkdir -p ${OUTPUT_DIR}/Contents/MacOS
-        COMMAND cp ${CMAKE_BINARY_DIR}/Info-${_TARGET}.plist ${CONTENTS_DIR}/Info.plist)
+	  IF(MAC_INFO_PLIST)
+        CONFIGURE_FILE(${MAC_INFO_PLIST} ${CMAKE_BINARY_DIR}/Info-${_TARGET}.plist)
+        # Copy right Info.plist to right location
+        ADD_CUSTOM_COMMAND(TARGET ${_TARGET} PRE_BUILD
+          COMMAND mkdir -p ${OUTPUT_DIR}/Contents/MacOS
+          COMMAND cp ${CMAKE_BINARY_DIR}/Info-${_TARGET}.plist ${CONTENTS_DIR}/Info.plist)
+      ENDIF()
     ENDIF()
 ENDMACRO()
 
@@ -481,7 +482,10 @@ MACRO(INSTALL_MAC_RESOURCES _TARGET)
 
     IF(NOT XCODE)
       ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp ARGS ${MAC_RESOURCES_DIR}/PkgInfo ${CONTENTS_DIR})
-      ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp ARGS ${CMAKE_BINARY_DIR}/archived-expanded-entitlements-${_TARGET}.xcent ${CONTENTS_DIR}/archived-expanded-entitlements.xcent)
+      SET(XCENT_FILENAME ${CMAKE_BINARY_DIR}/archived-expanded-entitlements-${_TARGET}.xcent)
+      IF(EXISTS XCENT_FILENAME)
+        ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp ARGS ${XCENT_FILENAME} ${CONTENTS_DIR}/archived-expanded-entitlements.xcent)
+      ENDIF()
     ENDIF()
   ENDIF()
 
