@@ -29,6 +29,9 @@ void PutForegroundWindow(WId id);
 bool IsUsingComposition();
 bool IsOS64bits();
 
+QString GetUserAgent();
+QString GetSupportedImageFormatsFilter();
+
 QString encodeEntities(const QString& src, const QString& force = QString());
 QString decodeEntities(const QString& src);
 

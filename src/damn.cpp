@@ -24,6 +24,7 @@
 #include "oauth2.h"
 #include "oembed.h"
 #include "configfile.h"
+#include "utils.h"
 
 #ifdef DEBUG_NEW
 	#define new DEBUG_NEW
@@ -176,7 +177,7 @@ bool DAmn::downloadImage(DAmnImage &image, int delay)
 
 	if (pos == -1) return false;
 
-	QRegExp reg(OAuth2::getSupportedImageFormatsFilter());
+	QRegExp reg(GetSupportedImageFormatsFilter());
 
 	image.valid = reg.indexIn(image.remoteUrl.mid(pos+1).toLatin1()) == 0;
 

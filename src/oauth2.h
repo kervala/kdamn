@@ -136,10 +136,6 @@ public:
 	bool requestNotesStar(const QStringList &notesIds);
 	bool requestNotesUnstar(const QStringList &notesIds);
 
-	static QString getSupportedImageFormatsFilter();
-	static QString getUserAgent();
-
-	bool checkUpdates();
 	bool checkUrlChanges(const QString &url);
 
 	bool get(const QString &url, const QString &referer = "");
@@ -274,7 +270,6 @@ private:
 
 	NoteForm m_noteForm;
 
-	static QString s_userAgent;
 	static OAuth2 *s_instance;
 };
 
