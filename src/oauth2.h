@@ -36,7 +36,6 @@
 #define OAUTH2_TOKEN_URL HTTPS_URL"/oauth2/token"
 #define DIFI_URL HTTPS_URL"/global/difi.php"
 #define REDIRECT_APP "kdamn://oauth2/login"
-#define UPDATE_URL "http://kervala.net/utils/update.php"
 #define AUTHORIZE_URL HTTPS_URL"/oauth2/authorize"
 #define JOIN_URL HTTPS_URL"/join/oauth2"
 #define SESSIONS_URL HTTPS_URL"/settings/sessions"
@@ -165,8 +164,6 @@ signals:
 	void notesUpdated(const QString &folderId, int offset, int count);
 	void noteUpdated(const QString &folderId, const QString &noteId);
 	void notesReceived(int count);
-	void newVersionDetected(const QString &url, const QString &date, uint size, const QString &version);
-	void noNewVersionDetected();
 	void uploadProgress(qint64 readBytes, qint64 totalBytes);
 	void noteSent(const QString &id);
 	void notePrepared();
@@ -220,7 +217,6 @@ private:
 	void processRedirection(const QString &redirection, const QString &url);
 	void processDiFi(const QByteArray &content);
 	void processJson(const QByteArray &content, const QString &path, const QString &filename);
-	void processNewVersions(const QByteArray &content);
 	bool processImage(const QString &url, const QByteArray &content);
 	void processNextAction();
 	bool processNextUpload();

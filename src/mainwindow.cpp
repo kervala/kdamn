@@ -31,6 +31,7 @@
 #include "utils.h"
 #include "configfile.h"
 #include "updatedialog.h"
+#include "updater.h"
 
 #ifdef Q_OS_WIN32
 #include <QtWinExtras/QWinTaskbarProgress>
@@ -41,7 +42,7 @@
 	#define new DEBUG_NEW
 #endif
 
-MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false), m_mustLoginAfterLogout(false)
+MainWindow::MainWindow():QMainWindow(), m_mustLoginAfterLogout(false)
 {
 	setupUi(this);
 
@@ -83,8 +84,6 @@ MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false), m_mustLogin
 	if (!pos.isNull()) move(pos);
 
 	connect(OAuth2::getInstance(), SIGNAL(loggedOut(bool)), this, SLOT(onLoggedOut(bool)));
-	connect(OAuth2::getInstance(), SIGNAL(newVersionDetected(QString, QString, uint, QString)), this, SLOT(onNewVersion(QString, QString, uint, QString)));
-	connect(OAuth2::getInstance(), SIGNAL(noNewVersionDetected()), this, SLOT(onNoNewVersion()));
 	connect(OAuth2::getInstance(), SIGNAL(uploadProgress(qint64, qint64)), this, SLOT(onProgress(qint64, qint64)));
 	connect(OAuth2::getInstance(), SIGNAL(urlChecked(QString, QString)), this, SLOT(onUrlChecked(QString, QString)));
 
@@ -99,7 +98,9 @@ MainWindow::MainWindow():QMainWindow(), m_manualCheckUpdates(false), m_mustLogin
 	autoConnect();
 
 	// check for a new version
-	OAuth2::getInstance()->checkUpdates();
+	Updater *updater = new Updater(this);
+	connect(updater, SIGNAL(newVersionDetected(QString, QString, uint, QString)), this, SLOT(onNewVersion(QString, QString, uint, QString)));
+	updater->checkUpdates();
 }
 
 MainWindow::~MainWindow()
@@ -154,9 +155,10 @@ void MainWindow::onLogs()
 
 void MainWindow::onCheckUpdates()
 {
-	m_manualCheckUpdates = true;
-
-	OAuth2::getInstance()->checkUpdates();
+	Updater *updater = new Updater(this);
+	connect(updater, SIGNAL(newVersionDetected(QString, QString, uint, QString)), this, SLOT(onNewVersion(QString, QString, uint, QString)));
+	connect(updater, SIGNAL(noNewVersionDetected()), this, SLOT(onNoNewVersion()));
+	updater->checkUpdates();
 }
 
 void MainWindow::onAbout()
@@ -482,14 +484,9 @@ void MainWindow::onNewVersion(const QString &url, const QString &date, uint size
 
 void MainWindow::onNoNewVersion()
 {
-	// silent result if launched at start
-	if (!m_manualCheckUpdates) return;
-
 	QMessageBox::information(this,
 		tr("No update found"),
 		tr("You already have the last %1 version (%2).").arg(QApplication::applicationName()).arg(QApplication::applicationVersion()));
-
-	m_manualCheckUpdates = false;
 }
 
 void MainWindow::onProgress(qint64 readBytes, qint64 totalBytes)

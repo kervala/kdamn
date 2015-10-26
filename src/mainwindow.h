@@ -83,7 +83,6 @@ protected:
 	bool event(QEvent *e);
 
 	QWinTaskbarButton *m_button;
-	bool m_manualCheckUpdates;
 	bool m_mustLoginAfterLogout;
 
 	QString m_urlToCheck;

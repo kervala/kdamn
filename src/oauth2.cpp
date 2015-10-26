@@ -687,11 +687,6 @@ void OAuth2::processContent(const QByteArray &content, const QString &url, const
 			// received DiFi content
 			processDiFi(content);
 		}
-		else if (url.startsWith(UPDATE_URL))
-		{
-			// received software update
-			processNewVersions(content);
-		}
 		else if (url.contains("oembed"))
 		{
 			// received oEmbed content

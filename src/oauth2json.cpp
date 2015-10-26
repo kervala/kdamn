@@ -182,24 +182,6 @@ void OAuth2::onUploadFinished()
 	emit uploadProgress(0, 0);
 }
 
-bool OAuth2::checkUpdates()
-{
-	QString system;
-
-#ifdef Q_OS_WIN32
-	system = "win";
-#ifdef _WIN64
-	system += "64";
-#else
-	system += "32";
-#endif
-#elif defined(Q_OS_OSX)
-	system += "osx";
-#endif
-
-	return !system.isEmpty() ? get(QString("%1?system=%2&version=%3&app=%4").arg(UPDATE_URL).arg(system).arg(QApplication::applicationVersion()).arg(QApplication::applicationName())):false;
-}
-
 void OAuth2::processJson(const QByteArray &content, const QString &path, const QString &filename)
 {
 	QVariantMap map;
@@ -388,42 +370,5 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 	if (status == "error")
 	{
 		emit errorReceived(tr("API error: %1").arg(errorDescription.isEmpty() ? error:errorDescription));
-	}
-}
-
-void OAuth2::processNewVersions(const QByteArray &content)
-{
-	QVariantMap map;
-
-#ifdef USE_QT5
-	QJsonParseError jsonError;
-	QJsonDocument doc = QJsonDocument::fromJson(content, &jsonError);
-
-	if (jsonError.error != QJsonParseError::NoError)
-	{
-		emit errorReceived(jsonError.errorString());
-		return;
-	}
-
-	map = doc.toVariant().toMap();
-#else
-	QScriptEngine engine;
-	map = engine.evaluate("(" + QString(content) + ")").toVariant().toMap();
-#endif
-
-	int result = map["result"].toInt();
-
-	if (result)
-	{
-		QString version = map["version"].toString();
-		QString date = map["date"].toString();
-		uint size = map["size"].toUInt();
-		QString url = map["url"].toString();
-
-		emit newVersionDetected(url, date, size, version);
-	}
-	else
-	{
-		emit noNewVersionDetected();
 	}
 }
