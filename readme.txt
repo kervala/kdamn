@@ -100,9 +100,9 @@ where you want to compile.
 * Ubuntu, Debian and derived
 
 # install necessary packages 
-sudo apt-get install mecurial debhelper cmake pkg-config qtbase5-dev \
+sudo apt-get install mercurial debhelper cmake pkg-config qtbase5-dev \
   qttools5-dev-tools libqt5svg5-dev qttools5-dev qtmultimedia5-dev \
-  libqt5svg5 qt5-image-formats-plugins libxmu-dev
+  libqt5svg5 qt5-image-formats-plugins libxmu-dev xorg-dev
 
 # to download sources
 hg clone http://hg.kervala./kdamn
