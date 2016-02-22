@@ -211,6 +211,7 @@ MACRO(SET_TARGET_FLAGS_MAC _TARGET)
           XCODE_ATTRIBUTE_ARCHS "armv7 arm64" # armv6 armv7 armv7s arm64
           XCODE_ATTRIBUTE_VALID_ARCHS "armv7 arm64" # armv6 armv7 armv7s arm64
           XCODE_ATTRIBUTE_VALIDATE_PRODUCT YES
+          XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT "dwarf"
         )
       ENDIF()
 
@@ -497,8 +498,8 @@ MACRO(INIT_BUILD_FLAGS_MAC)
       ENDIF()
     ENDIF()
 
-    # Keep all static Objective-C symbols
-    SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -ObjC")
+    # Keep all static Objective-C symbols and disable all warnings (too verbose)
+    SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -ObjC -w")
   ENDIF()
 ENDMACRO()
 
@@ -666,28 +667,57 @@ MACRO(CREATE_IOS_PACKAGE_TARGET _TARGET)
         LIST(APPEND _COMMANDS COMMAND cp -p "${MAC_ITUNESARTWORK2X}" "${IPA_DIR}/iTunesArtwork@2x")
       ENDIF()
 
-      ADD_CUSTOM_TARGET(${_TARGET}_package
-        COMMAND rm -rf "${OUTPUT_DIR}/Contents"
-        COMMAND mkdir -p "${IPA_DIR}/Payload"
-        COMMAND strip "${CONTENTS_DIR}/${PRODUCT_FIXED}"
-        COMMAND security unlock-keychain -p "${KEYCHAIN_PASSWORD}"
-        COMMAND CODESIGN_ALLOCATE=${CMAKE_IOS_DEVELOPER_ROOT}/usr/bin/codesign_allocate codesign -fs "${IOS_DISTRIBUTION}" --entitlements "${CMAKE_BINARY_DIR}/application-${_TARGET}.xcent" "${CONTENTS_DIR}"
-        COMMAND cp -pr "${OUTPUT_DIR}" "${IPA_DIR}/Payload"
-        COMMAND cp -p "${MAC_ITUNESARTWORK}" "${IPA_DIR}/iTunesArtwork"
-        ${_COMMANDS}
-        COMMAND ditto -c -k "${IPA_DIR}" "${IPA}"
-        COMMAND rm -rf "${IPA_DIR}"
-        COMMENT "Creating IPA archive..."
-        SOURCES ${MAC_ITUNESARTWORK}
-        VERBATIM)
-      ADD_DEPENDENCIES(${_TARGET}_package ${_TARGET})
-      SET_TARGET_LABEL(${_TARGET}_package "${_TARGET} PACKAGE")
+      # Find codesign_allocate
 
-      IF(NOT TARGET packages)
-        ADD_CUSTOM_TARGET(packages)
+      # Xcode 7.0 and later versions
+      SET(CODESIGN_ALLOCATE ${CMAKE_XCODE_ROOT}/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/codesign_allocate)
+
+      IF(NOT EXISTS "${CODESIGN_ALLOCATE}")
+        # Command-line version
+        SET(CODESIGN_ALLOCATE /Library/Developer/CommandLineTools/usr/bin/codesign_allocate)
       ENDIF()
 
-      ADD_DEPENDENCIES(packages ${_TARGET}_package)
+      IF(NOT EXISTS "${CODESIGN_ALLOCATE}")
+        # Developer tools
+        SET(CODESIGN_ALLOCATE /usr/libexec/DeveloperTools/codesign_allocate)
+      ENDIF()
+
+      IF(NOT EXISTS "${CODESIGN_ALLOCATE}")
+        # Xcode 6.4 and previous versions
+        SET(CODESIGN_ALLOCATE ${CMAKE_IOS_DEVELOPER_ROOT}/usr/bin/codesign_allocate)
+      ENDIF()
+
+      IF(NOT EXISTS "${CODESIGN_ALLOCATE}")
+        # System path
+        SET(CODESIGN_ALLOCATE /usr/bin/codesign_allocate)
+      ENDIF()
+
+      IF(NOT EXISTS "${CODESIGN_ALLOCATE}")
+        MESSAGE(WARNING "Unable to find codesign_allocate in standard directories")
+      ELSE()
+        ADD_CUSTOM_TARGET(${_TARGET}_package
+          COMMAND rm -rf "${OUTPUT_DIR}/Contents"
+          COMMAND mkdir -p "${IPA_DIR}/Payload"
+          COMMAND strip "${CONTENTS_DIR}/${PRODUCT_FIXED}"
+          COMMAND security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "/Users/buildbot/Library/Keychains/login.keychain"
+          COMMAND CODESIGN_ALLOCATE=${CODESIGN_ALLOCATE} codesign -fs "${IOS_DISTRIBUTION}" --entitlements "${CMAKE_BINARY_DIR}/application-${_TARGET}.xcent" "${CONTENTS_DIR}"
+          COMMAND cp -pr "${OUTPUT_DIR}" "${IPA_DIR}/Payload"
+          COMMAND cp -p "${MAC_ITUNESARTWORK}" "${IPA_DIR}/iTunesArtwork"
+          ${_COMMANDS}
+          COMMAND ditto -c -k "${IPA_DIR}" "${IPA}"
+          COMMAND rm -rf "${IPA_DIR}"
+          COMMENT "Creating IPA archive..."
+          SOURCES ${MAC_ITUNESARTWORK}
+          VERBATIM)
+        ADD_DEPENDENCIES(${_TARGET}_package ${_TARGET})
+        SET_TARGET_LABEL(${_TARGET}_package "${_TARGET} PACKAGE")
+
+        IF(NOT TARGET packages)
+          ADD_CUSTOM_TARGET(packages)
+        ENDIF()
+
+        ADD_DEPENDENCIES(packages ${_TARGET}_package)
+      ENDIF()
     ENDIF()
   ENDIF()
 ENDMACRO()

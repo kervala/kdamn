@@ -58,15 +58,14 @@ MACRO(PCH_SET_COMPILE_FLAGS _target)
 
   GET_TARGET_PROPERTY(_targetType ${_target} TYPE)
 
-  SET(_USE_PIE OFF)
+  SET(_USE_PIC OFF)
 
   IF(${_targetType} STREQUAL "SHARED_LIBRARY" OR ${_targetType} STREQUAL "MODULE_LIBRARY")
     LIST(APPEND _FLAGS " ${CMAKE_SHARED_LIBRARY_CXX_FLAGS}")
   ELSE()
     GET_TARGET_PROPERTY(_pic ${_target} POSITION_INDEPENDENT_CODE)
-    MESSAGE(STATUS "Target ${_target} is using PIE")
     IF(_pic)
-      SET(_USE_PIE ON)
+      SET(_USE_PIC ON)
     ENDIF()
   ENDIF()
 
@@ -164,19 +163,21 @@ MACRO(PCH_SET_COMPILE_FLAGS _target)
     ENDFOREACH()
   ENDIF()
 
-  # Hack to define missing QT_NO_DEBUG with Qt 5.2
-  IF(USE_QT5 AND _UPPER_BUILD STREQUAL "RELEASE")
-    LIST(APPEND GLOBAL_DEFINITIONS " -DQT_NO_DEBUG")
-  ENDIF()
+  # Special Qt 5 cases
+  IF(GLOBAL_DEFINITIONS MATCHES "QT_CORE_LIB")
+    # Hack to define missing QT_NO_DEBUG with Qt 5.2
+    IF(_UPPER_BUILD STREQUAL "RELEASE")
+      LIST(APPEND GLOBAL_DEFINITIONS " -DQT_NO_DEBUG")
+    ENDIF()
 
-  # Qt5_POSITION_INDEPENDENT_CODE should be true if Qt was compiled with PIE
-  IF(Qt5_POSITION_INDEPENDENT_CODE)
-    SET(_USE_PIE ON)
-  ENDIF()
+    # Qt5_POSITION_INDEPENDENT_CODE should be true if Qt was compiled with PIC
+    IF(Qt5_POSITION_INDEPENDENT_CODE)
+      SET(_USE_PIC ON)
+    ENDIF()
 
-  IF(_USE_PIE)
-    LIST(APPEND _FLAGS " ${CMAKE_CXX_COMPILE_OPTIONS_PIE}")
-    LIST(APPEND _FLAGS " ${CMAKE_CXX_COMPILE_OPTIONS_PIC}")
+    IF(_USE_PIC)
+      LIST(APPEND _FLAGS " ${CMAKE_CXX_COMPILE_OPTIONS_PIC}")
+    ENDIF()
   ENDIF()
 
   LIST(APPEND _FLAGS " ${GLOBAL_DEFINITIONS}")
@@ -438,53 +439,52 @@ MACRO(ADD_PRECOMPILED_HEADER _targetName _inputh _inputcpp)
 ENDMACRO()
 
 MACRO(ADD_NATIVE_PRECOMPILED_HEADER _targetName _inputh _inputcpp)
-  IF(NOT PCHSupport_FOUND)
-    MESSAGE(STATUS "PCH disabled because compiler doesn't support them")
-    RETURN()
-  ENDIF()
-
-  # 0 => creating a new target for PCH, works for all makefiles
-  # 1 => setting PCH for VC++ project, works for VC++ projects
-  # 2 => setting PCH for XCode project, works for XCode projects
-  IF(CMAKE_GENERATOR MATCHES "Visual Studio")
-    SET(PCH_METHOD 1)
-  ELSEIF(CMAKE_GENERATOR MATCHES "Xcode")
-    SET(PCH_METHOD 2)
-  ELSE()
-    SET(PCH_METHOD 0)
-  ENDIF()
-
-  IF(PCH_METHOD EQUAL 1)
-    # Auto include the precompile (useful for moc processing, since the use of
-    # precompiled is specified at the target level
-    # and I don't want to specifiy /F- for each moc/res/ui generated files (using Qt)
-
-    GET_TARGET_PROPERTY(oldProps ${_targetName} COMPILE_FLAGS)
-    IF(${oldProps} MATCHES NOTFOUND)
-      SET(oldProps "")
+  IF(PCHSupport_FOUND)
+    # 0 => creating a new target for PCH, works for all makefiles
+    # 1 => setting PCH for VC++ project, works for VC++ projects
+    # 2 => setting PCH for XCode project, works for XCode projects
+    IF(CMAKE_GENERATOR MATCHES "Visual Studio")
+      SET(PCH_METHOD 1)
+    ELSEIF(CMAKE_GENERATOR MATCHES "Xcode")
+      SET(PCH_METHOD 2)
+    ELSE()
+      SET(PCH_METHOD 0)
     ENDIF()
 
-    SET(newProperties "${oldProps} /Yu\"${_inputh}\" /FI\"${_inputh}\"")
-    SET_TARGET_PROPERTIES(${_targetName} PROPERTIES COMPILE_FLAGS "${newProperties}")
+    IF(PCH_METHOD EQUAL 1)
+      # Auto include the precompile (useful for moc processing, since the use of
+      # precompiled is specified at the target level
+      # and I don't want to specifiy /F- for each moc/res/ui generated files (using Qt)
 
-    #also inlude ${oldProps} to have the same compile options
-    SET_SOURCE_FILES_PROPERTIES(${_inputcpp} PROPERTIES COMPILE_FLAGS "${oldProps} /Yc\"${_inputh}\"")
-  ELSEIF(PCH_METHOD EQUAL 2)
-    # For Xcode, cmake needs my patch to process
-    # GCC_PREFIX_HEADER and GCC_PRECOMPILE_PREFIX_HEADER as target properties
+      GET_TARGET_PROPERTY(oldProps ${_targetName} COMPILE_FLAGS)
+      IF(${oldProps} MATCHES NOTFOUND)
+        SET(oldProps "")
+      ENDIF()
 
-    # When buiding out of the tree, precompiled may not be located
-    # Use full path instead.
-    GET_FILENAME_COMPONENT(fullPath ${_inputh} ABSOLUTE)
+      SET(newProperties "${oldProps} /Yu\"${_inputh}\" /FI\"${_inputh}\"")
+      SET_TARGET_PROPERTIES(${_targetName} PROPERTIES COMPILE_FLAGS "${newProperties}")
 
-    SET_TARGET_PROPERTIES(${_targetName} PROPERTIES XCODE_ATTRIBUTE_GCC_PREFIX_HEADER "${fullPath}")
-    SET_TARGET_PROPERTIES(${_targetName} PROPERTIES XCODE_ATTRIBUTE_GCC_PRECOMPILE_PREFIX_HEADER "YES")
+      #also inlude ${oldProps} to have the same compile options
+      SET_SOURCE_FILES_PROPERTIES(${_inputcpp} PROPERTIES COMPILE_FLAGS "${oldProps} /Yc\"${_inputh}\"")
+    ELSEIF(PCH_METHOD EQUAL 2)
+      # For Xcode, cmake needs my patch to process
+      # GCC_PREFIX_HEADER and GCC_PRECOMPILE_PREFIX_HEADER as target properties
+
+      # When buiding out of the tree, precompiled may not be located
+      # Use full path instead.
+      GET_FILENAME_COMPONENT(fullPath ${_inputh} ABSOLUTE)
+
+      SET_TARGET_PROPERTIES(${_targetName} PROPERTIES XCODE_ATTRIBUTE_GCC_PREFIX_HEADER "${fullPath}")
+      SET_TARGET_PROPERTIES(${_targetName} PROPERTIES XCODE_ATTRIBUTE_GCC_PRECOMPILE_PREFIX_HEADER "YES")
+    ELSE()
+      #Fallback to the "old" precompiled suppport
+      ADD_PRECOMPILED_HEADER(${_targetName} ${_inputh} ${_inputcpp})
+    ENDIF()
+
+    IF(TARGET ${_targetName}_static)
+      ADD_NATIVE_PRECOMPILED_HEADER(${_targetName}_static ${_inputh} ${_inputcpp})
+    ENDIF()
   ELSE()
-    #Fallback to the "old" precompiled suppport
-    ADD_PRECOMPILED_HEADER(${_targetName} ${_inputh} ${_inputcpp})
-  ENDIF()
-
-  IF(TARGET ${_targetName}_static)
-    ADD_NATIVE_PRECOMPILED_HEADER(${_targetName}_static ${_inputh} ${_inputcpp})
+    MESSAGE(STATUS "PCH disabled because compiler doesn't support them")
   ENDIF()
 ENDMACRO()
