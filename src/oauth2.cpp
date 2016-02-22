@@ -443,7 +443,20 @@ void OAuth2::onReply(QNetworkReply *reply)
 	{
 		if (!redirection.isEmpty())
 		{
-			emit errorReceived(tr("Error: both content (%1) and redirection (%2) are defined").arg(url).arg(redirection));
+			DAmnImage *image = NULL;
+
+			if (DAmn::getInstance()->getWaitingImageFromRemoteUrl(url, image))
+			{
+				// change remote URL to new redirection
+				image->remoteUrl = redirection;
+
+				// redirection and content
+				processRedirection(redirection, url);
+			}
+			else
+			{
+				emit errorReceived(tr("Error: both content (%1) and redirection (%2) are defined").arg(url).arg(redirection));
+			}
 		}
 		else
 		{
