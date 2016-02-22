@@ -50,7 +50,14 @@ bool SystrayIcon::create()
 
 	QWidget *parentW = qobject_cast<QWidget*>(parent());
 
-	m_icon = new QSystemTrayIcon(QIcon(":/icons/icon.svg"), parentW);
+	QIcon icon(":/icons/icon.svg");
+
+	// under OS X, icon should be white with dark theme and black with light theme
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 6, 0))
+	icon.setIsMask(true);
+#endif
+
+	m_icon = new QSystemTrayIcon(icon, parentW);
 	m_icon->setToolTip(QApplication::applicationName());
 
 	connect(m_icon, SIGNAL(messageClicked()), this, SLOT(onMessageClicked()));
