@@ -1054,7 +1054,7 @@ MACRO(INSTALL_RESOURCES _TARGET _DIR)
       SET(_ABS_DIR ${_DIR})
     ENDIF()
 
-    IF(EXISTS _ABS_DIR)
+    IF(EXISTS "${_ABS_DIR}")
       INSTALL_RESOURCES_MAC(${_TARGET} ${_ABS_DIR})
 
       # Common code for Unix and Windows
