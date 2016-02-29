@@ -1046,7 +1046,7 @@ MACRO(INSTALL_RESOURCES _TARGET _DIR)
       OPTIONAL)
   ENDIF()
 
-  IF(NOT "${_DIR}" STREQUAL "" AND EXISTS ${_DIR})
+  IF(NOT "${_DIR}" STREQUAL "")
     IF(NOT IS_ABSOLUTE ${_DIR})
       # transform relative path to absolute one
       SET(_ABS_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${_DIR})
@@ -1054,12 +1054,14 @@ MACRO(INSTALL_RESOURCES _TARGET _DIR)
       SET(_ABS_DIR ${_DIR})
     ENDIF()
 
-    INSTALL_RESOURCES_MAC(${_TARGET} ${_ABS_DIR})
+    IF(EXISTS _ABS_DIR)
+      INSTALL_RESOURCES_MAC(${_TARGET} ${_ABS_DIR})
 
-    # Common code for Unix and Windows
-    IF(NOT APPLE)
-      IF(WIN32 OR UNIX)
-        INSTALL(DIRECTORY ${_ABS_DIR}/ DESTINATION ${SHARE_PREFIX})
+      # Common code for Unix and Windows
+      IF(NOT APPLE)
+        IF(WIN32 OR UNIX)
+          INSTALL(DIRECTORY ${_ABS_DIR}/ DESTINATION ${SHARE_PREFIX})
+        ENDIF()
       ENDIF()
     ENDIF()
   ENDIF()
