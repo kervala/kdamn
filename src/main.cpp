@@ -39,7 +39,6 @@
 	Q_IMPORT_PLUGIN(CoreAudioPlugin)
 #endif
 
-	Q_IMPORT_PLUGIN(QMngPlugin)
 	Q_IMPORT_PLUGIN(QSvgPlugin)
 	Q_IMPORT_PLUGIN(QSvgIconPlugin)
 #endif
