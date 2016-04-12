@@ -145,13 +145,10 @@ MACRO(GEN_REVISION_H)
       ADD_DEFINITIONS(-DHAVE_REVISION_H)
       SET(HAVE_REVISION_H ON)
 
-      # a custom target that is always built
-      ADD_CUSTOM_TARGET(revision ALL
-        COMMAND ${CMAKE_COMMAND}
-        -DSOURCE_DIR=${CMAKE_SOURCE_DIR}
-        -DBINARY_DIR=${CMAKE_BINARY_DIR}
-        -DCMAKE_MODULE_PATH="${CMAKE_MODULE_PATH}"
-        -P ${GET_REVISION_DIR}/GetRevision.cmake)
+      INCLUDE(GetRevision)
+
+      NOW(BUILD_DATE)
+      CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/revision.h.in ${CMAKE_BINARY_DIR}/revision.h)
 
       # revision.h is a generated file
       SET_SOURCE_FILES_PROPERTIES(${CMAKE_BINARY_DIR}/revision.h
@@ -905,10 +902,10 @@ MACRO(SET_TARGET_FLAGS name)
   IF(HAVE_CONFIG_H)
     SET(_DIR ${CMAKE_BINARY_DIR}/${name}.dir)
     IF(NOT EXISTS ${_DIR}/config.h)
-      GEN_CONFIG_H()
+      GEN_TARGET_CONFIG_H(${name})
     ENDIF()
     IF(CMAKE_VERSION VERSION_GREATER "2.8.10")
-      TARGET_INCLUDE_DIRECTORIES(${TARGET} PRIVATE ${_DIR})
+      TARGET_INCLUDE_DIRECTORIES(${name} PRIVATE ${_DIR})
     ELSE()
       INCLUDE_DIRECTORIES(${_DIR})
     ENDIF()

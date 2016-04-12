@@ -649,6 +649,18 @@ MACRO(INSTALL_QT_LIBRARIES)
             INSTALL_QT_PLUGIN(imageformats qwebp)
           ENDIF()
 
+          IF(_MODULE STREQUAL "Multimedia")
+            INSTALL_QT_PLUGIN(mediaservice qtmedia_audioengine)
+
+            IF(WIN32)
+              INSTALL_QT_PLUGIN(audio qtaudio_windows)
+              INSTALL_QT_PLUGIN(mediaservice dsengine)
+              INSTALL_QT_PLUGIN(mediaservice wmfengine)
+            ELSEIF(APPLE)
+              INSTALL_QT_PLUGIN(audio qtaudio_coreaudio)
+            ENDIF()
+          ENDIF()
+          
           IF(_MODULE STREQUAL "Widgets")
             INSTALL_QT_PLUGIN(accessible qtaccessiblewidgets)
           ENDIF()

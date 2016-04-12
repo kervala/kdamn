@@ -103,7 +103,7 @@ MACRO(INIT_BUILD_FLAGS_ANDROID)
         # Optimizations for Intel Atom
 #          ADD_PLATFORM_FLAGS("-march=i686 -mtune=atom -mstackrealign -msse3 -mfpmath=sse -m32 -flto -ffast-math -funroll-loops")
       ENDIF()
-      ADD_PLATFORM_FLAGS("-fstack-protector")
+      ADD_PLATFORM_FLAGS("-fstack-protector-strong")
     ELSEIF(TARGET_MIPS)
       # Same options for mips and mips64
       IF(NOT CLANG)

@@ -16,32 +16,13 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6.3)
-
 # ROOT_DIR should be set to root of the repository (where to find the .svn or .hg directory)
 # SOURCE_DIR should be set to root of your code (where to find CMakeLists.txt)
 # BINARY_DIR should be set to root of your build directory
 
-IF(SOURCE_DIR)
-  # Replace spaces by semi-columns
-  IF(CMAKE_MODULE_PATH)
-    STRING(REPLACE " " ";" CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
-  ENDIF()
-
-  SET(CMAKE_MODULE_PATH ${SOURCE_DIR}/CMakeModules ${CMAKE_MODULE_PATH})
-
-  IF(NOT ROOT_DIR AND SOURCE_DIR)
-    SET(ROOT_DIR ${SOURCE_DIR})
-  ENDIF()
-
-  IF(NOT SOURCE_DIR AND ROOT_DIR)
-    SET(SOURCE_DIR ${ROOT_DIR})
-  ENDIF()
-ELSE()
-  SET(SOURCE_DIR ${CMAKE_SOURCE_DIR})
-  SET(ROOT_DIR ${CMAKE_SOURCE_DIR})
-  SET(BINARY_DIR ${CMAKE_BINARY_DIR})
-ENDIF()
+SET(SOURCE_DIR ${CMAKE_SOURCE_DIR})
+SET(ROOT_DIR ${CMAKE_SOURCE_DIR})
+SET(BINARY_DIR ${CMAKE_BINARY_DIR})
 
 MACRO(NOW RESULT)
   IF(CMAKE_VERSION VERSION_GREATER "2.8.10")
