@@ -35,27 +35,27 @@ MACRO(SIGN_FILE_WINDOWS TARGET)
   ENDIF()
 ENDMACRO()
 
-################################################################################ 
-# MACRO_ADD_INTERFACES(idl_files...) 
-# 
-# Syntax: MACRO_ADD_INTERFACES(<output list> <idl1> [<idl2> [...]]) 
-# Notes: <idl1> should be absolute paths so the MIDL compiler can find them. 
-# For every idl file xyz.idl, two files xyz_h.h and xyz.c are generated, which 
-# are added to the <output list> 
+################################################################################
+# MACRO_ADD_INTERFACES(idl_files...)
+#
+# Syntax: MACRO_ADD_INTERFACES(<output list> <idl1> [<idl2> [...]])
+# Notes: <idl1> should be absolute paths so the MIDL compiler can find them.
+# For every idl file xyz.idl, two files xyz_h.h and xyz.c are generated, which
+# are added to the <output list>
 
-# Copyright (c) 2007, Guilherme Balena Versiani, <[EMAIL PROTECTED]> 
-# 
-# Redistribution and use is allowed according to the terms of the BSD license. 
-# For details see the accompanying COPYING-CMAKE-SCRIPTS file. 
+# Copyright (c) 2007, Guilherme Balena Versiani, <[EMAIL PROTECTED]>
+#
+# Redistribution and use is allowed according to the terms of the BSD license.
+# For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 MACRO (MACRO_ADD_INTERFACES _output_list)
   IF(NOT WINSDK_MIDL)
     MESSAGE(FATAL_ERROR "midl not found, please check your Windows SDK installation")
     RETURN()
   ENDIF()
 
-  FOREACH(_in_FILE ${ARGN}) 
-    GET_FILENAME_COMPONENT(_out_FILE ${_in_FILE} NAME_WE) 
-    GET_FILENAME_COMPONENT(_in_PATH ${_in_FILE} PATH) 
+  FOREACH(_in_FILE ${ARGN})
+    GET_FILENAME_COMPONENT(_out_FILE ${_in_FILE} NAME_WE)
+    GET_FILENAME_COMPONENT(_in_PATH ${_in_FILE} PATH)
 
     SET(_out_header_name ${_out_FILE}.h)
     SET(_out_header ${CMAKE_CURRENT_BINARY_DIR}/${_out_header_name})
@@ -78,9 +78,9 @@ MACRO (MACRO_ADD_INTERFACES _output_list)
   ENDFOREACH()
 ENDMACRO (MACRO_ADD_INTERFACES)
 
-################################################################################ 
+################################################################################
 # macros to manage PDB files
-################################################################################ 
+################################################################################
 
 MACRO(GET_INTERMEDIATE_PDB_FILENAME name output)
   # determine output directory based on target type
@@ -159,7 +159,7 @@ MACRO(GET_FINAL_PDB_DIRECTORY name output)
   ELSE()
     SET(_PDB_DIRECTORY ${_PDB_DIRECTORY}/Debug)
   ENDIF()
-  
+
   SET(${output} ${_PDB_DIRECTORY})
 ENDMACRO()
 
@@ -186,11 +186,32 @@ MACRO(SET_TARGET_FLAGS_MSVC name)
 
     # define linker version
     IF(NOT "${type}" STREQUAL STATIC_LIBRARY)
+      # check if using a GUI
+      GET_TARGET_PROPERTY(_VALUE ${name} WIN32_EXECUTABLE)
+
+      IF(TARGET_X64)
+        # Target Windows XP 64 bits
+        SET(_SUBSYSTEM_VERSION "5.02")
+      ELSE()
+        # Target Windows XP
+        SET(_SUBSYSTEM_VERSION "5.01")
+      ENDIF()
+
+      IF(_VALUE)
+        # GUI
+        SET(_SUBSYSTEM "WINDOWS")
+      ELSE()
+        # Console
+        SET(_SUBSYSTEM "CONSOLE")
+      ENDIF()
+
       GET_TARGET_PROPERTY(_LINK_FLAGS ${name} LINK_FLAGS)
+
       IF(NOT _LINK_FLAGS)
         SET(_LINK_FLAGS "")
       ENDIF()
-      SET_TARGET_PROPERTIES(${name} PROPERTIES LINK_FLAGS "/VERSION:${VERSION_MAJOR}.${VERSION_MINOR} ${_LINK_FLAGS}")
+
+      SET_TARGET_PROPERTIES(${name} PROPERTIES LINK_FLAGS "/VERSION:${VERSION_MAJOR}.${VERSION_MINOR} /SUBSYSTEM:${_SUBSYSTEM},${_SUBSYSTEM_VERSION} ${_LINK_FLAGS}")
     ENDIF()
 
     IF("${type}" STREQUAL "STATIC_LIBRARY")
@@ -207,8 +228,7 @@ MACRO(SET_TARGET_FLAGS_MSVC name)
       SET_TARGET_PROPERTIES(${name} PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY_DEBUG "${_PDB_DIRECTORY}" COMPILE_PDB_NAME_DEBUG "${_PDB_FILENAME}")
       SET_TARGET_PROPERTIES(${name} PROPERTIES PDB_OUTPUT_DIRECTORY_DEBUG "${_PDB_DIRECTORY}" PDB_NAME_DEBUG "${_PDB_FILENAME}")
     ELSEIF("${type}" STREQUAL "EXECUTABLE")
-      SET_TARGET_PROPERTIES(${name} PROPERTIES COMPILE_FLAGS "/GA")
-      SET_TARGET_PROPERTIES(${name} PROPERTIES VERSION ${VERSION} SOVERSION ${VERSION_MAJOR})
+      SET_TARGET_PROPERTIES(${name} PROPERTIES SOVERSION ${VERSION_MAJOR})
     ELSEIF("${type}" STREQUAL "SHARED_LIBRARY")
       # final PDB
       GET_FINAL_PDB_FILENAME(${name} _PDB_FILENAME)
@@ -227,7 +247,7 @@ MACRO(SET_TARGET_FLAGS_MSVC name)
       IF(WITH_PREFIX_LIB)
         STRING(REGEX REPLACE "^lib" "" _COMPILE_PDB_FILENAME ${_COMPILE_PDB_FILENAME})
       ENDIF()
-      
+
       # define all properties supported by CMake for PDB (if not supported, it won't change anything)
       SET_TARGET_PROPERTIES(${name} PROPERTIES COMPILE_PDB_OUTPUT_DIRECTORY_DEBUG "${_COMPILE_PDB_DIRECTORY}" COMPILE_PDB_NAME_DEBUG "${_COMPILE_PDB_FILENAME}")
       SET_TARGET_PROPERTIES(${name} PROPERTIES PDB_OUTPUT_DIRECTORY_DEBUG "${_PDB_DIRECTORY}" PDB_NAME_DEBUG "${_PDB_FILENAME}")
@@ -270,7 +290,7 @@ MACRO(INSTALL_LIBRARY_PDB name)
 
       # Destination PDB filename
       GET_FINAL_PDB_FULLPATH(${_name} _OUTPUT_FULLPATH)
-      
+
       # copy PDB file together with LIB
       INSTALL(FILES ${_OUTPUT_FULLPATH} DESTINATION ${LIB_PREFIX} CONFIGURATIONS Debug)
     ENDIF()
