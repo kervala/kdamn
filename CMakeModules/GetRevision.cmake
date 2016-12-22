@@ -16,6 +16,8 @@
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6.3)
+
 # ROOT_DIR should be set to root of the repository (where to find the .svn or .hg directory)
 # SOURCE_DIR should be set to root of your code (where to find CMakeLists.txt)
 # BINARY_DIR should be set to root of your build directory

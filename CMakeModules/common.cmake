@@ -56,7 +56,9 @@ MACRO(GEN_CONFIG_H)
 ENDMACRO()
 
 MACRO(GEN_TARGET_CONFIG_H name)
-  IF(EXISTS ${CMAKE_SOURCE_DIR}/config.h.cmake)
+  IF(LAST_CONFIG_H_IN)
+    GEN_CONFIG_H_CUSTOM(${name} ${LAST_CONFIG_H_IN} config.h)
+  ELSEIF(EXISTS ${CMAKE_SOURCE_DIR}/config.h.cmake)
     GEN_CONFIG_H_CUSTOM(${name} ${CMAKE_SOURCE_DIR}/config.h.cmake config.h)
   ELSEIF(EXISTS ${CMAKE_SOURCE_DIR}/config.h.in)
     GEN_CONFIG_H_CUSTOM(${name} ${CMAKE_SOURCE_DIR}/config.h.in config.h)
@@ -102,6 +104,7 @@ MACRO(GEN_CONFIG_H_CUSTOM name src dst)
   CONFIGURE_FILE(${src} ${CMAKE_BINARY_DIR}/${name}.dir/${dst})
   ADD_DEFINITIONS(-DHAVE_CONFIG_H)
   SET(HAVE_CONFIG_H ON)
+  SET(LAST_CONFIG_H_IN ${src})
 ENDMACRO()
 
 MACRO(GEN_INIT_D name)
@@ -451,7 +454,9 @@ MACRO(SET_TARGET_EXECUTABLE _TYPE name)
   ELSE()
     INSTALL_QT_LIBRARIES()
 
-    INCLUDE(InstallRequiredSystemLibraries)
+    IF(WITH_INSTALL_RUNTIMES)
+      INCLUDE(InstallRequiredSystemLibraries)
+    ENDIF()
   ENDIF()
 
   INSTALL_QT_TRANSLATIONS(${name})
@@ -717,6 +722,10 @@ MACRO(SET_TARGET_LIB name)
             INSTALL(TARGETS ${_STATIC_LIB_TARGET} RUNTIME DESTINATION ${BIN_PREFIX} LIBRARY DESTINATION ${LIBRARY_DEST} ARCHIVE DESTINATION ${LIB_PREFIX})
           ENDIF()
         ELSEIF(IS_SHARED)
+          IF(WITH_INSTALL_RUNTIMES)
+            INCLUDE(InstallRequiredSystemLibraries)
+          ENDIF()
+
           INSTALL(TARGETS ${name} RUNTIME DESTINATION ${BIN_PREFIX} LIBRARY DESTINATION ${LIBRARY_DEST})
           IF(STATIC_LIB)
             INSTALL(TARGETS ${_STATIC_LIB_TARGET} RUNTIME DESTINATION ${BIN_PREFIX} LIBRARY DESTINATION ${LIBRARY_DEST})
@@ -725,6 +734,10 @@ MACRO(SET_TARGET_LIB name)
 
         INSTALL_LIBRARY_PDB(${name})
       ELSE()
+        IF(WITH_INSTALL_RUNTIMES)
+          INCLUDE(InstallRequiredSystemLibraries)
+        ENDIF()
+
         IF(IS_SHARED)
           # copy only DLL because we don't need development files
           INSTALL(TARGETS ${name} RUNTIME DESTINATION ${BIN_PREFIX} LIBRARY DESTINATION ${LIBRARY_DEST})
@@ -878,16 +891,19 @@ ENDMACRO()
 MACRO(SET_TARGET_LABEL name label)
   SET_TARGET_PROPERTIES(${name} PROPERTIES PROJECT_LABEL ${label})
 
-  # Under Mac OS X, executables should use project label
-  GET_TARGET_PROPERTY(type ${name} TYPE)
-
-  IF(${type} STREQUAL "EXECUTABLE" AND APPLE)
-    STRING(REGEX REPLACE " " "" label_fixed ${label})
-    SET_TARGET_PROPERTIES(${name} PROPERTIES OUTPUT_NAME ${label_fixed})
-  ENDIF()
-
   IF(TARGET "${name}_static")
     SET_TARGET_PROPERTIES(${name}_static PROPERTIES PROJECT_LABEL "${label} Static ")
+  ENDIF()
+ENDMACRO()
+
+MACRO(SET_TARGET_EXECUTABLE_NAME name executable)
+  IF(APPLE)
+    # Under Mac OS X, executables should use project label
+    GET_TARGET_PROPERTY(type ${name} TYPE)
+
+    IF(${type} STREQUAL "EXECUTABLE")
+      SET_TARGET_PROPERTIES(${name} PROPERTIES OUTPUT_NAME ${executable})
+    ENDIF()
   ENDIF()
 ENDMACRO()
 
@@ -1224,6 +1240,12 @@ MACRO(INIT_DEFAULT_OPTIONS)
   IF(IOS OR ANDROID)
     SET_OPTION_DEFAULT(WITH_VISIBILITY_HIDDEN ON)
   ENDIF()
+  
+  IF(MSVC14)
+    SET_OPTION_DEFAULT(WITH_INSTALL_RUNTIMES OFF)
+  ELSE()
+    SET_OPTION_DEFAULT(WITH_INSTALL_RUNTIMES ON)
+  ENDIF()
 
   UPDATE_VERSION()
 
@@ -1260,12 +1282,14 @@ MACRO(SETUP_DEFAULT_OPTIONS)
   ADD_OPTION(WITH_STATIC_RUNTIMES     "Use only static C++ runtimes")
   ADD_OPTION(WITH_UNIX_STRUCTURE      "Use UNIX structure (bin, include, lib)")
   ADD_OPTION(WITH_INSTALL_LIBRARIES   "Install development files (includes and static libraries)")
+  ADD_OPTION(WITH_INSTALL_RUNTIMES    "Install runtimes")
 
   ADD_OPTION(WITH_STLPORT             "Use STLport instead of standard STL")
   ADD_OPTION(WITH_RTTI                "Enable RTTI support")
   ADD_OPTION(WITH_EXCEPTIONS          "Enable exceptions support")
   ADD_OPTION(WITH_TESTS               "Compile tests projects")
   ADD_OPTION(WITH_SYMBOLS             "Keep debug symbols in binaries")
+  ADD_OPTION(WITH_CPP11               "Use C++ 2011")
 
   ADD_OPTION(WITH_UPDATE_TRANSLATIONS "Update Qt translations")
 
@@ -1284,6 +1308,10 @@ ENDMACRO()
 MACRO(ADD_PLATFORM_FLAGS _FLAGS)
   SET(PLATFORM_CFLAGS "${PLATFORM_CFLAGS} ${_FLAGS}")
   SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} ${_FLAGS}")
+ENDMACRO()
+
+MACRO(ADD_PLATFORM_LINKFLAGS _FLAGS)
+  SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} ${_FLAGS}")
 ENDMACRO()
 
 MACRO(INIT_BUILD_FLAGS)
@@ -1487,19 +1515,23 @@ MACRO(INIT_BUILD_FLAGS)
 
     IF(MSVC14)
       ADD_PLATFORM_FLAGS("/Gy-")
-      # /Ox is working with VC++ 2010, but custom optimizations don't exist
+      # /Ox is working with VC++ 2015, but custom optimizations don't exist
       SET(RELEASE_CFLAGS "/Ox /GF /GS- ${RELEASE_CFLAGS}")
       # without inlining it's unusable, use custom optimizations again
       SET(DEBUG_CFLAGS "/Od /Ob1 /GF- ${DEBUG_CFLAGS}")
+
+      IF(WITH_INSTALL_RUNTIMES)
+        SET(CMAKE_INSTALL_UCRT_LIBRARIES ON)
+      ENDIF()
     ELSEIF(MSVC12)
       ADD_PLATFORM_FLAGS("/Gy-")
-      # /Ox is working with VC++ 2010, but custom optimizations don't exist
+      # /Ox is working with VC++ 2013, but custom optimizations don't exist
       SET(RELEASE_CFLAGS "/Ox /GF /GS- ${RELEASE_CFLAGS}")
       # without inlining it's unusable, use custom optimizations again
       SET(DEBUG_CFLAGS "/Od /Ob1 /GF- ${DEBUG_CFLAGS}")
     ELSEIF(MSVC11)
       ADD_PLATFORM_FLAGS("/Gy-")
-      # /Ox is working with VC++ 2010, but custom optimizations don't exist
+      # /Ox is working with VC++ 2012, but custom optimizations don't exist
       SET(RELEASE_CFLAGS "/Ox /GF /GS- ${RELEASE_CFLAGS}")
       # without inlining it's unusable, use custom optimizations again
       SET(DEBUG_CFLAGS "/Od /Ob1 /GF- ${DEBUG_CFLAGS}")
@@ -1537,17 +1569,17 @@ MACRO(INIT_BUILD_FLAGS)
       # Fix a bug with Intellisense
       ADD_PLATFORM_FLAGS("/D_WIN64")
       # Fix a compilation error for some big C++ files
-      SET(RELEASE_CFLAGS "${RELEASE_CFLAGS} /bigobj")
+      ADD_PLATFORM_FLAGS("/bigobj")
     ELSE()
       # Allows 32 bits applications to use 3 GB of RAM
-      SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} /LARGEADDRESSAWARE")
+      ADD_PLATFORM_LINKFLAGS("/LARGEADDRESSAWARE")
     ENDIF()
 
     # Exceptions are only set for C++
     IF(WITH_EXCEPTIONS)
       SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} /EHa")
     ELSE()
-      SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} -DBOOST_NO_EXCEPTIONS -D_HAS_EXCEPTIONS=0 /wd4275")
+      SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} -DBOOST_NO_EXCEPTIONS -D_HAS_EXCEPTIONS=0 /wd4275 /wd4577")
     ENDIF()
 
     # RTTI is only set for C++
@@ -1571,7 +1603,7 @@ MACRO(INIT_BUILD_FLAGS)
     ENDIF()
 
     IF(WITH_WARNINGS)
-      SET(DEBUG_CFLAGS "/W4 /RTCc ${DEBUG_CFLAGS}")
+      SET(DEBUG_CFLAGS "/W4 ${DEBUG_CFLAGS}")
     ELSE()
       SET(DEBUG_CFLAGS "/W3 ${DEBUG_CFLAGS}")
     ENDIF()
@@ -1615,7 +1647,7 @@ MACRO(INIT_BUILD_FLAGS)
         ADD_PLATFORM_FLAGS("-Wstack-protector")
       ENDIF()
       # Fix undefined reference to `__stack_chk_fail' error
-      SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -lc")
+      ADD_PLATFORM_LINKFLAGS("-lc")
     ENDIF()
 
     IF(WITH_COVERAGE)
@@ -1623,13 +1655,20 @@ MACRO(INIT_BUILD_FLAGS)
     ENDIF()
 
     IF(WITH_WARNINGS)
-      ADD_PLATFORM_FLAGS("-Wall")
+      ADD_PLATFORM_FLAGS("-Wall -W")
+    ELSE()
+      # Check wrong formats in printf-like functions
+      ADD_PLATFORM_FLAGS("-Wformat -Werror=format-security")
+
+      # Don't display invalid or unused command lines arguments by default (often too verbose)
+      ADD_PLATFORM_FLAGS("-Wno-invalid-command-line-argument -Wno-unused-command-line-argument")
     ENDIF()
 
+    # never display these warnings because they are minor
+    ADD_PLATFORM_FLAGS("-Wno-unused-parameter")
+
     # Fix "relocation R_X86_64_32 against.." error on x64 platforms
-#   IF(TARGET_X64 AND WITH_STATIC AND NOT WITH_STATIC_PLUGINS)
-#     ADD_PLATFORM_FLAGS("-fPIC")
-#   ENDIF()
+    ADD_PLATFORM_FLAGS("-fPIC")
 
     IF(NOT XCODE)
       ADD_PLATFORM_FLAGS("-MMD -MP")
@@ -1657,6 +1696,11 @@ MACRO(INIT_BUILD_FLAGS)
       ELSE()
         SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} -fno-rtti")
       ENDIF()
+
+      IF(WITH_CPP11 AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 5.0.0)
+        SET(USE_CPP11 ON)
+        SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} -std=c++11")
+      ENDIF()
     ELSE()
       IF(NOT WITH_EXCEPTIONS)
         SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} -DBOOST_NO_EXCEPTIONS")
@@ -1664,7 +1708,7 @@ MACRO(INIT_BUILD_FLAGS)
     ENDIF()
 
     IF(NOT APPLE)
-      SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -Wl,--no-undefined -Wl,--as-needed")
+      ADD_PLATFORM_LINKFLAGS("-Wl,--no-undefined -Wl,--as-needed")
     ENDIF()
 
     IF(NOT WITH_SYMBOLS)
@@ -1676,11 +1720,11 @@ MACRO(INIT_BUILD_FLAGS)
     ENDIF()
 
     IF(WITH_STATIC_RUNTIMES)
-      SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -static")
+      ADD_PLATFORM_LINKFLAGS("-static")
     ENDIF()
 
-    SET(DEBUG_CFLAGS "-D_DEBUG -DDEBUG -fno-omit-frame-pointer -fno-strict-aliasing ${DEBUG_CFLAGS}")
-    SET(RELEASE_CFLAGS "-DNDEBUG -O3 -fomit-frame-pointer -fstrict-aliasing ${RELEASE_CFLAGS}")
+    SET(DEBUG_CFLAGS "-D_DEBUG -DDEBUG ${DEBUG_CFLAGS}")
+    SET(RELEASE_CFLAGS "-DNDEBUG -O3 ${RELEASE_CFLAGS}")
     SET(DEBUG_LINKFLAGS "${DEBUG_LINKFLAGS}")
     SET(RELEASE_LINKFLAGS "${RELEASE_LINKFLAGS}")
   ENDIF()
@@ -1996,7 +2040,7 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
   STRING(TOUPPER ${_NAME_FIXED} _UPNAME_FIXED)
   STRING(TOLOWER ${_NAME_FIXED} _LOWNAME_FIXED)
 
-  SET(_SUFFIXES ${_SUFFIXES} ${_LOWNAME} ${_LOWNAME_FIXED} ${_NAME})
+  SET(_SUFFIXES ${_SUFFIXES} ${_LOWNAME} ${_LOWNAME_FIXED} ${NAME})
 
   IF(NOT WIN32 AND NOT IOS)
     FIND_PACKAGE(PkgConfig QUIET)
@@ -2016,12 +2060,20 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
     GET_FILENAME_COMPONENT(_TMP ${_TMP} ABSOLUTE)
     LIST(APPEND _INCLUDE_PATHS ${_TMP}/include ${_TMP})
     LIST(APPEND _LIBRARY_PATHS ${_TMP}/lib${LIB_SUFFIX})
+
+    IF(_IS_VERBOSE)
+      MESSAGE(STATUS "Using ${_UPNAME_FIXED}_DIR as root directory ${_TMP}")
+    ENDIF()
   ENDIF()
 
   IF(DEFINED ${_UPNAME}_DIR)
     SET(_TMP ${${_UPNAME}_DIR})
     LIST(APPEND _INCLUDE_PATHS ${_TMP}/include ${_TMP})
     LIST(APPEND _LIBRARY_PATHS ${_TMP}/lib${LIB_SUFFIX})
+
+    IF(_IS_VERBOSE)
+      MESSAGE(STATUS "Using ${_UPNAME_FIXED}_DIR as root directory ${_TMP}")
+    ENDIF()
   ENDIF()
 
   IF(UNIX)
@@ -2044,19 +2096,25 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
       /opt/include)
   ENDIF()
 
+  IF(_IS_VERBOSE)
+    MESSAGE(STATUS "Searching header ${INCLUDE} in: ${_INCLUDE_PATHS} with suffixes ${_SUFFIXES}")
+  ENDIF()
+
   # Search for include directory
   FIND_PATH(${_UPNAME_FIXED}_INCLUDE_DIR
-    ${INCLUDE}
-    HINTS ${PKG_${_NAME_FIXED}_INCLUDE_DIRS}
+    NAMES ${INCLUDE}
+    HINTS
+      ${PKG_${_NAME_FIXED}_INCLUDE_DIRS}
+      ${_INCLUDE_PATHS}
+      $ENV{${_UPNAME}_DIR}/include
+      $ENV{${_UPNAME_FIXED}_DIR}/include
+      $ENV{${_UPNAME}_DIR}
+      $ENV{${_UPNAME_FIXED}_DIR}
     PATHS
-    ${_INCLUDE_PATHS}
-    $ENV{${_UPNAME}_DIR}/include
-    $ENV{${_UPNAME_FIXED}_DIR}/include
-    $ENV{${_UPNAME}_DIR}
-    $ENV{${_UPNAME_FIXED}_DIR}
     ${_UNIX_INCLUDE_PATHS}
     PATH_SUFFIXES
     ${_SUFFIXES}
+    DOC "Include path for ${NAME}"
   )
 
   IF(_IS_VERBOSE)

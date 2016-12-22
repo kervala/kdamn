@@ -273,8 +273,19 @@ MACRO(USE_CURRENT_WINSDK)
         SET(WINSDK_VERSION "6.0A")
       ENDIF()
     ELSEIF(MSVC80)
-      IF(NOT MSVC_EXPRESS)
-        # TODO: fix this version
+      SET(WINSDK_MSVC80_COMPATIBLES "7.1" "7.1A" "7.0" "7.0A" "6.1" "6.0" "6.0A" "5.2A")
+
+      # look for each Windows SDK supported by VC++ 2005 (7.1 is the latest)
+      FOREACH(_VERSION ${WINSDK_DETECTED_VERSIONS})
+        # look if this version of Windows SDK is installed
+        LIST(FIND WINSDK_MSVC80_COMPATIBLES ${_VERSION} _FOUND)
+        IF(NOT _FOUND EQUAL -1)
+          SET(WINSDK_VERSION "${_VERSION}")
+          BREAK()
+        ENDIF()
+      ENDFOREACH()
+
+      IF(NOT MSVC_EXPRESS AND NOT WINSDK_VERSION)
         SET(WINSDK_VERSION "5.2A")
       ENDIF()
     ELSE()
@@ -384,19 +395,34 @@ FIND_PATH(WINSDK_LIBRARY_DIR ComCtl32.lib
 )
 
 IF(WINSDK_UCRT_DIR)
-  # directory where UCRT headers are found
-  FIND_PATH(WINSDK_UCRT_INCLUDE_DIR corecrt.h
-    HINTS
-    ${WINSDK_UCRT_DIR}/Include/10.0.10056.0/ucrt
-    ${WINSDK_UCRT_DIR}/Include/10.0.10150.0/ucrt
-  )
+  # determine exact UCRT version
+  SET(WINSDK_UCRT_INCLUDE_ROOT_DIR ${WINSDK_UCRT_DIR}/Include)
+  SET(WINSDK_UCRT_LIB_ROOT_DIR ${WINSDK_UCRT_DIR}/Lib)
 
-  # directory where UCRT libraries are found
-  FIND_PATH(WINSDK_UCRT_LIBRARY_DIR ucrt.lib
-    HINTS
-    ${WINSDK_UCRT_DIR}/Lib/10.0.10056.0/ucrt/${WINSDK8_SUFFIX}
-    ${WINSDK_UCRT_DIR}/Lib/10.0.10150.0/ucrt/${WINSDK8_SUFFIX}
-  )
+  FILE(GLOB UCRT_SUBDIRS RELATIVE ${WINSDK_UCRT_INCLUDE_ROOT_DIR} ${WINSDK_UCRT_INCLUDE_ROOT_DIR}/*)
+  SET(UCRT_VERSION)
+
+  FOREACH(UCRT_SUBDIR ${UCRT_SUBDIRS})
+    IF(NOT UCRT_VERSION OR UCRT_SUBDIR VERSION_GREATER UCRT_VERSION)
+      SET(UCRT_VERSION ${UCRT_SUBDIR})
+    ENDIF()
+  ENDFOREACH()
+
+  IF(UCRT_VERSION)
+    MESSAGE(STATUS "Using Windows UCRT ${UCRT_VERSION}")
+
+    # directory where UCRT headers are found
+    FIND_PATH(WINSDK_UCRT_INCLUDE_DIR corecrt.h
+      HINTS
+      ${WINSDK_UCRT_INCLUDE_ROOT_DIR}/${UCRT_VERSION}/ucrt
+    )
+
+    # directory where UCRT libraries are found
+    FIND_PATH(WINSDK_UCRT_LIBRARY_DIR ucrt.lib
+      HINTS
+      ${WINSDK_UCRT_LIB_ROOT_DIR}/${UCRT_VERSION}/ucrt/${WINSDK8_SUFFIX}
+    )
+  ENDIF()
 ENDIF()
 
 # signtool is used to sign executables
@@ -437,7 +463,7 @@ IF(WINSDK_INCLUDE_DIR)
   ENDIF()
 
   INCLUDE_DIRECTORIES(${WINSDK_INCLUDE_DIRS})
-  
+
   IF(WINSDK_UCRT_LIBRARY_DIR)
     SET(CMAKE_LIBRARY_PATH ${WINSDK_UCRT_LIBRARY_DIR} ${CMAKE_LIBRARY_PATH})
   ENDIF()

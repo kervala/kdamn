@@ -237,10 +237,13 @@ MACRO(SET_TARGET_FLAGS_MAC _TARGET)
         IF(MACOSX_BUNDLE_GUI_IDENTIFIER)
           SET_TARGET_PROPERTIES(${_TARGET} PROPERTIES
             XCODE_ATTRIBUTE_COMBINE_HIDPI_IMAGES NO
-            XCODE_ATTRIBUTE_ENABLE_BITCODE NO
+            XCODE_ATTRIBUTE_ENABLE_BITCODE YES
             XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${MACOSX_BUNDLE_GUI_IDENTIFIER}"
           )
         ENDIF()
+      ELSEIF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "6.1.1")
+        # Add bitcode for compatibility with new Xcode versions
+        TARGET_COMPILE_OPTIONS(${_TARGET} PRIVATE "-fembed-bitcode")
       ENDIF()
     ELSE()
       IF(XCODE)
@@ -250,7 +253,7 @@ MACRO(SET_TARGET_FLAGS_MAC _TARGET)
         )
       ELSEIF(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "6.1.1")
         # Add bitcode for compatibility with new Xcode versions
-        TARGET_COMPILE_OPTIONS(${_TARGET} PRIVATE "-fembed-bitcode-marker")
+        TARGET_COMPILE_OPTIONS(${_TARGET} PRIVATE "-fembed-bitcode")
       ENDIF()
     ENDIF()
   ENDIF()
@@ -428,7 +431,7 @@ MACRO(INIT_BUILD_FLAGS_MAC)
 
             ADD_PLATFORM_FLAGS("${XARCH}-isysroot${CMAKE_IOS_SYSROOT}")
             ADD_PLATFORM_FLAGS("${XARCH}-miphoneos-version-min=${IOS_VERSION}")
-            SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} ${XARCH}-Wl,-iphoneos_version_min,${IOS_VERSION}")
+            ADD_PLATFORM_LINKFLAGS("${XARCH}-Wl,-iphoneos_version_min,${IOS_VERSION}")
           ENDIF()
 
           IF(TARGET_ARMV7S)
@@ -438,7 +441,7 @@ MACRO(INIT_BUILD_FLAGS_MAC)
 
             ADD_PLATFORM_FLAGS("${XARCH}-isysroot${CMAKE_IOS_SYSROOT}")
             ADD_PLATFORM_FLAGS("${XARCH}-miphoneos-version-min=${IOS_VERSION}")
-            SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} ${XARCH}-Wl,-iphoneos_version_min,${IOS_VERSION}")
+            ADD_PLATFORM_LINKFLAGS("${XARCH}-Wl,-iphoneos_version_min,${IOS_VERSION}")
           ENDIF()
 
           IF(TARGET_ARMV7)
@@ -448,7 +451,7 @@ MACRO(INIT_BUILD_FLAGS_MAC)
 
             ADD_PLATFORM_FLAGS("${XARCH}-isysroot${CMAKE_IOS_SYSROOT}")
             ADD_PLATFORM_FLAGS("${XARCH}-miphoneos-version-min=${IOS_VERSION}")
-            SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} ${XARCH}-Wl,-iphoneos_version_min,${IOS_VERSION}")
+            ADD_PLATFORM_LINKFLAGS("${XARCH}-Wl,-iphoneos_version_min,${IOS_VERSION}")
           ENDIF()
 
           IF(TARGET_ARMV6)
@@ -458,7 +461,7 @@ MACRO(INIT_BUILD_FLAGS_MAC)
 
             ADD_PLATFORM_FLAGS("${XARCH}-isysroot${CMAKE_IOS_SYSROOT}")
             ADD_PLATFORM_FLAGS("${XARCH}-miphoneos-version-min=${IOS_VERSION}")
-            SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} ${XARCH}-Wl,-iphoneos_version_min,${IOS_VERSION}")
+            ADD_PLATFORM_LINKFLAGS("${XARCH}-Wl,-iphoneos_version_min,${IOS_VERSION}")
           ENDIF()
         ENDIF()
 
@@ -472,7 +475,7 @@ MACRO(INIT_BUILD_FLAGS_MAC)
             ADD_PLATFORM_FLAGS("${XARCH}-mios-simulator-version-min=${IOS_VERSION}")
 
             IF(CMAKE_OSX_DEPLOYMENT_TARGET)
-              SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} ${XARCH}-Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
+              ADD_PLATFORM_LINKFLAGS("${XARCH}-Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
             ENDIF()
           ENDIF()
 
@@ -485,7 +488,7 @@ MACRO(INIT_BUILD_FLAGS_MAC)
             ADD_PLATFORM_FLAGS("${XARCH}-mios-simulator-version-min=${IOS_VERSION}")
 
             IF(CMAKE_OSX_DEPLOYMENT_TARGET)
-              SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} ${XARCH}-Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
+              ADD_PLATFORM_LINKFLAGS("${XARCH}-Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
             ENDIF()
           ENDIF()
         ENDIF()
@@ -493,13 +496,21 @@ MACRO(INIT_BUILD_FLAGS_MAC)
         # Always force -mmacosx-version-min to override environement variable
         # __MAC_OS_X_VERSION_MIN_REQUIRED
         IF(CMAKE_OSX_DEPLOYMENT_TARGET)
-          SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
+          IF(CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "10.7")
+            MESSAGE(FATAL_ERROR "Minimum target for OS X is 10.7 but you're using ${CMAKE_OSX_DEPLOYMENT_TARGET}")
+          ENDIF()
+
+          ADD_PLATFORM_LINKFLAGS("-Wl,-macosx_version_min,${CMAKE_OSX_DEPLOYMENT_TARGET}")
         ENDIF()
       ENDIF()
     ENDIF()
 
+    # use libc++ under OX X to be able to use new C++ features (and else it'll use GCC 4.2.1 STL)
+    # minimum target is now OS X 10.7
+    SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} -stdlib=libc++")
+
     # Keep all static Objective-C symbols and disable all warnings (too verbose)
-    SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -ObjC -w")
+    ADD_PLATFORM_LINKFLAGS("-ObjC -w")
   ENDIF()
 ENDMACRO()
 

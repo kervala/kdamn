@@ -17,6 +17,7 @@
 #
 
 # Globals variables
+# QT_QMAKE_EXECUTABLE could point to qmake
 # USE_QT
 # USE_QT4 or USE_QT5
 # QT_BINARY_DIR
@@ -82,6 +83,8 @@ MACRO(ADD_QT5_DEPENDENCIES)
       IF("${Qt5Core_VERSION_STRING}" VERSION_GREATER "5.4.1")
         LIST(APPEND QT_MODULES_WANTED WebChannel)
       ENDIF()
+    ELSEIF(_MODULE STREQUAL "WebEngine")
+      LIST(APPEND QT_MODULES_WANTED WebEngineCore Quick Gui WebChannel Qml Core Network)
     ELSEIF(_MODULE STREQUAL "WebKitWidgets")
       LIST(APPEND QT_MODULES_WANTED MultimediaWidgets OpenGL PrintSupport)
     ELSEIF(_MODULE STREQUAL "Multimedia")
@@ -98,6 +101,13 @@ MACRO(ADD_QT5_DEPENDENCIES)
       LIST(APPEND QT_MODULES_WANTED Qml Network Gui)
     ENDIF()
   ENDFOREACH()
+
+  # Remove obsolete modules for Qt 5.6+
+  IF("${Qt5Core_VERSION_STRING}" VERSION_GREATER "5.5.9")
+    LIST(REMOVE_ITEM QT_MODULES_WANTED Declarative MultimediaQuick QuickParticles V8 WebKit WebKitWidgets)
+  ELSEIF("${Qt5Core_VERSION_STRING}" VERSION_LESS "5.6")
+    LIST(REMOVE_ITEM QT_MODULES_WANTED WebEngineWidgets)
+  ENDIF()
 
   LIST(REMOVE_DUPLICATES QT_MODULES_WANTED)
 ENDMACRO()
@@ -118,7 +128,7 @@ MACRO(USE_QT_MODULES)
   SET(QT4_MODULES ${QT_SHARED_MODULES} Main)
 
   # Qt 5 modules
-  SET(QT5_MODULES ${QT_SHARED_MODULES} Bluetooth Concurrent LinguistTools MultimediaQuick MultimediaWidgets Nfc OpenGL OpenGLExtensions PlatformSupport Positioning PrintSupport Quick QuickParticles QuickTest QuickWidgets Sensors SerialPort V8 WebChannel WebKitWidgets WebSockets Widgets)
+  SET(QT5_MODULES ${QT_SHARED_MODULES} Bluetooth Concurrent DBus LinguistTools Location MultimediaQuick MultimediaWidgets Nfc OpenGL OpenGLExtensions PlatformSupport Positioning PrintSupport Quick QuickParticles QuickTest QuickWidgets Sensors SerialBus SerialPort UiPlugin UiTools V8 WebChannel WebEngine WebEngineCore WebEngineWidgets WebKitWidgets WebSockets WebView Widgets 3DCore 3DInput 3DLogic 3DQuick 3DQuickInput 3DQuickRender 3DRender)
 
   # Use WinExtras only under Windows
   IF(WIN32)
@@ -200,13 +210,15 @@ MACRO(USE_QT_MODULES)
     MESSAGE(STATUS "Found Qt ${_VERSION}")
 
     # These variables are not defined with Qt5 CMake modules
-    SET(QT_BINARY_DIR "${_qt5Core_install_prefix}/bin")
-    SET(QT_LIBRARY_DIR "${_qt5Core_install_prefix}/lib")
-    SET(QT_PLUGINS_DIR "${_qt5Core_install_prefix}/plugins")
-    SET(QT_TRANSLATIONS_DIR "${_qt5Core_install_prefix}/translations")
+    SET(QT_DIR "${_qt5Core_install_prefix}")
+    SET(QT_BINARY_DIR "${QT_DIR}/bin")
+    SET(QT_LIBRARY_DIR "${QT_DIR}/lib")
+    SET(QT_PLUGINS_DIR "${QT_DIR}/plugins")
+    SET(QT_RESOURCES_DIR "${QT_DIR}/resources")
+    SET(QT_TRANSLATIONS_DIR "${QT_DIR}/translations")
 
     # Fix wrong include directories with Qt 5 under Mac OS X
-    INCLUDE_DIRECTORIES("${_qt5Core_install_prefix}/include")
+    INCLUDE_DIRECTORIES("${QT_DIR}/include")
   ENDIF()
 
   IF(USE_QT4)
@@ -409,6 +421,8 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
                 ${WINSDK_LIBRARY_DIR}/Imm32.lib
                 ${WINSDK_LIBRARY_DIR}/OpenGL32.lib
                 ${WINSDK_LIBRARY_DIR}/WinMM.Lib)
+
+              LINK_QT_PLUGIN(${_TARGET} printsupport windowsprintersupport)
               LINK_QT_PLUGIN(${_TARGET} platforms qwindows)
             ELSEIF(APPLE)
               # Cups needs .dylib
@@ -540,6 +554,7 @@ MACRO(INSTALL_QT_TRANSLATIONS _TARGET)
       ELSEIF(USE_QT4)
         SET(_QM_BASE "qt")
       ENDIF()
+      SET(PAK_FILES)
       # Copy Qt standard translations
       FOREACH(_LANG ${QT_LANGS})
         SET(LANG_FILE "${QT_TRANSLATIONS_DIR}/${_QM_BASE}_${_LANG}.qm")
@@ -550,8 +565,33 @@ MACRO(INSTALL_QT_TRANSLATIONS _TARGET)
             ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp ARGS ${LANG_FILE} ${RESOURCES_DIR}/translations)
           ENDIF()
         ENDIF()
+        # Install WebEngine translations
+        IF(USE_QT5)
+          FOREACH(_MODULE ${QT_MODULES_USED})
+            IF(_MODULE STREQUAL "WebEngine")
+              SET(PAK_MASK "${QT_TRANSLATIONS_DIR}/qtwebengine_locales/${_LANG}*.pak")
+              FILE(GLOB PAK_FILE ${PAK_MASK})
+              IF(PAK_FILE)
+                LIST(APPEND PAK_FILES ${PAK_FILE})
+              ENDIF()
+            ENDIF()
+          ENDFOREACH()
+        ENDIF()
       ENDFOREACH()
+      IF(PAK_FILES)
+        INSTALL(FILES ${PAK_FILES} DESTINATION ${SHARE_PREFIX}/translations/qtwebengine_locales)
+      ENDIF()
     ENDIF()
+  ENDIF()
+ENDMACRO()
+
+MACRO(INSTALL_QT_EXECUTABLE _NAME)
+  IF(WIN32)
+    SET(_EXT "exe")
+  ENDIF()
+  SET(_BIN "${QT_BINARY_DIR}/${_NAME}.${_EXT}")
+  IF(EXISTS ${_BIN})
+    INSTALL(FILES ${_BIN} DESTINATION ${BIN_PREFIX})
   ENDIF()
 ENDMACRO()
 
@@ -567,6 +607,14 @@ MACRO(INSTALL_LIBRARY _NAME)
   FILE(GLOB _LIBS ${_LIB_MASK})
   IF(_LIBS)
     INSTALL(FILES ${_LIBS} DESTINATION ${BIN_PREFIX})
+  ENDIF()
+ENDMACRO()
+
+MACRO(INSTALL_MISC _SRC _DST)
+  SET(_MISC_MASK "${_SRC}")
+  FILE(GLOB _MISC ${_MISC_MASK})
+  IF(_MISC)
+    INSTALL(FILES ${_MISC} DESTINATION ${BIN_PREFIX}/${_DST})
   ENDIF()
 ENDMACRO()
 
@@ -647,6 +695,7 @@ MACRO(INSTALL_QT_LIBRARIES)
             INSTALL_QT_PLUGIN(imageformats qjpeg)
             INSTALL_QT_PLUGIN(imageformats qmng)
             INSTALL_QT_PLUGIN(imageformats qwebp)
+            INSTALL_QT_PLUGIN(printsupport windowsprintersupport)
           ENDIF()
 
           IF(_MODULE STREQUAL "Multimedia")
@@ -660,7 +709,15 @@ MACRO(INSTALL_QT_LIBRARIES)
               INSTALL_QT_PLUGIN(audio qtaudio_coreaudio)
             ENDIF()
           ENDIF()
-          
+
+          IF(_MODULE STREQUAL "WebEngine")
+            INSTALL_QT_EXECUTABLE(QtWebEngineProcess)
+            INSTALL_MISC(${QT_RESOURCES_DIR}/* "")
+            IF(WIN32)
+              INSTALL_MISC(${QT_BINARY_DIR}/qtwebengine/*.dll qtwebengine)
+            ENDIF()
+          ENDIF()
+
           IF(_MODULE STREQUAL "Widgets")
             INSTALL_QT_PLUGIN(accessible qtaccessiblewidgets)
           ENDIF()
@@ -684,15 +741,9 @@ MACRO(INSTALL_QT_LIBRARIES)
       # Install zlib DLL if found in Qt directory
       INSTALL_LIBRARY(zlib1)
 
-      # Install OpenSSL libraries
-      FOREACH(_ARG ${EXTERNAL_BINARY_PATH})
-        IF(EXISTS "${_ARG}/libeay32.dll")
-          INSTALL(FILES
-            "${_ARG}/libeay32.dll"
-            "${_ARG}/ssleay32.dll"
-            DESTINATION ${BIN_PREFIX})
-        ENDIF()
-      ENDFOREACH()
+      # Install OpenSSL from Qt directory
+      INSTALL_LIBRARY(libeay*)
+      INSTALL_LIBRARY(ssleay*)
     ENDIF()
   ENDIF()
 ENDMACRO()

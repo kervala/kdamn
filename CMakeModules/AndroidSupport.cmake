@@ -23,6 +23,9 @@ MACRO(INIT_BUILD_FLAGS_ANDROID)
     ADD_PLATFORM_FLAGS("-DANDROID")
     ADD_PLATFORM_FLAGS("-I${STL_INCLUDE_DIR} -I${STL_INCLUDE_CPU_DIR}")
 
+    ADD_PLATFORM_FLAGS("-fstack-protector-strong")
+    ADD_PLATFORM_FLAGS("-Wa,--noexecstack")
+
     IF(CLANG)
       IF(TARGET_ARM64)
         SET(LLVM_TRIPLE "aarch64-none-linux-android")
@@ -43,76 +46,60 @@ MACRO(INIT_BUILD_FLAGS_ANDROID)
       ENDIF()
 
       ADD_PLATFORM_FLAGS("-gcc-toolchain ${GCC_TOOLCHAIN_ROOT}")
-      SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -gcc-toolchain ${GCC_TOOLCHAIN_ROOT}")
+      ADD_PLATFORM_LINKFLAGS("-gcc-toolchain ${GCC_TOOLCHAIN_ROOT}")
 
       ADD_PLATFORM_FLAGS("-target ${LLVM_TRIPLE}") # -emit-llvm -fPIC ?
-      SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -target ${LLVM_TRIPLE}")
-    ELSE()
-      ADD_PLATFORM_FLAGS("-Wa,--noexecstack")
+      ADD_PLATFORM_LINKFLAGS("-target ${LLVM_TRIPLE}")
+
+      # better debugability with LLDB
+      SET(DEBUG_CFLAGS "${DEBUG_CFLAGS} -fno-limit-debug-info")
     ENDIF()
 
     IF(TARGET_ARM)
-      ADD_PLATFORM_FLAGS("-fpic -fstack-protector")
+      ADD_PLATFORM_FLAGS("-fpic")
       ADD_PLATFORM_FLAGS("-D__ARM_ARCH_5__ -D__ARM_ARCH_5T__ -D__ARM_ARCH_5E__ -D__ARM_ARCH_5TE__")
 
-      IF(CLANG)
-        ADD_PLATFORM_FLAGS("-fno-integrated-as")
-      ENDIF()
-
-      IF(TARGET_ARMV7)
+      IF(TARGET_ARM64)
+        # no specific options
+      ELSEIF(TARGET_ARMV7)
+        # only correct archs are managed
         ADD_PLATFORM_FLAGS("-march=armv7-a -mfpu=vfpv3-d16")
+        ADD_PLATFORM_FLAGS("-mfloat-abi=softfp")
 
-        SET(ARMV7_HARD_FLOAT OFF)
-
-        IF(ARMV7_HARD_FLOAT)
-          ADD_PLATFORM_FLAGS("-mhard-float -D_NDK_MATH_NO_SOFTFP=1")
-          SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -Wl,--no-warn-mismatch -lm_hard")
-        ELSE()
-          ADD_PLATFORM_FLAGS("-mfloat-abi=softfp")
+        IF(CLANG)
+          ADD_PLATFORM_FLAGS("-fno-integrated-as")
         ENDIF()
 
-        IF(NOT CLANG)
-          SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -march=armv7-a")
-        ENDIF()
-        
-        SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -Wl,--fix-cortex-a8")
+        ADD_PLATFORM_LINKFLAGS("-Wl,--fix-cortex-a8")
       ELSEIF(TARGET_ARMV5)
+        IF(CLANG)
+          ADD_PLATFORM_FLAGS("-fno-integrated-as")
+        ENDIF()
+
         ADD_PLATFORM_FLAGS("-march=armv5te -mtune=xscale -msoft-float")
       ENDIF()
 
       SET(TARGET_THUMB ON)
 
       IF(TARGET_THUMB)
-        IF(NOT CLANG)
-          ADD_PLATFORM_FLAGS("-finline-limit=64")
-        ENDIF()
-
-        SET(DEBUG_CFLAGS "${DEBUG_CFLAGS} -marm")
-        SET(RELEASE_CFLAGS "${RELEASE_CFLAGS} -mthumb")
+        ADD_PLATFORM_FLAGS("-mthumb")
       ELSE()
-        IF(NOT CLANG)
-          ADD_PLATFORM_FLAGS("-funswitch-loops -finline-limit=300")
-        ENDIF()
+        ADD_PLATFORM_FLAGS("-marm")
       ENDIF()
     ELSEIF(TARGET_X86)
       # Same options for x86 and x86_64
-      IF(CLANG)
-        ADD_PLATFORM_FLAGS("-fPIC")
-      ELSE()
-        ADD_PLATFORM_FLAGS("-funswitch-loops -finline-limit=300")
-        # Optimizations for Intel Atom
-#          ADD_PLATFORM_FLAGS("-march=i686 -mtune=atom -mstackrealign -msse3 -mfpmath=sse -m32 -flto -ffast-math -funroll-loops")
-      ENDIF()
-      ADD_PLATFORM_FLAGS("-fstack-protector-strong")
+      ADD_PLATFORM_FLAGS("-fPIC")
     ELSEIF(TARGET_MIPS)
-      # Same options for mips and mips64
-      IF(NOT CLANG)
-        ADD_PLATFORM_FLAGS("-frename-registers -fno-inline-functions-called-once -fgcse-after-reload -frerun-cse-after-loop")
-        SET(RELEASE_CFLAGS "${RELEASE_CFLAGS} -funswitch-loops -finline-limit=300")
+      IF(NOT TARGET_MIPS64)
+        # We need to specify that to force an older arch for compatibility
+        ADD_PLATFORM_FLAGS("-mips32")
+        ADD_PLATFORM_LINKFLAGS("-mips32")
       ENDIF()
+
       ADD_PLATFORM_FLAGS("-fpic -finline-functions -fmessage-length=0")
     ENDIF()
-    SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -no-canonical-prefixes")
-    SET(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -L${PLATFORM_ROOT}/usr/lib")
+
+    ADD_PLATFORM_LINKFLAGS("-Wl,-z,noexecstack -Wl,-z,relro -Wl,-z,now -no-canonical-prefixes")
+    ADD_PLATFORM_LINKFLAGS("-L${PLATFORM_ROOT}/usr/lib")
   ENDIF()
 ENDMACRO()
