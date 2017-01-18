@@ -151,7 +151,16 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 	folderPart.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"stack\"");
 	folderPart.setBody(QString("kdamn_%1").arg(room).toUtf8());
 
-	QString title = info.baseName().left(50);
+	QString title = info.baseName();
+
+	// uncompose Unicode accents
+	title = title.normalized(QString::NormalizationForm_D);
+
+	// remove unknown characters
+	title = title.replace(QRegExp("[^0-9a-zA-Z\\s\\-_:]"), "");
+
+	// only keep 50 characters
+	title = title.left(50);
 
 	QHttpPart titlePart;
 	titlePart.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"title\"");
