@@ -148,7 +148,7 @@ bool OAuth2::requestStash(const QString &filename, const QString &room)
 	QHttpMultiPart *multiPart = new QHttpMultiPart(QHttpMultiPart::FormDataType, this);
 
 	QHttpPart folderPart;
-	folderPart.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"folder\"");
+	folderPart.setHeader(QNetworkRequest::ContentDispositionHeader, "form-data; name=\"stack\"");
 	folderPart.setBody(QString("kdamn_%1").arg(room).toUtf8());
 
 	QString title = info.baseName().left(50);
