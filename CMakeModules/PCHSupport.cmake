@@ -408,6 +408,10 @@ MACRO(ADD_PRECOMPILED_HEADER_TO_TARGET _targetName)
     ENDIF()
 
     SET(_target_cflags "${oldProps} ${PCH_ADDITIONAL_COMPILER_FLAGS} -Winvalid-pch")
+
+    IF(USE_CPP0X)
+      SET(_target_cflags "${_target_cflags} -std=c++0x")
+    ENDIF()
   ENDIF()
 
   SET_TARGET_PROPERTIES(${_targetName} PROPERTIES COMPILE_FLAGS ${_target_cflags})

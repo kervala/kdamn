@@ -1641,6 +1641,7 @@ MACRO(INIT_BUILD_FLAGS)
 
     # use c++0x standard to use std::unique_ptr and std::shared_ptr
     IF(NOT XCODE)
+      SET(USE_CPP0X ON)
       SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} -std=c++0x")
     ENDIF()
 
