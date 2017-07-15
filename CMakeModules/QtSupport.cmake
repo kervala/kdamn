@@ -68,48 +68,48 @@ MACRO(INIT_QT)
 ENDMACRO()
 
 MACRO(ADD_QT5_DEPENDENCIES)
-  LIST(APPEND QT_MODULES_WANTED Core LinguistTools Concurrent)
+  LIST(APPEND QT5_MODULES_WANTED Core LinguistTools Concurrent)
 
-  FOREACH(_MODULE ${QT_MODULES_WANTED})
+  FOREACH(_MODULE ${QT5_MODULES_WANTED})
     IF(_MODULE STREQUAL "WebKit")
-      LIST(APPEND QT_MODULES_WANTED Quick Multimedia Qml Sql Sensors Network Gui)
+      LIST(APPEND QT5_MODULES_WANTED Quick Multimedia Qml Sql Sensors Network Gui)
 
       # Depends on Positioning since Qt 5.3.0
       IF("${Qt5Core_VERSION_STRING}" VERSION_GREATER "5.2.9")
-        LIST(APPEND QT_MODULES_WANTED Positioning)
+        LIST(APPEND QT5_MODULES_WANTED Positioning)
       ENDIF()
 
       # Depends on WebChannel since Qt 5.4.2
       IF("${Qt5Core_VERSION_STRING}" VERSION_GREATER "5.4.1")
-        LIST(APPEND QT_MODULES_WANTED WebChannel)
+        LIST(APPEND QT5_MODULES_WANTED WebChannel)
       ENDIF()
     ELSEIF(_MODULE STREQUAL "WebEngine")
-      LIST(APPEND QT_MODULES_WANTED WebEngineCore Quick Gui WebChannel Qml Core Network)
+      LIST(APPEND QT5_MODULES_WANTED WebEngineCore Quick Gui WebChannel Qml Core Network)
     ELSEIF(_MODULE STREQUAL "WebKitWidgets")
-      LIST(APPEND QT_MODULES_WANTED MultimediaWidgets OpenGL PrintSupport)
+      LIST(APPEND QT5_MODULES_WANTED MultimediaWidgets OpenGL PrintSupport)
     ELSEIF(_MODULE STREQUAL "Multimedia")
-      LIST(APPEND QT_MODULES_WANTED Gui Network)
+      LIST(APPEND QT5_MODULES_WANTED Gui Network)
     ELSEIF(_MODULE STREQUAL "MultimediaWidgets")
-      LIST(APPEND QT_MODULES_WANTED Multimedia Widgets Gui OpenGL)
+      LIST(APPEND QT5_MODULES_WANTED Multimedia Widgets Gui OpenGL)
     ELSEIF(_MODULE STREQUAL "OpenGL")
-      LIST(APPEND QT_MODULES_WANTED Widgets Gui)
+      LIST(APPEND QT5_MODULES_WANTED Widgets Gui)
     ELSEIF(_MODULE STREQUAL "PrintSupport")
-      LIST(APPEND QT_MODULES_WANTED Widgets Gui)
+      LIST(APPEND QT5_MODULES_WANTED Widgets Gui)
     ELSEIF(_MODULE STREQUAL "Qml")
-      LIST(APPEND QT_MODULES_WANTED Network)
+      LIST(APPEND QT5_MODULES_WANTED Network)
     ELSEIF(_MODULE STREQUAL "Quick")
-      LIST(APPEND QT_MODULES_WANTED Qml Network Gui)
+      LIST(APPEND QT5_MODULES_WANTED Qml Network Gui)
     ENDIF()
   ENDFOREACH()
 
   # Remove obsolete modules for Qt 5.6+
   IF("${Qt5Core_VERSION_STRING}" VERSION_GREATER "5.5.9")
-    LIST(REMOVE_ITEM QT_MODULES_WANTED Declarative MultimediaQuick QuickParticles V8 WebKit WebKitWidgets)
+    LIST(REMOVE_ITEM QT5_MODULES_WANTED Declarative MultimediaQuick QuickParticles V8 WebKit WebKitWidgets)
   ELSEIF("${Qt5Core_VERSION_STRING}" VERSION_LESS "5.6")
-    LIST(REMOVE_ITEM QT_MODULES_WANTED WebEngineWidgets)
+    LIST(REMOVE_ITEM QT5_MODULES_WANTED WebEngineWidgets)
   ENDIF()
 
-  LIST(REMOVE_DUPLICATES QT_MODULES_WANTED)
+  LIST(REMOVE_DUPLICATES QT5_MODULES_WANTED)
 ENDMACRO()
 
 MACRO(USE_QT_MODULES)
@@ -135,25 +135,51 @@ MACRO(USE_QT_MODULES)
     LIST(APPEND QT5_MODULES WinExtras)
   ENDIF()
 
+  # make a list with all Qt 4 and 5 modules wanted
+  SET(QT5_MODULES_WANTED)
+  SET(QT4_MODULES_WANTED)
+
+  # by default, modules are shared
+  SET(_ONLY_QT4 OFF)
+  SET(_ONLY_QT5 OFF)
+
+  FOREACH(_MODULE ${QT_MODULES_WANTED})
+    IF(_MODULE STREQUAL "QT4")
+      SET(_ONLY_QT4 ON)
+      SET(_ONLY_QT5 OFF)
+    ELSEIF(_MODULE STREQUAL "QT5")
+      SET(_ONLY_QT4 OFF)
+      SET(_ONLY_QT5 ON)
+    ELSEIF(NOT _ONLY_QT4 AND NOT _ONLY_QT5)
+      # add module to both lists
+      LIST(APPEND QT4_MODULES_WANTED ${_MODULE})
+      LIST(APPEND QT5_MODULES_WANTED ${_MODULE})
+    ELSEIF(_ONLY_QT4)
+      # add module to Qt 4 list
+      LIST(APPEND QT4_MODULES_WANTED ${_MODULE})
+    ELSEIF(_ONLY_QT5)
+      # add module to Qt 5 list
+      LIST(APPEND QT5_MODULES_WANTED ${_MODULE})
+    ENDIF()
+  ENDFOREACH()
+
   IF(WITH_QT5)
     # Look for Qt 5 in some environment variables
     SET(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} ${QTDIR} $ENV{QTDIR})
     FIND_PACKAGE(Qt5Core QUIET)
 
     IF(Qt5Core_FOUND)
+      # add default dependencies
       ADD_QT5_DEPENDENCIES()
 
       # To be sure a 2nd stage dependency is right
       ADD_QT5_DEPENDENCIES()
 
-      SET(_ONLY_QT4 OFF)
-      FOREACH(_MODULE ${QT_MODULES_WANTED})
-        IF(_MODULE STREQUAL "QT4")
-          SET(_ONLY_QT4 ON)
-        ELSEIF(_MODULE STREQUAL "QT5")
-          SET(_ONLY_QT4 OFF)
-        ELSEIF(NOT _ONLY_QT4 AND QT5_MODULES MATCHES ${_MODULE})
+      # only search for existing Qt 5 modules
+      FOREACH(_MODULE ${QT5_MODULES_WANTED})
+        IF(QT5_MODULES MATCHES ${_MODULE})
           FIND_PACKAGE(Qt5${_MODULE} REQUIRED)
+
           IF("${Qt5${_MODULE}_FOUND}")
             LIST(APPEND QT_MODULES_USED ${_MODULE})
             SET(USE_QT5 ON)
@@ -167,23 +193,21 @@ MACRO(USE_QT_MODULES)
   ENDIF()
 
   IF(NOT WITH_QT5)
-    LIST(APPEND QT_MODULES_WANTED Main Core)
-    LIST(REMOVE_DUPLICATES QT_MODULES_WANTED)
+    LIST(APPEND QT4_MODULES_WANTED Main Core)
+    LIST(REMOVE_DUPLICATES QT4_MODULES_WANTED)
 
-    SET(_ONLY_QT5 OFF)
-    FOREACH(_MODULE ${QT_MODULES_WANTED})
-      IF(_MODULE STREQUAL "QT5")
-        SET(_ONLY_QT5 ON)
-      ELSEIF(_MODULE STREQUAL "QT4")
-        SET(_ONLY_QT5 OFF)
-      ELSEIF(NOT _ONLY_QT5 AND QT4_MODULES MATCHES ${_MODULE})
+    FOREACH(_MODULE ${QT4_MODULES_WANTED})
+      IF(QT4_MODULES MATCHES ${_MODULE})
         LIST(APPEND _COMPONENTS Qt${_MODULE})
       ENDIF()
     ENDFOREACH()
+
     FIND_PACKAGE(Qt4 COMPONENTS ${_COMPONENTS} REQUIRED)
     INCLUDE(${QT_USE_FILE})
-    FOREACH(_MODULE ${QT_MODULES_WANTED})
+
+    FOREACH(_MODULE ${QT4_MODULES_WANTED})
       STRING(TOUPPER ${_MODULE} _UP_MODULE_NAME)
+
       IF("${QT_USE_QT${_UP_MODULE_NAME}}")
         LIST(APPEND QT_MODULES_USED ${_MODULE})
         SET(USE_QT4 ON)
@@ -268,7 +292,7 @@ MACRO(COMPILE_QT_HEADERS _TARGET)
   IF(USE_QT)
     # CMake supports automoc since version 2.8.6
     IF(CMAKE_VERSION VERSION_GREATER "2.8.5" AND CMAKE_AUTOMOC)
-      SET(QT_MOCS_CPPS "${CMAKE_CURRENT_BINARY_DIR}/${_TARGET}_automoc.cpp")
+      SET(QT_MOCS_CPPS "${CMAKE_CURRENT_BINARY_DIR}/${_TARGET}_autogen/moc_compilation.cpp")
       SET_SOURCE_FILES_PROPERTIES(${QT_MOCS_CPPS} PROPERTIES GENERATED TRUE)
     ELSE()
       SET(_FILES "${ARGN}")
@@ -285,6 +309,58 @@ MACRO(COMPILE_QT_HEADERS _TARGET)
   ENDIF()
 ENDMACRO()
 
+IF(CMAKE_VERSION VERSION_GREATER "2.8.2")
+  include(CMakeParseArguments)
+ENDIF()
+
+function(QT5FIXED_CREATE_TRANSLATION _qm_files)
+    set(options)
+    set(oneValueArgs)
+    set(multiValueArgs OPTIONS)
+
+    cmake_parse_arguments(_LUPDATE "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+    set(_lupdate_files ${_LUPDATE_UNPARSED_ARGUMENTS})
+    set(_lupdate_options ${_LUPDATE_OPTIONS})
+
+    set(_my_sources)
+    set(_my_tsfiles)
+    foreach(_file ${_lupdate_files})
+        get_filename_component(_ext ${_file} EXT)
+        get_filename_component(_abs_FILE ${_file} ABSOLUTE)
+        if(_ext MATCHES "ts")
+            list(APPEND _my_tsfiles ${_abs_FILE})
+        else()
+            list(APPEND _my_sources ${_abs_FILE})
+        endif()
+    endforeach()
+    foreach(_ts_file ${_my_tsfiles})
+        if(_my_sources)
+          # make a list file to call lupdate on, so we don't make our commands too
+          # long for some systems
+          get_filename_component(_ts_name ${_ts_file} NAME_WE)
+          set(_ts_lst_file "${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY}/${_ts_name}_lst_file")
+          set(_lst_file_srcs)
+          foreach(_lst_file_src ${_my_sources})
+              set(_lst_file_srcs "${_lst_file_src}\n${_lst_file_srcs}")
+          endforeach()
+
+#          get_directory_property(_inc_DIRS INCLUDE_DIRECTORIES)
+#          foreach(_pro_include ${_inc_DIRS})
+#              get_filename_component(_abs_include "${_pro_include}" ABSOLUTE)
+#              set(_lst_file_srcs "-I${_pro_include}\n${_lst_file_srcs}")
+#          endforeach()
+
+          file(WRITE ${_ts_lst_file} "${_lst_file_srcs}")
+        endif()
+        add_custom_command(OUTPUT ${_ts_file}
+            COMMAND ${Qt5_LUPDATE_EXECUTABLE}
+            ARGS ${_lupdate_options} "@${_ts_lst_file}" -ts ${_ts_file}
+            DEPENDS ${_my_sources} ${_ts_lst_file} VERBATIM)
+    endforeach()
+    qt5_add_translation(${_qm_files} ${_my_tsfiles})
+    set(${_qm_files} ${${_qm_files}} PARENT_SCOPE)
+endfunction()
+
 MACRO(COMPILE_QT_TRANSLATIONS)
   IF(QT_TSS)
     SET_SOURCE_FILES_PROPERTIES(${QT_TSS} PROPERTIES OUTPUT_LOCATION "${CMAKE_BINARY_DIR}/translations")
@@ -292,7 +368,7 @@ MACRO(COMPILE_QT_TRANSLATIONS)
     IF(WITH_UPDATE_TRANSLATIONS)
       SET(_TRANS ${ARGN} ${QT_UIS})
       IF(USE_QT5)
-        QT5_CREATE_TRANSLATION(QT_QMS ${_TRANS} ${QT_TSS})
+        QT5FIXED_CREATE_TRANSLATION(QT_QMS ${_TRANS} ${QT_TSS})
       ELSEIF(USE_QT4)
         QT4_CREATE_TRANSLATION(QT_QMS ${_TRANS} ${QT_TSS})
       ENDIF()
@@ -382,7 +458,16 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
         FOREACH(_MODULE ${QT_MODULES_USED})
           IF(_MODULE STREQUAL "Core")
             IF(APPLE)
-              FIND_LIBRARY(PCRE_LIBRARY pcre16 pcre)
+              # pcre is needed since Qt 5.5
+              SET(PCRE_LIBRARY "${QT_LIBRARY_DIR}/libqtpcre.a")
+
+              IF(NOT EXISTS ${PCRE_LIBRARY})
+                FIND_LIBRARY(PCRE_LIBRARY pcre16 pcre)
+              ENDIF()
+
+              IF(NOT EXISTS ${PCRE_LIBRARY})
+                MESSAGE(FATAL_ERROR "PCRE is required since Qt 5.5")
+              ENDIF()
 
               FIND_LIBRARY(FOUNDATION_FRAMEWORK Foundation)
               FIND_LIBRARY(CARBON_FRAMEWORK Carbon)
@@ -393,6 +478,25 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
                 ${FOUNDATION_FRAMEWORK}
                 ${CARBON_FRAMEWORK}
                 ${SECURITY_FRAMEWORK})
+            ELSEIF(WIN32)
+              SET(PCRE_LIB "${QT_LIBRARY_DIR}/qtpcre.lib")
+
+              IF(EXISTS ${PCRE_LIB})
+                TARGET_LINK_LIBRARIES(${_TARGET} ${PCRE_LIB})
+              ENDIF()
+            ELSEIF(UNIX)
+              # pcre is needed since Qt 5.5
+              SET(PCRE_LIBRARY "${QT_LIBRARY_DIR}/libqtpcre.a")
+
+              IF(NOT EXISTS ${PCRE_LIBRARY})
+                FIND_LIBRARY(PCRE_LIBRARY pcre16 pcre)
+              ENDIF()
+
+              IF(NOT EXISTS ${PCRE_LIBRARY})
+                MESSAGE(FATAL_ERROR "PCRE is required since Qt 5.5")
+              ENDIF()
+
+              TARGET_LINK_LIBRARIES(${_TARGET} ${PCRE_LIBRARY} -ldl -lrt)
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Network")
@@ -445,6 +549,23 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
 
               LINK_QT_PLUGIN(${_TARGET} printsupport cocoaprintersupport)
               LINK_QT_PLUGIN(${_TARGET} platforms qcocoa)
+            ELSE()
+              # order is very important there
+              LINK_QT_PLUGIN(${_TARGET} platforms qxcb)
+              LINK_QT_PLUGIN(${_TARGET} xcbglintegrations qxcb-glx-integration)
+
+              LINK_QT_LIBRARY(${_TARGET} XcbQpa)
+              LINK_QT_LIBRARY(${_TARGET} PlatformSupport)
+
+              TARGET_LINK_LIBRARIES(${_TARGET} -lX11-xcb -lXi -lSM -lICE -lxcb -lGL -lxcb-glx)
+
+              IF(EXISTS "${QT_LIBRARY_DIR}/libxcb-static.a")
+                TARGET_LINK_LIBRARIES(${_TARGET} "${QT_LIBRARY_DIR}/libxcb-static.a")
+              ENDIF()
+
+              TARGET_LINK_LIBRARIES(${_TARGET} -lfontconfig)
+
+              LINK_QT_LIBRARY(${_TARGET} DBus)
             ENDIF()
 
             LINK_QT_PLUGIN(${_TARGET} imageformats qgif)
@@ -455,33 +576,29 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
             LINK_QT_PLUGIN(${_TARGET} imageformats qwebp)
 
             # harfbuzz is needed since Qt 5.3
-            IF(APPLE)
-              SET(HB_LIB "${QT_LIBRARY_DIR}/libqtharfbuzzng.a")
-            ELSEIF(WIN32)
+            IF(WIN32)
               SET(HB_LIB "${QT_LIBRARY_DIR}/qtharfbuzzng.lib")
+            ELSE()
+              SET(HB_LIB "${QT_LIBRARY_DIR}/libqtharfbuzzng.a")
             ENDIF()
+
             IF(EXISTS ${HB_LIB})
               TARGET_LINK_LIBRARIES(${_TARGET} ${HB_LIB})
             ENDIF()
 
             # freetype is needed since Qt 5.5
-            IF(APPLE)
-              SET(FREETYPE_LIB "${QT_LIBRARY_DIR}/libqtfreetype.a")
-            ELSEIF(WIN32)
-              SET(FREETYPE_LIB "${QT_LIBRARY_DIR}/qtfreetype.lib")
-            ENDIF()
-            IF(EXISTS ${FREETYPE_LIB})
-              TARGET_LINK_LIBRARIES(${_TARGET} ${FREETYPE_LIB})
+            IF(WIN32)
+              SET(FREETYPE_LIBRARY "${QT_LIBRARY_DIR}/qtfreetype.lib")
+            ELSE()
+              SET(FREETYPE_LIBRARY "${QT_LIBRARY_DIR}/libqtfreetype.a")
+
+              IF(NOT EXISTS ${FREETYPE_LIBRARY})
+                FIND_PACKAGE(Freetype)
+              ENDIF()
             ENDIF()
 
-            # pcre is needed since Qt 5.5
-            IF(APPLE)
-              SET(PCRE_LIB "${QT_LIBRARY_DIR}/libqtpcre.a")
-            ELSEIF(WIN32)
-              SET(PCRE_LIB "${QT_LIBRARY_DIR}/qtpcre.lib")
-            ENDIF()
-            IF(EXISTS ${PCRE_LIB})
-              TARGET_LINK_LIBRARIES(${_TARGET} ${PCRE_LIB})
+            IF(EXISTS ${FREETYPE_LIBRARY})
+              TARGET_LINK_LIBRARIES(${_TARGET} ${FREETYPE_LIBRARY})
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Multimedia")
