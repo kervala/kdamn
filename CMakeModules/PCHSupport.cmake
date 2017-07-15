@@ -227,6 +227,10 @@ MACRO(PCH_SET_COMPILE_FLAGS _target)
     ENDIF()
   ENDIF()
 
+  IF(USE_CPP0X AND gcc_compiler_version GREATER "6.2.0")
+    LIST(APPEND _FLAGS "-std=gnu++11")
+  ENDIF()
+
   # Format definitions
   IF(MSVC)
     # Fix path with space
@@ -412,10 +416,6 @@ MACRO(ADD_PRECOMPILED_HEADER_TO_TARGET _targetName)
     ENDIF()
 
     SET(_target_cflags "${oldProps} ${PCH_ADDITIONAL_COMPILER_FLAGS} -Winvalid-pch")
-
-    IF(USE_CPP0X AND gcc_compiler_version GREATER "6.2.0")
-      SET(_target_cflags "${_target_cflags} -std=gnu++11")
-    ENDIF()
   ENDIF()
 
   SET_TARGET_PROPERTIES(${_targetName} PROPERTIES COMPILE_FLAGS ${_target_cflags})
