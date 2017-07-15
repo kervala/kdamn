@@ -413,8 +413,8 @@ MACRO(ADD_PRECOMPILED_HEADER_TO_TARGET _targetName)
 
     SET(_target_cflags "${oldProps} ${PCH_ADDITIONAL_COMPILER_FLAGS} -Winvalid-pch")
 
-    IF(USE_CPP0X)
-      SET(_target_cflags "${_target_cflags} -std=c++0x")
+    IF(USE_CPP0X AND gcc_compiler_version GREATER "6.2.0"))
+      SET(_target_cflags "${_target_cflags} -std=gnu++11")
     ENDIF()
   ENDIF()
 
