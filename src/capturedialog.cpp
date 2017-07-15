@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "capturedialog.h"
+#include "moc_capturedialog.cpp"
 #include "utils.h"
 
 CaptureDialog::CaptureDialog(QWidget *parent):QDialog(parent), m_handle(0)

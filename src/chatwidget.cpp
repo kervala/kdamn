@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "chatwidget.h"
+#include "moc_chatwidget.cpp"
 #include "oauth2.h"
 #include "configfile.h"
 

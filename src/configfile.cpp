@@ -19,6 +19,7 @@
 
 #include "common.h"
 #include "configfile.h"
+#include "moc_configfile.cpp"
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
