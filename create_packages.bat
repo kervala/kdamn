@@ -1,4 +1,4 @@
-set QTVERSION=5.6.0
+set QTVERSION=5.6.2
 
 call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64
 
