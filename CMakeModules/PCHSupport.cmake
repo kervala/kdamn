@@ -132,12 +132,16 @@ MACRO(PCH_SET_COMPILE_FLAGS _target)
 
   GET_TARGET_PROPERTY(oldProps ${_target} COMPILE_FLAGS)
   IF(oldProps)
-    LIST(APPEND _FLAGS ${oldProps})
+    SET(_FLAG ${oldProps})
+    SEPARATE_ARGUMENTS(_FLAG)
+    LIST(APPEND _FLAGS ${_FLAG})
   ENDIF()
 
   GET_TARGET_PROPERTY(oldPropsBuild ${_target} COMPILE_FLAGS_${_UPPER_BUILD})
   IF(oldPropsBuild)
-    LIST(APPEND _FLAGS ${oldPropsBuild})
+    SET(_FLAG ${oldPropsBuild})
+    SEPARATE_ARGUMENTS(_FLAG)
+    LIST(APPEND _FLAGS ${_FLAG})
   ENDIF()
 
   GET_TARGET_PROPERTY(DIRINC ${_target} INCLUDE_DIRECTORIES)
