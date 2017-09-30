@@ -195,9 +195,12 @@ bool OAuth2::login()
 	params.addQueryItem("redirect_uri", REDIRECT_APP);
 	params.addQueryItem("scope", "basic");
 	params.addQueryItem("state", "");
+	params.addQueryItem("validate_token", m_validateToken);
+	params.addQueryItem("validate_key", m_validateKey);
 	params.addQueryItem("subdomain", "www");
 	params.addQueryItem("referrer", getAuthorizationUrl());
 	params.addQueryItem("oauth2", "1");
+	params.addQueryItem("challenge", "");
 	params.addQueryItem("username", m_login);
 	params.addQueryItem("password", m_password);
 
@@ -635,6 +638,13 @@ void OAuth2::processContent(const QByteArray &content, const QString &url, const
 			processJson(content, urlTemp.path(), filename);
 		}
 	}
+	if (url.startsWith(JOIN_URL) /* && redirection.startsWith(JOIN_URL) AUTHORIZE_URL */)
+	{
+		parseSessionVariables(content);
+
+		// fill OAuth2 login form
+		login();
+	}
 	else if (url.startsWith(OAUTH2LOGIN_URL))
 	{
 		if (content.indexOf("The username or password you entered was incorrect.") > -1)
@@ -731,12 +741,7 @@ void OAuth2::processUrlChanges(const QByteArray &content, const QString &url)
 
 void OAuth2::processRedirection(const QString &redirection, const QString &url, const QString &filename)
 {
-	if (url.startsWith(AUTHORIZE_URL) && redirection.startsWith(JOIN_URL))
-	{
-		// fill OAuth2 login form
-		login();
-	}
-	else if (url.startsWith(OAUTH2LOGIN_URL) && redirection.startsWith(AUTHORIZE_URL))
+	if (url.startsWith(OAUTH2LOGIN_URL) && redirection.startsWith(AUTHORIZE_URL))
 	{
 		m_logged = true;
 
