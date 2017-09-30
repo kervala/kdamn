@@ -80,7 +80,7 @@ static QPixmap fancyPants( ICONINFO const &icon_info )
 	// Get bitmap bits
 	uchar *data = new uchar[info.bmiHeader.biSizeImage];
 
-	result = GetDIBits( qt_win_display_dc(), h_bitmap, 0, h, data, &info, DIB_RGB_COLORS );
+	result = GetDIBits(GetDC(0), h_bitmap, 0, h, data, &info, DIB_RGB_COLORS );
 
 	QPixmap p;
 	if (result)
