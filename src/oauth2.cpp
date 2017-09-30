@@ -489,7 +489,7 @@ void OAuth2::redirect(const QString &url, const QString &referer, const QString 
 {
 	qDebug() << "Redirected from" << referer << "to" << url;
 
-	get(url, referer);
+	get(url.startsWith("/") ? HTTPS_URL+url:url, referer);
 }
 
 void OAuth2::processNextAction()
