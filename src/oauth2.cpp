@@ -410,8 +410,8 @@ void OAuth2::onReply(QNetworkReply *reply)
 	if (errorCode != QNetworkReply::NoError) qDebug() << "HTTP" << statusCode << "error" << errorCode << errorString;
 #endif
 
-	// if status code 302 (redirection), 404 (not found) or 401 (unauthorized), we can clear content
-	if (statusCode == 302 || statusCode == 404 || statusCode == 401) content.clear();
+	// if status code 302 (redirection), 307, 404 (not found) or 401 (unauthorized), we can clear content
+	if (statusCode == 302 || statusCode == 307 || statusCode == 404 || statusCode == 401) content.clear();
 
 	if (content.isEmpty())
 	{
