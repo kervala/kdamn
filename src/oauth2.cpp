@@ -86,7 +86,7 @@ void OAuth2::addUserAgent(QNetworkRequest &req) const
 #endif
 }
 
-bool OAuth2::get(const QString &url, const QString &referer)
+bool OAuth2::get(const QString &url, const QString &referer, const QString &filename)
 {
 	init();
 
@@ -98,6 +98,7 @@ bool OAuth2::get(const QString &url, const QString &referer)
 	if (!referer.isEmpty()) req.setRawHeader("Referer", referer.toLatin1());
 
 	QNetworkReply *reply = m_manager->get(req);
+	if (!filename.isEmpty()) reply->setUserData(0, new StringUserData(filename));
 
 	return true;
 }
@@ -414,7 +415,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 		if (!redirection.isEmpty())
 		{
 			// redirection and no content
-			processRedirection(redirection, url);
+			processRedirection(redirection, url, filename);
 		}
 		else if (errorCode != QNetworkReply::NoError)
 		{
@@ -451,7 +452,7 @@ void OAuth2::onReply(QNetworkReply *reply)
 				image->remoteUrl = redirection;
 
 				// redirection and content
-				processRedirection(redirection, url);
+				processRedirection(redirection, url, filename);
 			}
 			else
 			{
@@ -484,7 +485,7 @@ void OAuth2::onProxyAuthentication(const QNetworkProxy &proxy, QAuthenticator *a
 	emit errorReceived(tr("Proxy authentication required"));
 }
 
-void OAuth2::redirect(const QString &url, const QString &referer)
+void OAuth2::redirect(const QString &url, const QString &referer, const QString &filename)
 {
 	qDebug() << "Redirected from" << referer << "to" << url;
 
@@ -728,7 +729,7 @@ void OAuth2::processUrlChanges(const QByteArray &content, const QString &url)
 	emit urlChecked(url, md5);
 }
 
-void OAuth2::processRedirection(const QString &redirection, const QString &url)
+void OAuth2::processRedirection(const QString &redirection, const QString &url, const QString &filename)
 {
 	if (url.startsWith(AUTHORIZE_URL) && redirection.startsWith(JOIN_URL))
 	{
@@ -806,7 +807,7 @@ void OAuth2::processRedirection(const QString &redirection, const QString &url)
 	}
 	else if (redirection != url)
 	{
-		redirect(redirection, url);
+		redirect(redirection, url, filename);
 	}
 	else
 	{

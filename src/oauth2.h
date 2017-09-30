@@ -138,7 +138,7 @@ public:
 
 	bool checkUrlChanges(const QString &url);
 
-	bool get(const QString &url, const QString &referer = "");
+	bool get(const QString &url, const QString &referer = "", const QString &filename = "");
 	bool getFilename(const QString &url, const QString &filename);
 	bool post(const QString &url, const QByteArray &data = QByteArray(), const QString &referer = "");
 
@@ -207,10 +207,10 @@ private:
 	bool requestNotes(const QString &method, const QString &args);
 	bool requestMessageCenter(const QString &method, const QString &args);
 
-	void redirect(const QString &url, const QString &referer);
+	void redirect(const QString &url, const QString &referer, const QString &filename);
 	void processContent(const QByteArray &content, const QString &url, const QString &filename);
 	void processUrlChanges(const QByteArray &content, const QString &url);
-	void processRedirection(const QString &redirection, const QString &url);
+	void processRedirection(const QString &redirection, const QString &url, const QString &filename);
 	void processDiFi(const QByteArray &content);
 	void processJson(const QByteArray &content, const QString &path, const QString &filename);
 	bool processImage(const QString &url, const QByteArray &content);
