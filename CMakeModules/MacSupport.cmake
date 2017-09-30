@@ -32,7 +32,11 @@ MACRO(SIGN_FILE_MAC _TARGET)
     ENDIF()
     SET_TARGET_PROPERTIES(${_TARGET} PROPERTIES
       XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY[variant=Debug] ${IOS_DEVELOPER}
-      XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY[variant=Release] ${IOS_DISTRIBUTION})
+      XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY[variant=Release] ${IOS_DISTRIBUTION}
+      XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY ${IOS_DEVELOPER}
+      XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY[sdk=iphoneos*] ${IOS_DEVELOPER}
+      XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic"
+      XCODE_ATTRIBUTE_DEVELOPMENT_TEAM ${MACOSX_APPLICATION_IDENTIFIER_PREFIX})
   ELSE()
 #   SET_TARGET_PROPERTIES(${target} PROPERTIES
 #     XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "Mac Developer")
@@ -54,7 +58,7 @@ MACRO(INIT_MAC)
   SET(MAC_INFO_PLIST)
   SET(MAC_ITUNESARTWORK)
   SET(MAC_ITUNESARTWORK2X)
-  SET(MAC_MOBILEPRIVISION)
+  SET(MAC_MOBILEPROVISION)
 
   # Regex filter for Mac files
   SET(MAC_FILES_FILTER "(\\.(xib|strings|icns|plist|framework|mobileprovision)|iTunesArtwork.*\\.png|\\.lproj/.*)$")
@@ -73,12 +77,12 @@ MACRO(FILTER_MAC_FILES FILE)
     ELSEIF(${FILE} MATCHES "embedded-xcode\\.mobileprovision$")
         SET(_INCLUDE OFF)
         IF(XCODE)
-          SET(MAC_MOBILEPRIVISION ${FILE})
+          SET(MAC_MOBILEPROVISION ${FILE})
         ENDIF()
     ELSEIF(${FILE} MATCHES "embedded\\.mobileprovision$")
         SET(_INCLUDE OFF)
         IF(NOT XCODE)
-          SET(MAC_MOBILEPRIVISION ${FILE})
+          SET(MAC_MOBILEPROVISION ${FILE})
         ENDIF()
     ELSEIF(${FILE} MATCHES "iTunesArtwork\\.png$")
         # Don't include iTunesArtwork because it'll be copied in IPA
@@ -212,6 +216,8 @@ MACRO(SET_TARGET_FLAGS_MAC _TARGET)
             XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${MACOSX_BUNDLE_GUI_IDENTIFIER}"
             XCODE_ATTRIBUTE_SKIP_INSTALL NO
             XCODE_ATTRIBUTE_INSTALL_PATH "$(LOCAL_APPS_DIR)"
+            XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME "AppIcon"
+            XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_LAUNCHIMAGE_NAME "LaunchImage"
           )
         ENDIF()
       ENDIF()
@@ -583,8 +589,8 @@ MACRO(INSTALL_MAC_RESOURCES _TARGET)
   ENDIF()
 
   # Copying .mobileprovision file
-  IF(MAC_MOBILEPRIVISION)
-    ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp -p ${MAC_MOBILEPRIVISION} ${RESOURCES_DIR}/embedded.mobileprovision)
+  IF(MAC_MOBILEPROVISION)
+    ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD COMMAND cp -p ${MAC_MOBILEPROVISION} ${RESOURCES_DIR}/embedded.mobileprovision)
   ENDIF()
 ENDMACRO()
 
@@ -677,6 +683,10 @@ MACRO(CREATE_IOS_PACKAGE_TARGET _TARGET)
         LIST(APPEND _COMMANDS COMMAND cp -p "${MAC_ITUNESARTWORK2X}" "${IPA_DIR}/iTunesArtwork@2x")
       ENDIF()
 
+      # Create Assets.car
+      ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD
+        COMMAND ${CMAKE_XCODE_ROOT}/Developer/usr/bin/actool --output-format human-readable-text --notices --warnings --export-dependency-info ${CMAKE_BINARY_DIR}/${_TARGET}.dir/assetcatalog_dependencies --output-partial-info-plist ${CMAKE_BINARY_DIR}/${_TARGET}.dir/assetcatalog_generated_info.plist --app-icon AppIcon --launch-image LaunchImage --compress-pngs --enable-on-demand-resources YES --sticker-pack-identifier-prefix ${MACOSX_BUNDLE_GUI_IDENTIFIER}.sticker-pack. --target-device iphone --target-device ipad --minimum-deployment-target ${IOS_VERSION} --platform iphoneos --product-type com.apple.product-type.application --compile ${CONTENTS_DIR} ${CMAKE_BINARY_DIR}/${_TARGET}.dir/Images.xcassets)
+
       # Find codesign_allocate
 
       # Xcode 7.0 and later versions
@@ -710,7 +720,7 @@ MACRO(CREATE_IOS_PACKAGE_TARGET _TARGET)
           COMMAND mkdir -p "${IPA_DIR}/Payload"
           COMMAND strip "${CONTENTS_DIR}/${PRODUCT_FIXED}"
           COMMAND security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "/Users/buildbot/Library/Keychains/login.keychain"
-          COMMAND CODESIGN_ALLOCATE=${CODESIGN_ALLOCATE} codesign -fs "${IOS_DISTRIBUTION}" --entitlements "${CMAKE_BINARY_DIR}/application-${_TARGET}.xcent" "${CONTENTS_DIR}"
+          COMMAND CODESIGN_ALLOCATE=${CODESIGN_ALLOCATE} codesign -fs "${IOS_DISTRIBUTION}" --entitlements "${CMAKE_BINARY_DIR}/application-${_TARGET}.xcent" --timestamp=none "${CONTENTS_DIR}"
           COMMAND cp -pr "${OUTPUT_DIR}" "${IPA_DIR}/Payload"
           COMMAND cp -p "${MAC_ITUNESARTWORK}" "${IPA_DIR}/iTunesArtwork"
           ${_COMMANDS}

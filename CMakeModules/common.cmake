@@ -1506,22 +1506,47 @@ MACRO(INIT_BUILD_FLAGS)
       SET(MANUALLY_MANAGE_PDB_FLAG OFF)
     ENDIF()
 
-    IF(MSVC_VERSION EQUAL "1700" AND NOT MSVC11)
-      SET(MSVC11 ON)
-    ENDIF()
+    # VC++ versions
+    #
+    # year public private dll  registry
+    #
+    # 2017 14.11  1911    140  15.0
+    # 2017 14.1   1910    140  15.0
+    # 2015 14     1900    140  14.0
+    # 2013 12     1800    120
+    # 2012 11     1700    110
+    # 2010 10     1600    100
+    # 2008  9     1500    90
+    # 2005  8     1400    80
+    # 2003  7.1   1310    71
+    # 2002  7     1300    70
+    # 1998  6     1200    60
+    # 1997  5     1100    50
+    # 1995  4     1000    40
 
     # Ignore default include paths
     ADD_PLATFORM_FLAGS("/X")
 
+    # global optimizations
+    # SET(RELEASE_CFLAGS "/GL ${RELEASE_CFLAGS}")
+    # SET(RELEASE_LINKFLAGS "/LTCG:incremental ${RELEASE_LINKFLAGS}")
+
     IF(MSVC14)
       ADD_PLATFORM_FLAGS("/Gy-")
-      # /Ox is working with VC++ 2015, but custom optimizations don't exist
+      # /Ox is working with VC++ 2017, but custom optimizations don't exist
       SET(RELEASE_CFLAGS "/Ox /GF /GS- ${RELEASE_CFLAGS}")
       # without inlining it's unusable, use custom optimizations again
       SET(DEBUG_CFLAGS "/Od /Ob1 /GF- ${DEBUG_CFLAGS}")
 
       IF(WITH_INSTALL_RUNTIMES)
         SET(CMAKE_INSTALL_UCRT_LIBRARIES ON)
+      ENDIF()
+
+      # Special cases for VC++ 2017
+      IF(MSVC_VERSION EQUAL "1911")
+        SET(MSVC1411 ON)
+      ELSEIF(MSVC_VERSION EQUAL "1910")
+        SET(MSVC1410 ON)
       ENDIF()
     ELSEIF(MSVC12)
       ADD_PLATFORM_FLAGS("/Gy-")
