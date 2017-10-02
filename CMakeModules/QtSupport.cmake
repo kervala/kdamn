@@ -458,8 +458,13 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
         FOREACH(_MODULE ${QT_MODULES_USED})
           IF(_MODULE STREQUAL "Core")
             IF(APPLE)
-              # pcre is needed since Qt 5.5
-              SET(PCRE_LIBRARY "${QT_LIBRARY_DIR}/libqtpcre.a")
+              IF(QT_VERSION GREATER "5.8")
+                # pcre2 is needed since Qt 5.5
+                SET(PCRE_LIBRARY "${QT_LIBRARY_DIR}/libqtpcre2.a")
+              ELSE()
+                # pcre is needed since Qt 5.5
+                SET(PCRE_LIBRARY "${QT_LIBRARY_DIR}/libqtpcre.a")
+              ENDIF()
 
               IF(NOT EXISTS ${PCRE_LIBRARY})
                 FIND_LIBRARY(PCRE_LIBRARY pcre16 pcre)
@@ -479,10 +484,20 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
                 ${CARBON_FRAMEWORK}
                 ${SECURITY_FRAMEWORK})
             ELSEIF(WIN32)
-              SET(PCRE_LIB "${QT_LIBRARY_DIR}/qtpcre.lib")
+              IF(QT_VERSION GREATER "5.8")
+                # pcre2 is needed since Qt 5.5
+                SET(PCRE_LIB "${QT_LIBRARY_DIR}/qtpcre2.lib")
+              ELSE()
+                # pcre is needed since Qt 5.5
+                SET(PCRE_LIB "${QT_LIBRARY_DIR}/qtpcre.lib")
+              ENDIF()
 
               IF(EXISTS ${PCRE_LIB})
                 TARGET_LINK_LIBRARIES(${_TARGET} ${PCRE_LIB})
+              ENDIF()
+
+              IF(QT_VERSION GREATER "5.8")
+                TARGET_LINK_LIBRARIES(${_TARGET} Mincore.lib)
               ENDIF()
             ELSEIF(UNIX)
               # pcre is needed since Qt 5.5
@@ -519,6 +534,10 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
 
             LINK_QT_LIBRARY(${_TARGET} PrintSupport)
             LINK_QT_LIBRARY(${_TARGET} PlatformSupport)
+            LINK_QT_LIBRARY(${_TARGET} FontDatabaseSupport)
+            LINK_QT_LIBRARY(${_TARGET} EventDispatcherSupport)
+            LINK_QT_LIBRARY(${_TARGET} ThemeSupport)
+            LINK_QT_LIBRARY(${_TARGET} AccessibilitySupport)
 
             IF(WIN32)
               TARGET_LINK_LIBRARIES(${_TARGET}
@@ -575,11 +594,20 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
             LINK_QT_PLUGIN(${_TARGET} imageformats qmng)
             LINK_QT_PLUGIN(${_TARGET} imageformats qwebp)
 
-            # harfbuzz is needed since Qt 5.3
-            IF(WIN32)
-              SET(HB_LIB "${QT_LIBRARY_DIR}/qtharfbuzzng.lib")
+            IF(QT_VERSION GREATER "5.8")
+              # harfbuzz is needed since Qt 5.9
+              IF(WIN32)
+                SET(HB_LIB "${QT_LIBRARY_DIR}/qtharfbuzz.lib")
+              ELSE()
+                SET(HB_LIB "${QT_LIBRARY_DIR}/libqtharfbuzz.a")
+              ENDIF()
             ELSE()
-              SET(HB_LIB "${QT_LIBRARY_DIR}/libqtharfbuzzng.a")
+              # harfbuzzng is needed since Qt 5.3
+              IF(WIN32)
+                SET(HB_LIB "${QT_LIBRARY_DIR}/qtharfbuzzng.lib")
+              ELSE()
+                SET(HB_LIB "${QT_LIBRARY_DIR}/libqtharfbuzzng.a")
+              ENDIF()
             ENDIF()
 
             IF(EXISTS ${HB_LIB})
@@ -625,6 +653,10 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
           ENDIF()
           IF(_MODULE STREQUAL "Widgets")
             LINK_QT_PLUGIN(${_TARGET} accessible qtaccessiblewidgets)
+
+            IF(WIN32 AND QT_VERSION GREATER "5.8")
+              TARGET_LINK_LIBRARIES(${_TARGET} UxTheme.lib)
+            ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Sql")
             LINK_QT_PLUGIN(${_TARGET} sqldrivers qsqlite)
@@ -636,6 +668,11 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
           IF(_MODULE STREQUAL "Qml")
             IF(APPLE)
               LINK_QT_PLUGIN(${_TARGET} qmltooling qmldbg_tcp)
+            ENDIF()
+          ENDIF()
+          IF(_MODULE STREQUAL "WinExtras")
+            IF(WIN32 AND QT_VERSION GREATER "5.8")
+              TARGET_LINK_LIBRARIES(${_TARGET} Dwmapi.lib)
             ENDIF()
           ENDIF()
         ENDFOREACH()
