@@ -41,6 +41,12 @@
 
 	Q_IMPORT_PLUGIN(QSvgPlugin)
 	Q_IMPORT_PLUGIN(QSvgIconPlugin)
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 9, 0))
+	Q_IMPORT_PLUGIN(QJpegPlugin)
+	Q_IMPORT_PLUGIN(QGifPlugin)
+#endif
+
 #endif
 
 #ifdef DEBUG_NEW
