@@ -1,9 +1,17 @@
-set QTVERSION=5.9.1
+@echo off
 
-:: call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64
-call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars64.bat"
+set COMPILER=vc12
+set UNIXDIR=D:\Projects\packaging\unix
+set CURRENTDIR=%cd%
 
-set QTDIR=D:/External/vc14/qt-%QTVERSION%-static-64
+set QTVERSION=5.9.2
+
+cd %UNIXDIR%
+call setenv.bat %COMPILER% x86
+
+cd %CURRENTDIR%
+
+set QTDIR=D:/External/%COMPILER%/qt-%QTVERSION%-static-64
 
 rmdir /s /q package_x64
 
@@ -20,10 +28,14 @@ cd ..
 
 pause
 
-:: call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x86
-call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvars32.bat"
+set QTVERSION=5.6.3
 
-set QTDIR=D:/External/vc14/qt-%QTVERSION%-static-32
+cd %UNIXDIR%
+call setenv.bat %COMPILER% x86
+
+cd %CURRENTDIR%
+
+set QTDIR=D:/External/%COMPILER%/qt-%QTVERSION%-static-32
 
 rmdir /s /q package_x32
 
