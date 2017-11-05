@@ -7,7 +7,7 @@ set CURRENTDIR=%cd%
 set QTVERSION=5.9.2
 
 cd %UNIXDIR%
-call setenv.bat %COMPILER% x86
+call setenv.bat %COMPILER% amd64
 
 cd %CURRENTDIR%
 
