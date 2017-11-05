@@ -497,7 +497,7 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
               ENDIF()
 
               IF(QT_VERSION GREATER "5.8")
-                TARGET_LINK_LIBRARIES(${_TARGET} Mincore.lib)
+                TARGET_LINK_LIBRARIES(${_TARGET} Version.lib)
               ENDIF()
             ELSEIF(UNIX)
               # pcre is needed since Qt 5.5
