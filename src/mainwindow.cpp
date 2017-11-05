@@ -291,7 +291,7 @@ void MainWindow::onRooms()
 
 void MainWindow::onUploadFiles()
 {
-	QStringList filenames = QFileDialog::getOpenFileNames(this, tr("Upload filess"));
+	QStringList filenames = QFileDialog::getOpenFileNames(this, tr("Upload files"));
 
 	QString room;
 	
