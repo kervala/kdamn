@@ -37,7 +37,7 @@
         <translation>Tablump %1 non trouvé dans la table</translation>
     </message>
     <message>
-        <location filename="../src/damntablumps.cpp" line="399"/>
+        <location filename="../src/damntablumps.cpp" line="405"/>
         <source>Tablump %1 not recognized</source>
         <translation>Tablump %1 non reconnu</translation>
     </message>
@@ -127,38 +127,38 @@
         <translation>Connexion fermée</translation>
     </message>
     <message>
-        <location filename="../src/damnparsers.cpp" line="403"/>
+        <location filename="../src/damnparsers.cpp" line="413"/>
         <source>Room %1 doesn&apos;t exist</source>
         <translation>Le salon %1 n&apos;existe pas</translation>
     </message>
     <message>
-        <location filename="../src/damnparsers.cpp" line="423"/>
+        <location filename="../src/damnparsers.cpp" line="433"/>
         <source>Privilege class %1 doesn&apos;t exist</source>
         <translation>La classe de privilège %1 n&apos;existe pas</translation>
     </message>
     <message>
-        <location filename="../src/damnparsers.cpp" line="482"/>
+        <location filename="../src/damnparsers.cpp" line="492"/>
         <source>Unable to recognize param: %1</source>
         <translation>Impossible de déterminer le paramètre : %1</translation>
     </message>
     <message>
-        <location filename="../src/damnparsers.cpp" line="485"/>
+        <location filename="../src/damnparsers.cpp" line="495"/>
         <source>Unable to recognize command: %1</source>
         <translation>Impossible de déterminer la commande : %1</translation>
     </message>
     <message>
-        <location filename="../src/damnparsers.cpp" line="500"/>
-        <location filename="../src/damnparsers.cpp" line="529"/>
-        <location filename="../src/damnparsers.cpp" line="753"/>
-        <location filename="../src/damnparsers.cpp" line="771"/>
-        <location filename="../src/damnparsers.cpp" line="786"/>
+        <location filename="../src/damnparsers.cpp" line="510"/>
+        <location filename="../src/damnparsers.cpp" line="539"/>
+        <location filename="../src/damnparsers.cpp" line="763"/>
+        <location filename="../src/damnparsers.cpp" line="781"/>
+        <location filename="../src/damnparsers.cpp" line="796"/>
         <source>Not implemented: %1</source>
         <translation>Non implémenté : %1</translation>
     </message>
     <message>
-        <location filename="../src/damnparsers.cpp" line="428"/>
-        <location filename="../src/damnparsers.cpp" line="601"/>
-        <location filename="../src/damnparsers.cpp" line="756"/>
+        <location filename="../src/damnparsers.cpp" line="438"/>
+        <location filename="../src/damnparsers.cpp" line="611"/>
+        <location filename="../src/damnparsers.cpp" line="766"/>
         <source>Unable to recognize property: %1</source>
         <translation>Impossible de déterminer la propriété : %1</translation>
     </message>
@@ -168,17 +168,17 @@
         <translation>Expirée</translation>
     </message>
     <message>
-        <location filename="../src/damnparsers.cpp" line="564"/>
+        <location filename="../src/damnparsers.cpp" line="574"/>
         <source>Unable to remove room %1</source>
         <translation>Impossible de supprimer le salon %1</translation>
     </message>
     <message>
-        <location filename="../src/damnparsers.cpp" line="676"/>
+        <location filename="../src/damnparsers.cpp" line="686"/>
         <source>Unable to parse privclass: %1</source>
         <translation>Impossible de parser la privclass : %1</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="121"/>
+        <location filename="../src/damn.cpp" line="126"/>
         <source>Remote host closed</source>
         <translation>Fermeture de l&apos;hôte distant</translation>
     </message>
@@ -187,12 +187,12 @@
         <translation type="vanished">Erreur d&apos;opération</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="131"/>
+        <location filename="../src/damn.cpp" line="136"/>
         <source>Unable to connect</source>
         <translation>Impossible de se connecter</translation>
     </message>
     <message>
-        <location filename="../src/damn.cpp" line="135"/>
+        <location filename="../src/damn.cpp" line="140"/>
         <source>Socket error: %1</source>
         <translation>Erreur de socket : %1</translation>
     </message>
@@ -219,7 +219,7 @@
         <translation>- Salon %1</translation>
     </message>
     <message>
-        <location filename="../src/damncommands.cpp" line="345"/>
+        <location filename="../src/damncommands.cpp" line="344"/>
         <source>I&apos;m currently away from keyboard, but I&apos;ll reply you when I&apos;m back</source>
         <translation>Je suis AFK, mais je répondrais à mon retour</translation>
     </message>
@@ -262,22 +262,22 @@
         <translation>*** Vous venez de quitter le salon %1 *</translation>
     </message>
     <message>
-        <location filename="../src/htmlformatting.cpp" line="147"/>
+        <location filename="../src/htmlformatting.cpp" line="151"/>
         <source>** Topic removed by %1 *</source>
         <translation>** Sujet supprimé par %1 *</translation>
     </message>
     <message>
-        <location filename="../src/htmlformatting.cpp" line="151"/>
+        <location filename="../src/htmlformatting.cpp" line="155"/>
         <source>** Topic changed by %1: %2 *</source>
         <translation>** Sujet modifié par %1 : %2 *</translation>
     </message>
     <message>
-        <location filename="../src/htmlformatting.cpp" line="163"/>
+        <location filename="../src/htmlformatting.cpp" line="167"/>
         <source>** Title removed by %1 *</source>
         <translation>** Titre supprimé par %1 *</translation>
     </message>
     <message>
-        <location filename="../src/htmlformatting.cpp" line="167"/>
+        <location filename="../src/htmlformatting.cpp" line="171"/>
         <source>** Title changed by %1: %2 *</source>
         <translation>** Titre modifié par %1 : %2 *</translation>
     </message>
@@ -434,52 +434,56 @@
         <translation>&amp;Quitter</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="165"/>
+        <location filename="../src/mainwindow.cpp" line="167"/>
         <source>About %1</source>
         <translation>A propos de %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="167"/>
+        <location filename="../src/mainwindow.cpp" line="169"/>
         <source>deviantART Messaging Network (dAmn) chat client</source>
         <translation>Client de chat pour deviantART Messaging Network (dAmn)</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="169"/>
+        <location filename="../src/mainwindow.cpp" line="171"/>
         <source>Author: %1</source>
         <translation>Auteur : %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="170"/>
+        <location filename="../src/mainwindow.cpp" line="172"/>
         <source>Homepage: %1</source>
         <translation>Site officiel : %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="171"/>
+        <location filename="../src/mainwindow.cpp" line="173"/>
         <source>Support: %1</source>
         <translation>Support technique : %1</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="292"/>
         <source>Upload filess</source>
+        <translation type="vanished">Téléverser des fichiers</translation>
+    </message>
+    <message>
+        <location filename="../src/mainwindow.cpp" line="294"/>
+        <source>Upload files</source>
         <translation>Téléverser des fichiers</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="379"/>
+        <location filename="../src/mainwindow.cpp" line="381"/>
         <source>URL changes check</source>
         <translation>Vérification des changements de l&apos;URL</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="379"/>
+        <location filename="../src/mainwindow.cpp" line="381"/>
         <source>Enter URL to check:</source>
         <translation>Entrez l&apos;URL à vérifier :</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="464"/>
+        <location filename="../src/mainwindow.cpp" line="466"/>
         <source>New version</source>
         <translation>Mise-à-jour disponible</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="465"/>
+        <location filename="../src/mainwindow.cpp" line="467"/>
         <source>Version %1 is available since %2.
 
 Do you want to download it now?</source>
@@ -488,17 +492,17 @@ Do you want to download it now?</source>
 Souhaitez-vous la télécharger maintenant ?</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="489"/>
+        <location filename="../src/mainwindow.cpp" line="488"/>
         <source>No update found</source>
         <translation>Aucune mise-à-jour trouvée</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="490"/>
+        <location filename="../src/mainwindow.cpp" line="489"/>
         <source>You already have the last %1 version (%2).</source>
         <translation>Vous avez déjà la dernière version de %1 (%2).</translation>
     </message>
     <message>
-        <location filename="../src/mainwindow.cpp" line="533"/>
+        <location filename="../src/mainwindow.cpp" line="530"/>
         <source>Url %1 changed, click here to open it</source>
         <translation>L&apos;URL %1 a changé, cliquez ici pour l&apos;ouvrir</translation>
     </message>
@@ -580,78 +584,92 @@ Souhaitez-vous la télécharger maintenant ?</translation>
         <translation>Impossible d&apos;accéder au fichier %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2json.cpp" line="238"/>
+        <location filename="../src/oauth2json.cpp" line="229"/>
         <source>No login received</source>
         <translation>Aucun identifiant reçu</translation>
     </message>
     <message>
-        <location filename="../src/oauth2json.cpp" line="278"/>
+        <location filename="../src/oauth2json.cpp" line="269"/>
         <source>No dAmn token received</source>
         <translation>Aucun jeton dAmn reçu</translation>
     </message>
     <message>
-        <location filename="../src/oauth2json.cpp" line="383"/>
+        <location filename="../src/oauth2json.cpp" line="358"/>
+        <source>Invalid ID for uploaded item</source>
+        <translation>ID invalide pour l&apos;objet téléversé</translation>
+    </message>
+    <message>
+        <location filename="../src/oauth2json.cpp" line="363"/>
+        <source>File not found in files to upload to Stash</source>
+        <translation>Fichier non trouvé parmi les fichiers téléversés dans le Stash</translation>
+    </message>
+    <message>
+        <location filename="../src/oauth2json.cpp" line="381"/>
         <source>API error: %1</source>
         <translation>Erreur API : %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="511"/>
         <source>Network error: %1 (%2) (HTTP %3)</source>
-        <translation>Erreur réseau : %1 (%2) (HTTP %3)</translation>
+        <translation type="vanished">Erreur réseau : %1 (%2) (HTTP %3)</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="524"/>
+        <location filename="../src/oauth2.cpp" line="462"/>
         <source>Error: both content (%1) and redirection (%2) are defined</source>
         <translation>Erreur : le contenu (%1) et la redirection (%2) sont tous deux définis</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="712"/>
+        <location filename="../src/oauth2.cpp" line="653"/>
         <source>Login &apos;%1&apos; or password is incorrect</source>
         <translation>Identifiant &apos;%1&apos; ou mot de passe incorrect</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="717"/>
+        <location filename="../src/oauth2.cpp" line="658"/>
         <source>Unknown error for login &apos;%1&apos;</source>
         <translation>Erreur inconnue pour l&apos;utilisateur &apos;%1&apos;</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="839"/>
+        <location filename="../src/oauth2.cpp" line="775"/>
         <source>Unknown error while redirected to %1</source>
         <translation>Error inconnue lors de la redirection vers %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="866"/>
+        <location filename="../src/oauth2.cpp" line="802"/>
         <source>Error when sending note: %1</source>
         <translation>Erreur lors de l&apos;envoi de la note : %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="883"/>
+        <location filename="../src/oauth2.cpp" line="819"/>
         <source>Something goes wrong... URL: %1 Redirection: %2</source>
         <translation>Quelque chose s&apos;est mal passé... URL: %1 Redirection: %2</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="733"/>
-        <location filename="../src/oauth2.cpp" line="760"/>
+        <location filename="../src/oauth2.cpp" line="674"/>
+        <location filename="../src/oauth2.cpp" line="701"/>
         <source>Unable to find validate_key</source>
         <translation>Impossible de trouver validate_key</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="755"/>
+        <location filename="../src/oauth2.cpp" line="437"/>
+        <source>Network error: %1 (HTTP %2)</source>
+        <translation>Erreur réseau : %1 (HTTP %2)</translation>
+    </message>
+    <message>
+        <location filename="../src/oauth2.cpp" line="696"/>
         <source>Unable to find validate_token</source>
         <translation>Impossible de trouver validate_token</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="780"/>
+        <location filename="../src/oauth2.cpp" line="721"/>
         <source>Something goes wrong... URL: %1</source>
         <translation>Quelque chose s&apos;est mal passé... URL : %1</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="662"/>
+        <location filename="../src/oauth2.cpp" line="601"/>
         <source>Unable to find validate token or key</source>
         <translation>Impossible de valider le jeton ou la clé</translation>
     </message>
     <message>
-        <location filename="../src/oauth2.cpp" line="549"/>
+        <location filename="../src/oauth2.cpp" line="488"/>
         <source>Proxy authentication required</source>
         <translation>Authentification requise pour le proxy</translation>
     </message>
@@ -678,12 +696,12 @@ Souhaitez-vous la télécharger maintenant ?</translation>
 <context>
     <name>OEmbed</name>
     <message>
-        <location filename="../src/oembed.cpp" line="207"/>
+        <location filename="../src/oembed.cpp" line="198"/>
         <source>Invalid oEmbed version: %1</source>
         <translation>Version invalide d&apos;oEmbed: %1</translation>
     </message>
     <message>
-        <location filename="../src/oembed.cpp" line="261"/>
+        <location filename="../src/oembed.cpp" line="252"/>
         <source>Unsupported oEmbed type: %1</source>
         <translation>Type d&apos;oEmbed invalide : %1</translation>
     </message>
@@ -692,7 +710,7 @@ Souhaitez-vous la télécharger maintenant ?</translation>
     <name>QObject</name>
     <message>
         <location filename="../src/utils_x.cpp" line="84"/>
-        <location filename="../src/utils_win.cpp" line="324"/>
+        <location filename="../src/utils_win.cpp" line="325"/>
         <source>Whole screen</source>
         <translation>Ecran complet</translation>
     </message>
@@ -949,17 +967,17 @@ Souhaitez-vous la télécharger maintenant ?</translation>
 <context>
     <name>SystrayIcon</name>
     <message>
-        <location filename="../src/systrayicon.cpp" line="60"/>
+        <location filename="../src/systrayicon.cpp" line="67"/>
         <source>Minimize</source>
         <translation>Minimiser</translation>
     </message>
     <message>
-        <location filename="../src/systrayicon.cpp" line="61"/>
+        <location filename="../src/systrayicon.cpp" line="68"/>
         <source>Restore</source>
         <translation>Restaurer</translation>
     </message>
     <message>
-        <location filename="../src/systrayicon.cpp" line="62"/>
+        <location filename="../src/systrayicon.cpp" line="69"/>
         <source>Quit</source>
         <translation>Quitter</translation>
     </message>
