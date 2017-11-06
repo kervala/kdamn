@@ -456,6 +456,7 @@ MACRO(INIT_BUILD_FLAGS_MAC)
             MESSAGE(FATAL_ERROR "Minimum target for OS X is 10.7 but you're using ${CMAKE_OSX_DEPLOYMENT_TARGET}")
           ENDIF()
 
+          ADD_PLATFORM_FLAGS("-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
           ADD_PLATFORM_LINKFLAGS("-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}")
         ENDIF()
       ENDIF()
