@@ -121,22 +121,33 @@ void UpdateDialog::onReply(QNetworkReply *reply)
 		return;
 	}
 
+	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
 	QByteArray content = reply->readAll();
 
 	reply->deleteLater();
 
-	QFile file(m_fullpath);
-
-	if (file.open(QIODevice::WriteOnly))
+	if (!redirection.isEmpty())
 	{
-		file.write(content);
+		// download new URL
+		m_url = redirection;
 
-		label->setText(tr("Your download is complete, click on \"Install\" to install the new version."));
-		installButton->setVisible(true);
+		download();
 	}
 	else
 	{
-		label->setText(tr("Your download is complete, but we're unable to create file %1.").arg(m_fullpath));
+		QFile file(m_fullpath);
+
+		if (file.open(QIODevice::WriteOnly))
+		{
+			file.write(content);
+
+			label->setText(tr("Your download is complete, click on \"Install\" to install the new version."));
+			installButton->setVisible(true);
+		}
+		else
+		{
+			label->setText(tr("Your download is complete, but we're unable to create file %1.").arg(m_fullpath));
+		}
 	}
 }
 
