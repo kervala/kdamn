@@ -532,12 +532,18 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
 
             TARGET_LINK_LIBRARIES(${_TARGET} ${PNG_LIBRARIES} ${JPEG_LIBRARIES})
 
-            LINK_QT_LIBRARY(${_TARGET} PrintSupport)
-            LINK_QT_LIBRARY(${_TARGET} PlatformSupport)
-            LINK_QT_LIBRARY(${_TARGET} FontDatabaseSupport)
-            LINK_QT_LIBRARY(${_TARGET} EventDispatcherSupport)
-            LINK_QT_LIBRARY(${_TARGET} ThemeSupport)
             LINK_QT_LIBRARY(${_TARGET} AccessibilitySupport)
+            LINK_QT_LIBRARY(${_TARGET} CglSupport)
+            LINK_QT_LIBRARY(${_TARGET} ClipboardSupport)
+            LINK_QT_LIBRARY(${_TARGET} DeviceDiscoverySupport
+            LINK_QT_LIBRARY(${_TARGET} EventDispatcherSupport)
+            LINK_QT_LIBRARY(${_TARGET} FbSupport)
+            LINK_QT_LIBRARY(${_TARGET} FontDatabaseSupport)
+            LINK_QT_LIBRARY(${_TARGET} GraphicsSupport)
+            LINK_QT_LIBRARY(${_TARGET} PlatformCompositorSupport
+            LINK_QT_LIBRARY(${_TARGET} PlatformSupport)
+            LINK_QT_LIBRARY(${_TARGET} PrintSupport)
+            LINK_QT_LIBRARY(${_TARGET} ThemeSupport)
 
             IF(WIN32)
               TARGET_LINK_LIBRARIES(${_TARGET}
@@ -578,7 +584,6 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
               LINK_QT_PLUGIN(${_TARGET} xcbglintegrations qxcb-glx-integration)
 
               LINK_QT_LIBRARY(${_TARGET} XcbQpa)
-              LINK_QT_LIBRARY(${_TARGET} PlatformSupport)
 
               TARGET_LINK_LIBRARIES(${_TARGET} -lX11-xcb -lXi -lSM -lICE -lxcb -lGL -lxcb-glx)
 
