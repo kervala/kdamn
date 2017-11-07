@@ -396,6 +396,25 @@ MACRO(SET_QT_SOURCES)
   ENDIF()
 ENDMACRO()
 
+MACRO(LINK_MISC_LIBRARY _TARGET _NAME _NAMEFOUND)
+  IF(WIN32)
+    SET(_PREFIX "")
+    SET(_EXT "lib")
+  ELSE()
+    SET(_PREFIX "lib")
+    SET(_EXT "a")
+  ENDIF()
+  SET(_LIB "${QT_LIBRARY_DIR}/${_PREFIX}${_NAME}.${_EXT}")
+  IF(EXISTS ${_LIB})
+    TARGET_LINK_LIBRARIES(${_TARGET} optimized ${_LIB})
+    SET(${_NAMEFOUND} ON)
+  ENDIF()
+  SET(_LIB "${QT_LIBRARY_DIR}/${_PREFIX}${_NAME}d.${_EXT}")
+  IF(EXISTS ${_LIB})
+    TARGET_LINK_LIBRARIES(${_TARGET} debug ${_LIB})
+  ENDIF()
+ENDMACRO()
+
 MACRO(LINK_QT_LIBRARY _TARGET _NAME)
   IF(WIN32)
     SET(_PREFIX "Qt5")
@@ -457,60 +476,37 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
 
         FOREACH(_MODULE ${QT_MODULES_USED})
           IF(_MODULE STREQUAL "Core")
-            IF(APPLE)
-              IF(QT_VERSION GREATER "5.8")
-                # pcre2 is needed since Qt 5.5
-                SET(PCRE_LIBRARY "${QT_LIBRARY_DIR}/libqtpcre2.a")
+            # pcre2 is needed since Qt 5.5
+            LINK_MISC_LIBRARY(${_TARGET} qtpcre2 PCRE_FOUND)
+
+            IF(NOT PCRE_FOUND)
+              # pcre is needed since Qt 5.5
+              LINK_MISC_LIBRARY(${_TARGET} qtpcre PCRE_FOUND)
+            ENDIF()
+
+            IF(NOT PCRE_FOUND)
+              FIND_LIBRARY(PCRE_LIBRARY pcre16 pcre)
+              IF(PCRE_LIBRARY)
+                TARGET_LINK_LIBRARIES(${_TARGET} ${PCRE_LIBRARY})
               ELSE()
-                # pcre is needed since Qt 5.5
-                SET(PCRE_LIBRARY "${QT_LIBRARY_DIR}/libqtpcre.a")
-              ENDIF()
-
-              IF(NOT EXISTS ${PCRE_LIBRARY})
-                FIND_LIBRARY(PCRE_LIBRARY pcre16 pcre)
-              ENDIF()
-
-              IF(NOT EXISTS ${PCRE_LIBRARY})
                 MESSAGE(FATAL_ERROR "PCRE is required since Qt 5.5")
               ENDIF()
+            ENDIF()
 
+            IF(APPLE)
               FIND_LIBRARY(FOUNDATION_FRAMEWORK Foundation)
               FIND_LIBRARY(CARBON_FRAMEWORK Carbon)
               FIND_LIBRARY(SECURITY_FRAMEWORK Security)
 
               TARGET_LINK_LIBRARIES(${_TARGET}
-                ${PCRE_LIBRARY}
                 ${FOUNDATION_FRAMEWORK}
                 ${CARBON_FRAMEWORK}
                 ${SECURITY_FRAMEWORK})
             ELSEIF(WIN32)
               IF(QT_VERSION GREATER "5.8")
-                # pcre2 is needed since Qt 5.5
-                SET(PCRE_LIB "${QT_LIBRARY_DIR}/qtpcre2.lib")
-              ELSE()
-                # pcre is needed since Qt 5.5
-                SET(PCRE_LIB "${QT_LIBRARY_DIR}/qtpcre.lib")
-              ENDIF()
-
-              IF(EXISTS ${PCRE_LIB})
-                TARGET_LINK_LIBRARIES(${_TARGET} ${PCRE_LIB})
-              ENDIF()
-
-              IF(QT_VERSION GREATER "5.8")
                 TARGET_LINK_LIBRARIES(${_TARGET} Version.lib)
               ENDIF()
             ELSEIF(UNIX)
-              # pcre is needed since Qt 5.5
-              SET(PCRE_LIBRARY "${QT_LIBRARY_DIR}/libqtpcre.a")
-
-              IF(NOT EXISTS ${PCRE_LIBRARY})
-                FIND_LIBRARY(PCRE_LIBRARY pcre16 pcre)
-              ENDIF()
-
-              IF(NOT EXISTS ${PCRE_LIBRARY})
-                MESSAGE(FATAL_ERROR "PCRE is required since Qt 5.5")
-              ENDIF()
-
               TARGET_LINK_LIBRARIES(${_TARGET} ${PCRE_LIBRARY} -ldl -lrt)
             ENDIF()
           ENDIF()
@@ -587,9 +583,7 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
 
               TARGET_LINK_LIBRARIES(${_TARGET} -lX11-xcb -lXi -lSM -lICE -lxcb -lGL -lxcb-glx)
 
-              IF(EXISTS "${QT_LIBRARY_DIR}/libxcb-static.a")
-                TARGET_LINK_LIBRARIES(${_TARGET} "${QT_LIBRARY_DIR}/libxcb-static.a")
-              ENDIF()
+              LINK_MISC_LIBRARY(${_TARGET} xcb-static XCB_STATIC_FOUND)
 
               TARGET_LINK_LIBRARIES(${_TARGET} -lfontconfig)
 
@@ -603,39 +597,22 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
             LINK_QT_PLUGIN(${_TARGET} imageformats qmng)
             LINK_QT_PLUGIN(${_TARGET} imageformats qwebp)
 
-            IF(QT_VERSION GREATER "5.8")
-              # harfbuzz is needed since Qt 5.9
-              IF(WIN32)
-                SET(HB_LIB "${QT_LIBRARY_DIR}/qtharfbuzz.lib")
-              ELSE()
-                SET(HB_LIB "${QT_LIBRARY_DIR}/libqtharfbuzz.a")
-              ENDIF()
-            ELSE()
-              # harfbuzzng is needed since Qt 5.3
-              IF(WIN32)
-                SET(HB_LIB "${QT_LIBRARY_DIR}/qtharfbuzzng.lib")
-              ELSE()
-                SET(HB_LIB "${QT_LIBRARY_DIR}/libqtharfbuzzng.a")
-              ENDIF()
-            ENDIF()
+            # harfbuzz is needed since Qt 5.9
+            LINK_MISC_LIBRARY(${_TARGET} qtharfbuzz HARFBUZZ_FOUND)
 
-            IF(EXISTS ${HB_LIB})
-              TARGET_LINK_LIBRARIES(${_TARGET} ${HB_LIB})
+            IF(NOT HARFBUZZ_FOUND)
+              # harfbuzzng is needed since Qt 5.3
+              LINK_MISC_LIBRARY(${_TARGET} qtharfbuzzng HARFBUZZ_FOUND)
             ENDIF()
 
             # freetype is needed since Qt 5.5
-            IF(WIN32)
-              SET(FREETYPE_LIBRARY "${QT_LIBRARY_DIR}/qtfreetype.lib")
-            ELSE()
-              SET(FREETYPE_LIBRARY "${QT_LIBRARY_DIR}/libqtfreetype.a")
+            LINK_MISC_LIBRARY(${_TARGET} qtfreetype FREETYPE_FOUND)
 
-              IF(NOT EXISTS ${FREETYPE_LIBRARY})
-                FIND_PACKAGE(Freetype)
+            IF(NOT FREETYPE_FOUND)
+              FIND_PACKAGE(Freetype)
+              IF(FREETYPE_FOUND)
+                TARGET_LINK_LIBRARIES(${_TARGET} ${FREETYPE_LIBRARIES})
               ENDIF()
-            ENDIF()
-
-            IF(EXISTS ${FREETYPE_LIBRARY})
-              TARGET_LINK_LIBRARIES(${_TARGET} ${FREETYPE_LIBRARY})
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Multimedia")
