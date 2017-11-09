@@ -507,7 +507,9 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
                 TARGET_LINK_LIBRARIES(${_TARGET} Version.lib)
               ENDIF()
             ELSEIF(UNIX)
-              TARGET_LINK_LIBRARIES(${_TARGET} ${PCRE_LIBRARY} -ldl -lrt)
+              # always link these in dynamic
+              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED dl)
+              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED rt)
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Network")
@@ -581,11 +583,19 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
 
               LINK_QT_LIBRARY(${_TARGET} XcbQpa)
 
-              TARGET_LINK_LIBRARIES(${_TARGET} -lX11-xcb -lXi -lSM -lICE -lxcb -lGL -lxcb-glx)
+              # always link these in dynamic
+              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED X11-xcb)
+              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED Xi)
+              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED SM)
+              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED ICE)
+              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED xcb)
+              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED GL)
+              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED xcb-glx)
 
               LINK_MISC_LIBRARY(${_TARGET} xcb-static XCB_STATIC_FOUND)
 
-              TARGET_LINK_LIBRARIES(${_TARGET} -lfontconfig)
+              # always link these in dynamic
+              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED fontconfig)
 
               LINK_QT_LIBRARY(${_TARGET} DBus)
             ENDIF()
