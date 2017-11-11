@@ -1871,14 +1871,18 @@ MACRO(INIT_BUILD_FLAGS)
       ADD_PLATFORM_FLAGS("/Zm1000")
     ENDIF()
 
-    ADD_PLATFORM_FLAGS("/D_WIN32_WINNT=0x0501 /DWINVER=0x0501")
-
     IF(TARGET_X64)
+      # Target Vista for x64
+      ADD_PLATFORM_FLAGS("/D_WIN32_WINNT=0x0600 /DWINVER=0x0600")
+
       # Fix a bug with Intellisense
       ADD_PLATFORM_FLAGS("/D_WIN64")
       # Fix a compilation error for some big C++ files
       ADD_PLATFORM_FLAGS("/bigobj")
     ELSE()
+      # Target XP SP2 for x86
+      ADD_PLATFORM_FLAGS("/D_WIN32_WINNT=0x0502 /DWINVER=0x0502")
+
       # Allows 32 bits applications to use 3 GB of RAM
       ADD_PLATFORM_LINKFLAGS("/LARGEADDRESSAWARE")
     ENDIF()
