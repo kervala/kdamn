@@ -1973,7 +1973,7 @@ MACRO(INIT_BUILD_FLAGS)
       ADD_PLATFORM_FLAGS("-Wformat -Werror=format-security")
 
       # Don't display invalid or unused command lines arguments by default (often too verbose)
-      ADD_PLATFORM_FLAGS("-Wno-invalid-command-line-argument -Wno-unused-command-line-argument")
+#      ADD_PLATFORM_FLAGS("-Wno-invalid-command-line-argument -Wno-unused-command-line-argument")
     ENDIF()
 
     # never display these warnings because they are minor
