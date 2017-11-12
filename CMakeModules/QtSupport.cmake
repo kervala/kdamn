@@ -494,8 +494,6 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
           IF(_MODULE STREQUAL "Network")
             LINK_SYSTEM_LIBRARY(${_TARGET} ssl)
             LINK_SYSTEM_LIBRARY(${_TARGET} crypto)
-#            FIND_PACKAGE(OpenSSL REQUIRED)
-#            FIND_PACKAGE(MyZLIB REQUIRED)
             TARGET_LINK_LIBRARIES(${_TARGET} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES})
 
             IF(WIN32)
@@ -506,9 +504,17 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Gui")
-            LINK_SYSTEM_LIBRARY(${_TARGET} png)
-            LINK_SYSTEM_LIBRARY(${_TARGET} z)
-#            LINK_SYSTEM_LIBRARY(${_TARGET} jpeg)
+            # order is very important there
+            IF(WIN32)
+              LINK_QT_PLUGIN(${_TARGET} printsupport windowsprintersupport)
+              LINK_QT_PLUGIN(${_TARGET} platforms qwindows)
+            ELSEIF(APPLE)
+              LINK_QT_PLUGIN(${_TARGET} printsupport cocoaprintersupport)
+              LINK_QT_PLUGIN(${_TARGET} platforms qcocoa)
+            ELSE()
+              LINK_QT_PLUGIN(${_TARGET} platforms qxcb)
+              LINK_QT_LIBRARY(${_TARGET} XcbQpa)
+            ENDIF()
 
             LINK_QT_LIBRARY(${_TARGET} AccessibilitySupport)
             LINK_QT_LIBRARY(${_TARGET} CglSupport)
@@ -522,75 +528,49 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
             LINK_QT_LIBRARY(${_TARGET} PlatformSupport)
             LINK_QT_LIBRARY(${_TARGET} PrintSupport)
             LINK_QT_LIBRARY(${_TARGET} ThemeSupport)
+            LINK_QT_LIBRARY(${_TARGET} ServiceSupport)
 
             IF(WIN32)
-              TARGET_LINK_LIBRARIES(${_TARGET}
-                ${WINSDK_LIBRARY_DIR}/Imm32.lib
-                ${WINSDK_LIBRARY_DIR}/OpenGL32.lib
-                ${WINSDK_LIBRARY_DIR}/WinMM.Lib)
-
-              LINK_QT_PLUGIN(${_TARGET} printsupport windowsprintersupport)
-              LINK_QT_PLUGIN(${_TARGET} platforms qwindows)
-
-              IF(WIN32 AND QT_VERSION GREATER "5.8")
-                TARGET_LINK_LIBRARIES(${_TARGET} Dwmapi.lib)
-              ENDIF()
+              LINK_SYSTEM_LIBRARY(${_TARGET} Imm32)
+              LINK_SYSTEM_LIBRARY(${_TARGET} OpenGL32)
+              LINK_SYSTEM_LIBRARY(${_TARGET} WinMM)
+              LINK_SYSTEM_LIBRARY(${_TARGET} Dwmapi)
             ELSEIF(APPLE)
               # Cups needs .dylib
-              SET(OLD_CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_FIND_LIBRARY_SUFFIXES})
-              SET(CMAKE_FIND_LIBRARY_SUFFIXES .dylib)
-              FIND_LIBRARY(CUPS_LIBRARY cups)
-              SET(CMAKE_FIND_LIBRARY_SUFFIXES ${OLD_CMAKE_FIND_LIBRARY_SUFFIXES})
+              LINK_SYSTEM_LIBRARY(${_TARGET} cups SHARED)
 
-              FIND_LIBRARY(IOKIT_FRAMEWORK IOKit)
-              FIND_LIBRARY(COCOA_FRAMEWORK Cocoa)
-              FIND_LIBRARY(SYSTEMCONFIGURATION_FRAMEWORK SystemConfiguration)
-              FIND_LIBRARY(OPENGL_FRAMEWORK NAMES OpenGL)
-
-              TARGET_LINK_LIBRARIES(${_TARGET}
-                ${CUPS_LIBRARY}
-                ${COCOA_FRAMEWORK}
-                ${SYSTEMCONFIGURATION_FRAMEWORK}
-                ${IOKIT_FRAMEWORK}
-                ${OPENGL_FRAMEWORK})
-
-              LINK_QT_PLUGIN(${_TARGET} printsupport cocoaprintersupport)
-              LINK_QT_PLUGIN(${_TARGET} platforms qcocoa)
+              # Other frameworks
+              LINK_SYSTEM_LIBRARY(${_TARGET} IOKit)
+              LINK_SYSTEM_LIBRARY(${_TARGET} Cocoa)
+              LINK_SYSTEM_LIBRARY(${_TARGET} SystemConfiguration)
+              LINK_SYSTEM_LIBRARY(${_TARGET} OpenGL)
             ELSE()
-              # order is very important there
-              LINK_QT_PLUGIN(${_TARGET} platforms qxcb)
-              LINK_QT_PLUGIN(${_TARGET} xcbglintegrations qxcb-glx-integration)
+              # required by themes
+              LINK_QT_LIBRARY(${_TARGET} DBus)
 
-              LINK_QT_LIBRARY(${_TARGET} XcbQpa)
+              # internal xcb wrapper to reduce dependencies
+              LINK_MISC_LIBRARY(${_TARGET} xcb-static XCB_STATIC_FOUND)
 
-              # always link these in dynamic
+              # always link these in dynamic, API never changes
               LINK_SYSTEM_LIBRARY(${_TARGET} X11 SHARED)
               LINK_SYSTEM_LIBRARY(${_TARGET} Xmu SHARED)
               LINK_SYSTEM_LIBRARY(${_TARGET} X11-xcb SHARED)
-#              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED Xi)
-#              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED SM)
-#              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED ICE)
+              LINK_SYSTEM_LIBRARY(${_TARGET} Xi SHARED)
+              LINK_SYSTEM_LIBRARY(${_TARGET} SM SHARED)
+              LINK_SYSTEM_LIBRARY(${_TARGET} ICE SHARED)
               LINK_SYSTEM_LIBRARY(${_TARGET} xcb SHARED)
-#              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED GL)
-#              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED xcb-glx)
-
-              LINK_MISC_LIBRARY(${_TARGET} xcb-static XCB_STATIC_FOUND)
-
-              # always link these in dynamic
-#              LINK_SYSTEM_LIBRARY(${_TARGET} SHARED fontconfig)
-
-              LINK_QT_LIBRARY(${_TARGET} DBus)
+              LINK_SYSTEM_LIBRARY(${_TARGET} fontconfig SHARED)
             ENDIF()
 
+            # common dependencies
             LINK_QT_PLUGIN(${_TARGET} imageformats qgif)
             LINK_QT_PLUGIN(${_TARGET} imageformats qicns)
             LINK_QT_PLUGIN(${_TARGET} imageformats qico)
-
             LINK_QT_PLUGIN(${_TARGET} imageformats qjpeg)
-            LINK_SYSTEM_LIBRARY(${_TARGET} jpeg)
-
             LINK_QT_PLUGIN(${_TARGET} imageformats qmng)
             LINK_QT_PLUGIN(${_TARGET} imageformats qwebp)
+
+            # 3rd-party libraries
 
             # harfbuzz is needed since Qt 5.9
             LINK_MISC_LIBRARY(${_TARGET} qtharfbuzz HARFBUZZ_FOUND)
@@ -606,6 +586,10 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
             IF(NOT FREETYPE_FOUND)
               LINK_SYSTEM_LIBRARY(${_TARGET} freetype)
             ENDIF()
+
+            LINK_SYSTEM_LIBRARY(${_TARGET} png)
+            LINK_SYSTEM_LIBRARY(${_TARGET} z)
+            LINK_SYSTEM_LIBRARY(${_TARGET} jpeg)
           ENDIF()
           IF(_MODULE STREQUAL "Multimedia")
             LINK_QT_PLUGIN(${_TARGET} mediaservice qtmedia_audioengine)
@@ -615,25 +599,25 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
               LINK_QT_PLUGIN(${_TARGET} mediaservice dsengine)
               LINK_QT_PLUGIN(${_TARGET} mediaservice wmfengine)
 
-              TARGET_LINK_LIBRARIES(${_TARGET} ${WINSDK_LIBRARY_DIR}/strmiids.lib)
+              LINK_SYSTEM_LIBRARY(${_TARGET} ${WINSDK_LIBRARY_DIR}/strmiids.lib)
             ELSEIF(APPLE)
-              LINK_QT_PLUGIN(${_TARGET} audio qtaudio_coreaudio)
+              LINK_QT_PLUGIN(${_TARGET} audio qtmedia_pulse)
 
-              FIND_LIBRARY(COREAUDIO_FRAMEWORK CoreAudio)
-              FIND_LIBRARY(AUDIOUNIT_FRAMEWORK AudioUnit)
-              FIND_LIBRARY(AUDIOTOOLBOX_FRAMEWORK AudioToolbox)
+              LINK_SYSTEM_LIBRARY(${_TARGET} CoreAudio)
+              LINK_SYSTEM_LIBRARY(${_TARGET} AudioUnit)
+              LINK_SYSTEM_LIBRARY(${_TARGET} AudioToolbox)
+            ELSE()
+              LINK_QT_PLUGIN(${_TARGET} audio qtaudio_windows)
 
-              TARGET_LINK_LIBRARIES(${_TARGET}
-                ${AUDIOUNIT_FRAMEWORK}
-                ${COREAUDIO_FRAMEWORK}
-                ${AUDIOTOOLBOX_FRAMEWORK})
+              # always link these in dynamic
+              LINK_SYSTEM_LIBRARY(${_TARGET} pulse) #  SHARED
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Widgets")
             LINK_QT_PLUGIN(${_TARGET} accessible qtaccessiblewidgets)
 
-            IF(WIN32 AND QT_VERSION GREATER "5.8")
-              TARGET_LINK_LIBRARIES(${_TARGET} UxTheme.lib)
+            IF(WIN32)
+              LINK_SYSTEM_LIBRARY(${_TARGET} UxTheme)
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Sql")
@@ -645,9 +629,7 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
             LINK_QT_LIBRARY(${_TARGET} Svg)
           ENDIF()
           IF(_MODULE STREQUAL "Qml")
-            IF(APPLE)
-              LINK_QT_PLUGIN(${_TARGET} qmltooling qmldbg_tcp)
-            ENDIF()
+            LINK_QT_PLUGIN(${_TARGET} qmltooling qmldbg_tcp)
           ENDIF()
         ENDFOREACH()
       ENDIF()

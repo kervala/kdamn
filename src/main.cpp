@@ -29,14 +29,15 @@
 
 #include <QtPlugin>
 
-#ifdef Q_OS_WIN32
+#if defined(Q_OS_WIN32)
 	Q_IMPORT_PLUGIN(QWindowsIntegrationPlugin)
 	Q_IMPORT_PLUGIN(QWindowsAudioPlugin)
-#endif
-	
-#ifdef Q_OS_MAC
+#elif defined(Q_OS_MAC)
 	Q_IMPORT_PLUGIN(QCocoaIntegrationPlugin)
 	Q_IMPORT_PLUGIN(CoreAudioPlugin)
+#else
+	Q_IMPORT_PLUGIN(QXcbIntegrationPlugin)
+//	Q_IMPORT_PLUGIN(QPulseAudio)
 #endif
 
 	Q_IMPORT_PLUGIN(QSvgPlugin)
