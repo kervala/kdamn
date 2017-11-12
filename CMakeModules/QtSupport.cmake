@@ -492,15 +492,13 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Network")
-            LINK_SYSTEM_LIBRARY(${_TARGET} ssl)
-            LINK_SYSTEM_LIBRARY(${_TARGET} crypto)
-            TARGET_LINK_LIBRARIES(${_TARGET} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES})
+            LINK_SYSTEM_LIBRARY(${_TARGET} ssl libssl ssleay32)
+            LINK_SYSTEM_LIBRARY(${_TARGET} crypto libcrypto libeay32)
 
             IF(WIN32)
-              TARGET_LINK_LIBRARIES(${_TARGET}
-                ${WINSDK_LIBRARY_DIR}/Crypt32.lib
-                ${WINSDK_LIBRARY_DIR}/WS2_32.Lib
-                ${WINSDK_LIBRARY_DIR}/IPHlpApi.Lib)
+              LINK_SYSTEM_LIBRARY(${_TARGET} Crypt32)
+              LINK_SYSTEM_LIBRARY(${_TARGET} WS2_32)
+              LINK_SYSTEM_LIBRARY(${_TARGET} IPHlpApi)
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Gui")
@@ -587,8 +585,8 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
               LINK_SYSTEM_LIBRARY(${_TARGET} freetype)
             ENDIF()
 
-            LINK_SYSTEM_LIBRARY(${_TARGET} png)
-            LINK_SYSTEM_LIBRARY(${_TARGET} z)
+            LINK_SYSTEM_LIBRARY(${_TARGET} png libpng)
+            LINK_SYSTEM_LIBRARY(${_TARGET} z zlib)
             LINK_SYSTEM_LIBRARY(${_TARGET} jpeg)
           ENDIF()
           IF(_MODULE STREQUAL "Multimedia")
@@ -599,7 +597,7 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
               LINK_QT_PLUGIN(${_TARGET} mediaservice dsengine)
               LINK_QT_PLUGIN(${_TARGET} mediaservice wmfengine)
 
-              LINK_SYSTEM_LIBRARY(${_TARGET} ${WINSDK_LIBRARY_DIR}/strmiids.lib)
+              LINK_SYSTEM_LIBRARY(${_TARGET} strmiids)
             ELSEIF(APPLE)
               LINK_QT_PLUGIN(${_TARGET} audio qtmedia_pulse)
 
@@ -610,7 +608,7 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
               LINK_QT_PLUGIN(${_TARGET} audio qtaudio_windows)
 
               # always link these in dynamic
-              LINK_SYSTEM_LIBRARY(${_TARGET} pulse) #  SHARED
+              LINK_SYSTEM_LIBRARY(${_TARGET} pulse)
             ENDIF()
           ENDIF()
           IF(_MODULE STREQUAL "Widgets")
