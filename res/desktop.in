@@ -10,6 +10,6 @@ Exec=${BIN_ABSOLUTE_PREFIX}/${TARGET}
 Icon=${TARGET}
 Terminal=false
 Hidden=false
-Categories=Network;Qt
+Categories=Network;Qt;Chat
 StartupWMClass=${TARGET}
 X-AppInstall-Package=${TARGET}
