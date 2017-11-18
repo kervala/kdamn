@@ -20,7 +20,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#cmakedefine SHARE_PREFIX "${SHARE_FULL_PREFIX}"
+#cmakedefine SHARE_PREFIX "${SHARE_ABSOLUTE_PREFIX}"
 #cmakedefine TARGET "${TARGET}"
 #cmakedefine TARGET_ICON "${TARGET_ICON}"
 #cmakedefine PRODUCT "${PRODUCT}"
