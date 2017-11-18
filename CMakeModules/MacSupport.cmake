@@ -605,7 +605,7 @@ MACRO(COMPILE_MAC_XIBS _TARGET)
         ENDIF()
         GET_FILENAME_COMPONENT(NIB_OUTPUT_DIR ${RESOURCES_DIR}/${NIB} PATH)
         ADD_CUSTOM_COMMAND(TARGET ${_TARGET} POST_BUILD
-          COMMAND ${IBTOOL} --target-device iphone --target-device ipad --errors --warnings --notices --module "${PRODUCT}" --minimum-deployment-target ${IOS_VERSION} --auto-activate-custom-fonts --output-format human-readable-text
+          COMMAND ${IBTOOL} --target-device iphone --target-device ipad --errors --warnings --notices --module \"${PRODUCT}\" --minimum-deployment-target ${IOS_VERSION} --auto-activate-custom-fonts --output-format human-readable-text
             --compile ${RESOURCES_DIR}/${NIB}
             ${XIB}
             --sdk ${CMAKE_IOS_SDK_ROOT} 2> /dev/null
