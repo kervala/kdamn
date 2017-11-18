@@ -485,14 +485,44 @@ void ConfigFile::initDirectories()
 	// same directory as executable
 	m_globalDataDirectory = applicationDir.absolutePath();
 #else
-	applicationDir.cdUp();
 
 #ifdef Q_OS_MAC
+	applicationDir.cdUp();
 	m_globalDataDirectory = applicationDir.absolutePath() + "/Resources";
-#elif defined(SHARE_PREFIX)
-	m_globalDataDirectory = SHARE_PREFIX;
 #else
-	m_globalDataDirectory = QString("%1/share/%2").arg(applicationDir.absolutePath()).arg(TARGET);
+	// Linux
+	QStringList directoriesToSearch;
+
+#ifdef SHARE_PREFIX
+	directoriesToSearch << SHARE_PREFIX;
+#endif
+
+	// application directory
+	directoriesToSearch << applicationDir.absolutePath();
+
+	// application parent directory
+	applicationDir.cdUp();
+	directoriesToSearch << applicationDir.absolutePath();
+
+	// application share/kdamn directory
+	directoriesToSearch << QString("%1/share/%2").arg(applicationDir.absolutePath()).arg(TARGET);;
+
+	// current path
+	directoriesToSearch << QDir::currentPath();
+
+	foreach(const QString &directory, directoriesToSearch)
+	{
+		if (QFile::exists(QString("%1/oembed.ini").arg(directory)))
+		{
+			m_globalDataDirectory = directory;
+			break;
+		}
+	}
+
+	if (m_globalDataDirectory.isEmpty())
+	{
+		qDebug() << "Unable to find a directory with resources!";
+	}
 #endif
 
 #endif
@@ -542,6 +572,8 @@ void ConfigFile::initDirectories()
 #else
 	m_downloadDirectory = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
 #endif
+
+
 }
 
 void ConfigFile::updateSettings()
