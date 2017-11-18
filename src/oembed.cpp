@@ -41,17 +41,20 @@ OEmbed::OEmbed(QObject *parent):QObject(parent)
 {
 	if (s_instance == NULL) s_instance = this;
 
-	init(false);
-	init(true);
+	init(ConfigFile::getInstance()->getGlobalDataDirectory());
+	init(ConfigFile::getInstance()->getLocalDataDirectory());
 }
 
 OEmbed::~OEmbed()
 {
 }
 
-void OEmbed::init(bool local)
+bool OEmbed::init(const QString &path)
 {
-	QString filename = QString("%1/oembed.ini").arg(local ? ConfigFile::getInstance()->getLocalDataDirectory():ConfigFile::getInstance()->getGlobalDataDirectory());
+	QString filename = QString("%1/oembed.ini").arg(path);
+
+	// check if file exists
+	if (!QFile::exists(filename)) return false;
 
 	QSettings settings(filename, QSettings::IniFormat);
 
@@ -78,6 +81,8 @@ void OEmbed::init(bool local)
 
 		m_sites[group] = site;
 	}
+
+	return true;
 }
 
 bool OEmbed::isUrlSupported(const QString &url, QString *siteId) const

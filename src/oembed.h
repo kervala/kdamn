@@ -81,7 +81,7 @@ public:
 	bool buildHtml(Data &data, const QString &localUrl);
 
 private:
-	void init(bool local);
+	bool init(const QString &path);
 
 	Sites m_sites;
 
