@@ -118,64 +118,18 @@ IF(MSVC1411 OR MSVC1410)
 
   SET(VC_DIR "${VC_DIR}/${MSVC_TOOLCHAIN_VERSION}")
   SET(VC_INCLUDE_DIR "${VC_DIR}/include")
-
-  IF(NOT MSVC14_REDIST_DIR)
-    # If you have VC++ 2017 Express, put x64/Microsoft.VC141.CRT/*.dll in ${EXTERNAL_PATH}/redist
-    # original files whould be in ${VC_DIR}/Redist/MSVC/14.11.25325/x64/Microsoft.VC141.CRT
-    SET(MSVC14_REDIST_DIR "${EXTERNAL_PATH}/redist")
-
-    IF(NOT EXISTS "${MSVC14_REDIST_DIR}")
-      SET(MSVC14_REDIST_DIR "${VC_DIR}/redist")
-    ENDIF()
-  ENDIF()
 ELSEIF(MSVC14)
   DETECT_VC_VERSION("14.0")
   SET(MSVC_TOOLSET "140")
-
-  IF(NOT MSVC14_REDIST_DIR)
-    # If you have VC++ 2015 Express, put x64/Microsoft.VC140.CRT/*.dll in ${EXTERNAL_PATH}/redist
-    SET(MSVC14_REDIST_DIR "${EXTERNAL_PATH}/redist")
-
-    IF(NOT EXISTS "${MSVC14_REDIST_DIR}")
-      SET(MSVC14_REDIST_DIR "${VC_DIR}/redist")
-    ENDIF()
-  ENDIF()
 ELSEIF(MSVC12)
   DETECT_VC_VERSION("12.0")
   SET(MSVC_TOOLSET "120")
-
-  IF(NOT MSVC12_REDIST_DIR)
-    # If you have VC++ 2013 Express, put x64/Microsoft.VC120.CRT/*.dll in ${EXTERNAL_PATH}/redist
-    SET(MSVC12_REDIST_DIR "${EXTERNAL_PATH}/redist")
-
-    IF(NOT EXISTS "${MSVC12_REDIST_DIR}")
-      SET(MSVC12_REDIST_DIR "${VC_DIR}/redist")
-    ENDIF()
-  ENDIF()
 ELSEIF(MSVC11)
   DETECT_VC_VERSION("11.0")
   SET(MSVC_TOOLSET "110")
-
-  IF(NOT MSVC11_REDIST_DIR)
-    # If you have VC++ 2012 Express, put x64/Microsoft.VC110.CRT/*.dll in ${EXTERNAL_PATH}/redist
-    SET(MSVC11_REDIST_DIR "${EXTERNAL_PATH}/redist")
-
-    IF(NOT EXISTS "${MSVC11_REDIST_DIR}")
-      SET(MSVC11_REDIST_DIR "${VC_DIR}/redist")
-    ENDIF()
-  ENDIF()
 ELSEIF(MSVC10)
   DETECT_VC_VERSION("10.0")
   SET(MSVC_TOOLSET "100")
-
-  IF(NOT MSVC10_REDIST_DIR)
-    # If you have VC++ 2010 Express, put x64/Microsoft.VC100.CRT/*.dll in ${EXTERNAL_PATH}/redist
-    SET(MSVC10_REDIST_DIR "${EXTERNAL_PATH}/redist")
-
-    IF(NOT EXISTS "${MSVC10_REDIST_DIR}")
-      SET(MSVC10_REDIST_DIR "${VC_DIR}/redist")
-    ENDIF()
-  ENDIF()
 ELSEIF(MSVC90)
   DETECT_VC_VERSION("9.0")
   SET(MSVC_TOOLSET "90")
@@ -204,6 +158,39 @@ IF(NOT VC_INCLUDE_DIR AND VC_DIR AND EXISTS "${VC_DIR}")
   SET(VC_INCLUDE_DIR "${VC_DIR}/include")
   IF(EXISTS "${VC_INCLUDE_DIR}")
     SET(VC_FOUND ON)
+  ENDIF()
+ENDIF()
+
+SET(MSVC_REDIST_DIR "${EXTERNAL_PATH}/redist")
+
+IF(NOT EXISTS "${MSVC_REDIST_DIR}")
+  SET(MSVC_REDIST_DIR "${VC_DIR}/redist")
+  
+  IF(NOT EXISTS "${MSVC_REDIST_DIR}")
+    SET(MSVC_REDIST_DIR)
+  ENDIF()
+ENDIF()
+
+IF(MSVC_REDIST_DIR)
+  IF(MSVC1411 OR MSVC1410)
+    # If you have VC++ 2017 Express, put x64/Microsoft.VC141.CRT/*.dll in ${EXTERNAL_PATH}/redist
+    # original files whould be in ${VC_DIR}/Redist/MSVC/14.11.25325/x64/Microsoft.VC141.CRT
+    SET(MSVC14_REDIST_DIR "${MSVC_REDIST_DIR}")
+  ELSEIF(MSVC14)
+    SET(MSVC14_REDIST_DIR "${MSVC_REDIST_DIR}")
+  ELSEIF(MSVC12)
+    # If you have VC++ 2013 Express, put x64/Microsoft.VC120.CRT/*.dll in ${EXTERNAL_PATH}/redist
+    SET(MSVC12_REDIST_DIR "${MSVC_REDIST_DIR}")
+  ELSEIF(MSVC11)
+    # If you have VC++ 2012 Express, put x64/Microsoft.VC110.CRT/*.dll in ${EXTERNAL_PATH}/redist
+    SET(MSVC11_REDIST_DIR "${MSVC_REDIST_DIR}")
+  ELSEIF(MSVC10)
+      # If you have VC++ 2010 Express, put x64/Microsoft.VC100.CRT/*.dll in ${EXTERNAL_PATH}/redist
+    SET(MSVC10_REDIST_DIR "${MSVC_REDIST_DIR}")
+  ELSEIF(MSVC90)
+    SET(MSVC90_REDIST_DIR "${MSVC_REDIST_DIR}")
+  ELSEIF(MSVC80)
+    SET(MSVC80_REDIST_DIR "${MSVC_REDIST_DIR}")
   ENDIF()
 ENDIF()
 
