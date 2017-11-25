@@ -483,7 +483,8 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
                 ${SECURITY_FRAMEWORK})
             ELSEIF(WIN32)
               IF(QT_VERSION GREATER "5.8")
-                TARGET_LINK_LIBRARIES(${_TARGET} Version.lib)
+                # we link to comsuppw because VC++ under WINE doesn't find it automatically...
+                TARGET_LINK_LIBRARIES(${_TARGET} version comsuppw)
               ENDIF()
             ELSEIF(UNIX)
               # always link these in dynamic
