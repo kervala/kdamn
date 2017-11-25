@@ -191,10 +191,10 @@ MACRO(SET_TARGET_FLAGS_MSVC name)
 
       IF(TARGET_X64)
         # Target Windows XP 64 bits
-        SET(_SUBSYSTEM_VERSION "5.02")
+        SET(_SUBSYSTEM_VERSION "5.2")
       ELSE()
         # Target Windows XP
-        SET(_SUBSYSTEM_VERSION "5.01")
+        SET(_SUBSYSTEM_VERSION "5.1")
       ENDIF()
 
       IF(_VALUE)
