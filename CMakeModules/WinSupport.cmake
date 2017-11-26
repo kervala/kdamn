@@ -262,6 +262,179 @@ MACRO(SET_TARGET_FLAGS_MSVC name)
   ENDIF()
 ENDMACRO()
 
+MACRO(INIT_BUILD_FLAGS_WINDOWS)
+  IF(WIN32)
+    IF(MSVC)
+      # From 2.8.12 (included) to 3.1.0 (excluded), the /Fd parameter to specify
+      # compilation PDB was managed entirely by CMake and there was no way to access
+      # or change it, so we need to remove it from CFLAGS and manage it ourself later
+      IF(CMAKE_VERSION VERSION_GREATER "2.8.11.9" AND CMAKE_VERSION VERSION_LESS "3.1.0")
+        SET(MANUALLY_MANAGE_PDB_FLAG ON)
+      ELSE()
+        SET(MANUALLY_MANAGE_PDB_FLAG OFF)
+      ENDIF()
+
+      # VC++ versions
+      #
+      # year public private dll  registry
+      #
+      # 2017 14.11  1911    140  15.0
+      # 2017 14.1   1910    140  15.0
+      # 2015 14     1900    140  14.0
+      # 2013 12     1800    120
+      # 2012 11     1700    110
+      # 2010 10     1600    100
+      # 2008  9     1500    90
+      # 2005  8     1400    80
+      # 2003  7.1   1310    71
+      # 2002  7     1300    70
+      # 1998  6     1200    60
+      # 1997  5     1100    50
+      # 1995  4     1000    40
+
+      # Ignore default include paths
+      ADD_PLATFORM_FLAGS("/X")
+
+      # global optimizations
+      # SET(RELEASE_CFLAGS "/GL ${RELEASE_CFLAGS}")
+      # SET(RELEASE_LINKFLAGS "/LTCG:incremental ${RELEASE_LINKFLAGS}")
+
+      IF(MSVC14)
+        ADD_PLATFORM_FLAGS("/Gy-")
+        # /Ox is working with VC++ 2017, but custom optimizations don't exist
+        SET(RELEASE_CFLAGS "/Ox /GF /GS- ${RELEASE_CFLAGS}")
+        # without inlining it's unusable, use custom optimizations again
+        SET(DEBUG_CFLAGS "/Od /Ob1 /GF- ${DEBUG_CFLAGS}")
+
+        IF(WITH_INSTALL_RUNTIMES)
+          SET(CMAKE_INSTALL_UCRT_LIBRARIES ON)
+        ENDIF()
+
+        # Special cases for VC++ 2017
+        IF(MSVC_VERSION EQUAL "1911")
+          SET(MSVC1411 ON)
+        ELSEIF(MSVC_VERSION EQUAL "1910")
+          SET(MSVC1410 ON)
+        ENDIF()
+      ELSEIF(MSVC12)
+        ADD_PLATFORM_FLAGS("/Gy-")
+        # /Ox is working with VC++ 2013, but custom optimizations don't exist
+        SET(RELEASE_CFLAGS "/Ox /GF /GS- ${RELEASE_CFLAGS}")
+        # without inlining it's unusable, use custom optimizations again
+        SET(DEBUG_CFLAGS "/Od /Ob1 /GF- ${DEBUG_CFLAGS}")
+      ELSEIF(MSVC11)
+        ADD_PLATFORM_FLAGS("/Gy-")
+        # /Ox is working with VC++ 2012, but custom optimizations don't exist
+        SET(RELEASE_CFLAGS "/Ox /GF /GS- ${RELEASE_CFLAGS}")
+        # without inlining it's unusable, use custom optimizations again
+        SET(DEBUG_CFLAGS "/Od /Ob1 /GF- ${DEBUG_CFLAGS}")
+      ELSEIF(MSVC10)
+        ADD_PLATFORM_FLAGS("/Gy-")
+        # /Ox is working with VC++ 2010, but custom optimizations don't exist
+        SET(RELEASE_CFLAGS "/Ox /GF /GS- ${RELEASE_CFLAGS}")
+        # without inlining it's unusable, use custom optimizations again
+        SET(DEBUG_CFLAGS "/Od /Ob1 /GF- ${DEBUG_CFLAGS}")
+      ELSEIF(MSVC90)
+        ADD_PLATFORM_FLAGS("/Gy-")
+        # don't use a /O[012x] flag if you want custom optimizations
+        SET(RELEASE_CFLAGS "/Ob2 /Oi /Ot /Oy /GT /GF /GS- ${RELEASE_CFLAGS}")
+        # without inlining it's unusable, use custom optimizations again
+        SET(DEBUG_CFLAGS "/Ob1 /GF- ${DEBUG_CFLAGS}")
+      ELSEIF(MSVC80)
+        ADD_PLATFORM_FLAGS("/Gy- /Wp64")
+        # don't use a /O[012x] flag if you want custom optimizations
+        SET(RELEASE_CFLAGS "/Ox /GF /GS- ${RELEASE_CFLAGS}")
+        # without inlining it's unusable, use custom optimizations again
+        SET(DEBUG_CFLAGS "/Od /Ob1 ${DEBUG_CFLAGS}")
+      ELSE()
+        MESSAGE(FATAL_ERROR "Can't determine compiler version ${MSVC_VERSION}")
+      ENDIF()
+
+      ADD_PLATFORM_FLAGS("/D_CRT_SECURE_NO_DEPRECATE /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /D_SCL_SECURE_NO_WARNINGS /D_WIN32 /DWIN32 /D_WINDOWS /wd4250")
+
+      IF(WITH_PCH_MAX_SIZE)
+        ADD_PLATFORM_FLAGS("/Zm1000")
+      ENDIF()
+
+      IF(TARGET_X64)
+        # Target Vista for x64
+        ADD_PLATFORM_FLAGS("/D_WIN32_WINNT=0x0600 /DWINVER=0x0600")
+
+        # Fix a bug with Intellisense
+        ADD_PLATFORM_FLAGS("/D_WIN64")
+        # Fix a compilation error for some big C++ files
+        ADD_PLATFORM_FLAGS("/bigobj")
+      ELSE()
+        # Target XP for x86
+        ADD_PLATFORM_FLAGS("/D_WIN32_WINNT=0x0501 /DWINVER=0x0501")
+
+        # Allows 32 bits applications to use 3 GB of RAM
+        ADD_PLATFORM_LINKFLAGS("/LARGEADDRESSAWARE")
+      ENDIF()
+
+      # Exceptions are only set for C++
+      IF(WITH_EXCEPTIONS)
+        SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} /EHa")
+      ELSE()
+        SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} -DBOOST_NO_EXCEPTIONS -D_HAS_EXCEPTIONS=0 /wd4275 /wd4577")
+      ENDIF()
+
+      # RTTI is only set for C++
+      IF(WITH_RTTI)
+#       SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} /GR")
+      ELSE()
+        SET(PLATFORM_CXXFLAGS "${PLATFORM_CXXFLAGS} /GR-")
+      ENDIF()
+
+      IF(WITH_SYMBOLS)
+        SET(RELEASE_CFLAGS "/Zi ${RELEASE_CFLAGS}")
+        SET(RELEASE_LINKFLAGS "/DEBUG ${RELEASE_LINKFLAGS}")
+      ELSE()
+        SET(RELEASE_LINKFLAGS "/RELEASE ${RELEASE_LINKFLAGS}")
+      ENDIF()
+
+      IF(WITH_STATIC_RUNTIMES)
+        SET(RUNTIME_FLAG "/MT")
+      ELSE()
+        SET(RUNTIME_FLAG "/MD")
+      ENDIF()
+
+      IF(WITH_WARNINGS)
+        SET(DEBUG_CFLAGS "/W4 ${DEBUG_CFLAGS}")
+      ELSE()
+        SET(DEBUG_CFLAGS "/W3 ${DEBUG_CFLAGS}")
+      ENDIF()
+
+      SET(DEBUG_CFLAGS "/Zi ${RUNTIME_FLAG}d /RTC1 /D_DEBUG /DDEBUG ${DEBUG_CFLAGS}")
+      SET(RELEASE_CFLAGS "${RUNTIME_FLAG} /DNDEBUG ${RELEASE_CFLAGS}")
+      SET(DEBUG_LINKFLAGS "/DEBUG /OPT:NOREF /OPT:NOICF /NODEFAULTLIB:msvcrt /PDBCOMPRESS ${MSVC_INCREMENTAL_YES_FLAG} ${DEBUG_LINKFLAGS}")
+      SET(RELEASE_LINKFLAGS "/OPT:REF /OPT:ICF /INCREMENTAL:NO ${RELEASE_LINKFLAGS}")
+
+      IF(MANUALLY_MANAGE_PDB_FLAG)
+        SET(CMAKE_C_COMPILE_OBJECT "<CMAKE_C_COMPILER> /nologo /TC <FLAGS> <DEFINES> /Fo<OBJECT> -c <SOURCE>")
+        SET(CMAKE_CXX_COMPILE_OBJECT "<CMAKE_CXX_COMPILER> /nologo /TP <FLAGS> <DEFINES> /Fo<OBJECT> -c <SOURCE>")
+      ENDIF()
+
+      IF(TARGET_X64)
+        # Target Vista 64 bits
+        SET(SUBSYSTEM_VERSION "6.0")
+      ELSE()
+        # Target Windows XP
+        SET(SUBSYSTEM_VERSION "5.1")
+      ENDIF()
+
+      SET(CMAKE_CREATE_WIN32_EXE "/SUBSYSTEM:WINDOWS,${SUBSYSTEM_VERSION}")
+      SET(CMAKE_CREATE_CONSOLE_EXE "/SUBSYSTEM:CONSOLE,${SUBSYSTEM_VERSION}")
+    ELSE()
+      ADD_PLATFORM_FLAGS("-DWIN32 -D_WIN32")
+
+      IF(CLANG)
+        ADD_PLATFORM_FLAGS("-nobuiltininc")
+      ENDIF()
+    ENDIF()
+  ENDIF()
+ENDMACRO()
+
 MACRO(INSTALL_PLUGIN_PDB name)
   # copy also PDB files in installation directory for Visual C++
   IF(MSVC AND WITH_INSTALL_LIBRARIES)
