@@ -28,14 +28,11 @@ IF(POLICY CMP0071)
   CMAKE_POLICY(SET CMP0071 NEW)
 ENDIF()
 
-SET(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules;${CMAKE_MODULE_PATH};$ENV{CMAKE_MODULE_PATH}")
+# Include our generic module with all macros
+SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
+INCLUDE(common)
 
-INCLUDE(common OPTIONAL)
-
-IF(NOT COMMON_MODULE_FOUND)
-  MESSAGE(FATAL_ERROR "Unable to find common.cmake! Please place it in CMakeModules subdirectory, set CMAKE_MODULE_PATH environement variable or set CMAKE_MODULE_PATH parameter to CMake.")
-ENDIF()
-
+# Define useful variables
 SET(VERSION_MAJOR 1)
 SET(VERSION_MINOR 2)
 SET(VERSION_PATCH "REVISION")
