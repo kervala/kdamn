@@ -189,14 +189,6 @@ MACRO(SET_TARGET_FLAGS_MSVC name)
       # check if using a GUI
       GET_TARGET_PROPERTY(_VALUE ${name} WIN32_EXECUTABLE)
 
-      IF(TARGET_X64)
-        # Target Windows XP 64 bits
-        SET(_SUBSYSTEM_VERSION "5.2")
-      ELSE()
-        # Target Windows XP
-        SET(_SUBSYSTEM_VERSION "5.1")
-      ENDIF()
-
       IF(_VALUE)
         # GUI
         SET(_SUBSYSTEM "WINDOWS")
@@ -211,7 +203,8 @@ MACRO(SET_TARGET_FLAGS_MSVC name)
         SET(_LINK_FLAGS "")
       ENDIF()
 
-      SET_TARGET_PROPERTIES(${name} PROPERTIES LINK_FLAGS "/VERSION:${VERSION_MAJOR}.${VERSION_MINOR} ${_LINK_FLAGS}")
+      # force this because CMake don't really set it for executables even if mentionned in the documentation
+      SET_TARGET_PROPERTIES(${name} PROPERTIES LINK_FLAGS "/VERSION:${VERSION_MAJOR}.${VERSION_MINOR} /SUBSYSTEM:${_SUBSYSTEM},${SUBSYSTEM_VERSION} ${_LINK_FLAGS}")
     ENDIF()
 
     IF("${type}" STREQUAL "STATIC_LIBRARY")
