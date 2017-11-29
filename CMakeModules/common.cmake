@@ -428,11 +428,19 @@ MACRO(LINK_SYSTEM_LIBRARY _TARGET _NAME)
     SET(CMAKE_FIND_LIBRARY_SUFFIXES ${_OLD_SUFFIXES})
 
     IF(${_NAME}_LIBRARY)
-      MESSAGE(STATUS "Found ${${_NAME}_LIBRARY} ${_NAME} ${_LIB_TYPE} ${_LIB_NAMES}")
+      GET_FILENAME_COMPONENT(_LIBEXT ${${_NAME}_LIBRARY} EXT)
 
-      # Don't redefine the same library several times
-      ADD_LIBRARY(${_NAME} ${_LIB_TYPE} IMPORTED)
-      SET_PROPERTY(TARGET ${_NAME} PROPERTY IMPORTED_LOCATION ${${_NAME}_LIBRARY})
+      # Special case for Apple frameworks
+      IF(_LIBEXT STREQUAL ".framework")
+        SET(${_NAME}_LIBRARY NAMES)
+        FIND_LIBRARY(${_NAME}_LIBRARY NAMES ${_LIB_NAMES})
+      ELSE()
+        MESSAGE(STATUS "Found ${${_NAME}_LIBRARY} ${_NAME} ${_LIB_TYPE} ${_LIB_NAMES}")
+
+        # Don't redefine the same library several times
+        ADD_LIBRARY(${_NAME} ${_LIB_TYPE} IMPORTED)
+        SET_PROPERTY(TARGET ${_NAME} PROPERTY IMPORTED_LOCATION ${${_NAME}_LIBRARY})
+      ENDIF()
     ELSE()
       MESSAGE(STATUS "Didn't find ${_NAME} ${_LIB_TYPE} ${_LIB_NAMES}")
     ENDIF()
