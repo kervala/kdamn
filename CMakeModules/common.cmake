@@ -432,8 +432,7 @@ MACRO(LINK_SYSTEM_LIBRARY _TARGET _NAME)
 
       # Special case for Apple frameworks
       IF(_LIBEXT STREQUAL ".framework")
-        SET(${_NAME}_LIBRARY)
-        FIND_LIBRARY(${_NAME}_LIBRARY NAMES ${_LIB_NAMES})
+        TARGET_LINK_LIBRARIES(${_TARGET} ${${_NAME}_LIBRARY})
       ELSE()
         # Don't redefine the same library several times
         ADD_LIBRARY(${_NAME} ${_LIB_TYPE} IMPORTED)

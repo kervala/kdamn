@@ -600,6 +600,7 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
 
               LINK_SYSTEM_LIBRARY(${_TARGET} strmiids)
             ELSEIF(APPLE)
+              LINK_QT_PLUGIN(${_TARGET} audio qtaudio_coreaudio)
               LINK_QT_PLUGIN(${_TARGET} audio qtmedia_pulse)
 
               LINK_SYSTEM_LIBRARY(${_TARGET} CoreAudio)
