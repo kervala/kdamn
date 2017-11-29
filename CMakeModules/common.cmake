@@ -1176,9 +1176,8 @@ MACRO(SET_TARGET_FLAGS name)
   # include directory where config.h have been generated
   IF(HAVE_CONFIG_H)
     SET(_DIR ${CMAKE_BINARY_DIR}/${name}.dir)
-    IF(NOT EXISTS ${_DIR}/config.h)
-      GEN_TARGET_CONFIG_H(${name})
-    ENDIF()
+    # regenerate each time we call cmake
+    GEN_TARGET_CONFIG_H(${name})
     IF(CMAKE_VERSION VERSION_GREATER "2.8.10")
       TARGET_INCLUDE_DIRECTORIES(${name} PRIVATE ${_DIR})
     ELSE()
