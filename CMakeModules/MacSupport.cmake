@@ -485,7 +485,7 @@ MACRO(INIT_BUILD_FLAGS_MAC)
     ENDIF()
 
     # Keep all static Objective-C symbols and disable all warnings (too verbose)
-    ADD_PLATFORM_LINKFLAGS("-ObjC -w")
+    ADD_PLATFORM_LINKFLAGS("-ObjC")
   ENDIF()
 ENDMACRO()
 
