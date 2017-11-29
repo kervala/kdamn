@@ -18,9 +18,11 @@
 
 MACRO(INIT_BUILD_FLAGS_ANDROID)
   IF(ANDROID)
-    ADD_PLATFORM_FLAGS("--sysroot=${PLATFORM_ROOT}")
+    ADD_PLATFORM_FLAGS("--sysroot=${CMAKE_SYSROOT}/usr")
+    ADD_PLATFORM_FLAGS("-isystem ${CMAKE_SYSROOT}/usr/include/${TOOLCHAIN_BIN_PREFIX}")
     ADD_PLATFORM_FLAGS("-ffunction-sections -funwind-tables -no-canonical-prefixes")
     ADD_PLATFORM_FLAGS("-DANDROID")
+    ADD_PLATFORM_FLAGS("-D__ANDROID_API__=${MINIMUM_NDK_TARGET}")
     ADD_PLATFORM_FLAGS("-I${STL_INCLUDE_DIR} -I${STL_INCLUDE_CPU_DIR}")
 
     ADD_PLATFORM_FLAGS("-fstack-protector-strong")
