@@ -91,6 +91,8 @@ MACRO(ADD_QT5_DEPENDENCIES)
       LIST(APPEND QT5_MODULES_WANTED Gui Network)
     ELSEIF(_MODULE STREQUAL "MultimediaWidgets")
       LIST(APPEND QT5_MODULES_WANTED Multimedia Widgets Gui OpenGL)
+    ELSEIF(_MODULE STREQUAL "Network")
+      LIST(APPEND QT5_MODULES_WANTED Core)
     ELSEIF(_MODULE STREQUAL "OpenGL")
       LIST(APPEND QT5_MODULES_WANTED Widgets Gui)
     ELSEIF(_MODULE STREQUAL "PrintSupport")
@@ -473,14 +475,11 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
             ENDIF()
 
             IF(APPLE)
-              FIND_LIBRARY(FOUNDATION_FRAMEWORK Foundation)
-              FIND_LIBRARY(CARBON_FRAMEWORK Carbon)
-              FIND_LIBRARY(SECURITY_FRAMEWORK Security)
-
-              TARGET_LINK_LIBRARIES(${_TARGET}
-                ${FOUNDATION_FRAMEWORK}
-                ${CARBON_FRAMEWORK}
-                ${SECURITY_FRAMEWORK})
+              LINK_SYSTEM_LIBRARY(${_TARGET} Foundation)
+              LINK_SYSTEM_LIBRARY(${_TARGET} Carbon)
+              LINK_SYSTEM_LIBRARY(${_TARGET} Security)
+              LINK_SYSTEM_LIBRARY(${_TARGET} Cocoa)
+              LINK_SYSTEM_LIBRARY(${_TARGET} SystemConfiguration)
             ELSEIF(WIN32)
               IF(QT_VERSION GREATER "5.8")
                 # we link to comsuppw because VC++ under WINE doesn't find it automatically...
@@ -495,6 +494,7 @@ MACRO(LINK_QT_LIBRARIES _TARGET)
           IF(_MODULE STREQUAL "Network")
             LINK_SYSTEM_LIBRARY(${_TARGET} ssl libssl ssleay32)
             LINK_SYSTEM_LIBRARY(${_TARGET} crypto libcrypto libeay32)
+            LINK_SYSTEM_LIBRARY(${_TARGET} z zlib)
 
             IF(WIN32)
               LINK_SYSTEM_LIBRARY(${_TARGET} Crypt32)
