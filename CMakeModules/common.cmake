@@ -2043,7 +2043,7 @@ MACRO(SETUP_PREFIX_PATHS name)
         SET(SBIN_PREFIX "sbin${LIB_SUFFIX}")
       ENDIF()
     ELSE()
-      SET(BIN_PREFIX ".")
+      SET(SBIN_PREFIX ".")
     ENDIF()
   ENDIF()
 
