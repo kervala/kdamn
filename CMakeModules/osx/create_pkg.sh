@@ -18,17 +18,18 @@ then
   exit 1
 fi
 
-if [ ! -e "$DIR/Distribution" ]
+if [ ! -e "$PKGDIR/Distribution" ]
 then
   echo "Unable to find Distribution file"
   exit 1
 fi
 
-PACKAGEDIR=$(ls -1 -d *.pkg)
+PACKAGEDIR=$(ls -1 -d $PKGDIR/*.pkg)
 
+echo "PACKAGEDIR $PACKAGEDIR"
 # TODO: check only one line
 
-if [ ! -e "$DIR/$PACKAGEDIR/PackageInfo" ]
+if [ ! -e "$PACKAGEDIR/PackageInfo" ]
 then
   echo "Unable to find PackageInfo file"
   exit 1
@@ -36,18 +37,18 @@ fi
 
 # create Bom
 echo "Creating Bom..."
-mkbom -u 0 -g 0 $APPDIR $PKGDIR/PACKAGEDIR/Bom
+mkbom -u 0 -g 0 $APPDIR $PACKAGEDIR/Bom
 
 RET=$?
 
 if [ "$RET" -ne 0 ]
 then
-  echo "mkbom -u 0 -g 0 $APPDIR $PKGDIR/PACKAGEDIR/Bom returned $RET"
+  echo "mkbom -u 0 -g 0 $APPDIR PACKAGEDIR/Bom returned $RET"
   exit 1
 fi
 
 echo "Creating Payload..."
-find $APPDIR | cpio -o --format odc --owner 0:80 | gzip -c -9 > $PKGDIR/PACKAGEDIR/Payload
+find $APPDIR | cpio -o --format odc --owner 0:80 | gzip -c -9 > $PACKAGEDIR/Payload
 
 echo "Creating PKG..."
-xar --compression none -cf $PKGFILE PKGDIR/*
+xar --compression none -cf $PKGFILE $PKGDIR/*
