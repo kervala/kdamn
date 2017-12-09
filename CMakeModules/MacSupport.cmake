@@ -721,7 +721,7 @@ MACRO(CREATE_MAC_PACKAGE_TARGET _TARGET)
     SET(CUSTOM_OPTIONS)
 
     IF(BG)
-      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}  <background file=\"background\" alignment=\"left" scaling=\"none\"/>\n")
+      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}  <background file=\"background\" alignment=\"left\" scaling=\"none\"/>\n")
     ENDIF()
 
     IF(WELCOME)
