@@ -40,9 +40,9 @@ fi
 NUMBER_OF_FILES=$(find $APPDIR | wc -l)
 INSTALL_KBYTES=$(du -b -s $APPDIR)
 
-sed -i "s/NUMBER_OF_FILES/$NUMBER_OF_FILES/g" $DIR/Distribution
-sed -i "s/INSTALL_KBYTES/$INSTALL_KBYTES/g" $DIR/Distribution
-sed -i "s/INSTALL_KBYTES/$INSTALL_KBYTES/g" $PACKAGEDIR/PackageInfo
+sed -i "s/NUMBER_OF_FILES/"$NUMBER_OF_FILES"/g" $PKGDIR/Distribution
+sed -i "s/INSTALL_KBYTES/"$INSTALL_KBYTES"/g" $PKGDIR/Distribution
+sed -i "s/INSTALL_KBYTES/"$INSTALL_KBYTES"/g" $PACKAGEDIR/PackageInfo
 
 # create Bom
 echo "Creating Bom..."
