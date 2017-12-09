@@ -716,12 +716,50 @@ MACRO(CREATE_MAC_PACKAGE_TARGET _TARGET)
     # Creating .ipa package
     SET(_APP ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PRODUCT_FIXED}.app)
     SET(_PKG ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${PACKAGE_BASENAME}-${VERSION}-osx.pkg)
+    SET(PACKAGE_DIR ${CMAKE_BINARY_DIR}/package)
+
+    SET(CUSTOM_OPTIONS)
+
+    IF(BG)
+      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}  <background file=\"background\" alignment=\"left" scaling=\"none\"/>\n")
+    ENDIF()
+
+    IF(WELCOME)
+      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}  <welcome file=\"Welcome.txt\"/>\n")
+    ENDIF()
+
+    IF(CPACK_PACKAGE_DESCRIPTION_FILE)
+      CONFIGURE_FILE(${CPACK_PACKAGE_DESCRIPTION_FILE} ${PACKAGE_DIR}/ReadMe.txt COPYONLY)
+      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}  <readme file=\"ReadMe.txt\"/>\n")
+    ENDIF()
+
+    IF(CPACK_RESOURCE_FILE_LICENSE)
+      CONFIGURE_FILE(${CPACK_RESOURCE_FILE_LICENSE} ${PACKAGE_DIR}/License.txt COPYONLY)
+      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}  <license file=\"License.txt\"/>\n")
+    ENDIF()
+
+    FILE(GLOB_RECURSE _APP_FILES ${_APP}/*)
+
+    LIST(LENGTH _APP_FILES NUMBER_OF_FILES)
+    MATH(NUMBER_OF_FILES "${NUMBER_OF_FILES}+1") # the root folder should be included in files
+    EXECUTE_PROCESS(COMMAND du -b -s ${_APP} OUTPUT_VARIABLE INSTALL_KBYTES)
+
+#    FILE(MAKE_DIRECTORY ${PACKAGE_DIR}/${MACOSX_BUNDLE_GUI_IDENTIFIER}.pkg)
+
+    CONFIGURE_FILE(${MAC_RESOURCES_DIR}/Distribution.in ${PACKAGE_DIR}/Distribution)
+    CONFIGURE_FILE(${MAC_RESOURCES_DIR}/PackageInfo.in ${PACKAGE_DIR}/${MACOSX_BUNDLE_GUI_IDENTIFIER}.pkg/PackageInfo)
 
     ADD_CUSTOM_TARGET(packages
-      COMMAND productbuild --identifier "${MACOSX_BUNDLE_GUI_IDENTIFIER}" --version "${VERSION}" --component ${_APP} /Applications ${_PKG}
+      COMMAND ${MAC_RESOURCES_DIR}/create_pkg.sh "${PACKAGE_DIR}" "${_APP}" "${_PKG}"
       COMMENT "Creating OS X package..."
       SOURCES ${MAC_ITUNESARTWORK}
       VERBATIM)
+
+#    ADD_CUSTOM_TARGET(packages
+#      COMMAND productbuild --identifier "${MACOSX_BUNDLE_GUI_IDENTIFIER}" --version "${VERSION}" --component ${_APP} /Applications ${_PKG}
+#      COMMENT "Creating OS X package..."
+#      SOURCES ${MAC_ITUNESARTWORK}
+#      VERBATIM)
     ADD_DEPENDENCIES(packages ${_TARGET})
     SET_TARGET_LABEL(packages "PACKAGE")
   ENDIF()
