@@ -38,7 +38,7 @@ fi
 
 # variables to change in files
 NUMBER_OF_FILES=$(find $APPDIR | wc -l)
-INSTALL_KBYTES=$(du -b -s $APPDIR)
+INSTALL_KBYTES=$(du -b -s $APPDIR | cut -f1)
 
 sed -i "s/NUMBER_OF_FILES/"$NUMBER_OF_FILES"/g" $PKGDIR/Distribution
 sed -i "s/INSTALL_KBYTES/"$INSTALL_KBYTES"/g" $PKGDIR/Distribution
@@ -60,4 +60,4 @@ echo "Creating Payload..."
 find $APPDIR | cpio -o --format odc --owner 0:80 | gzip -c -9 > $PKGDIR/PACKAGEDIR/Payload
 
 echo "Creating PKG..."
-xar --compression none -cf $PKGFILE PKGDIR/*
+xar --compression none -cf $PKGFILE $PKGDIR/*
