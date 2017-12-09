@@ -236,6 +236,15 @@ ENDMACRO()
 
 MACRO(INIT_BUILD_FLAGS_MAC)
   IF(APPLE)
+    IF(NOT MAC_RESOURCES_DIR)
+      FOREACH(ITEM ${CMAKE_MODULE_PATH})
+        IF(EXISTS "${ITEM}/osx/create_pkg.sh")
+          SET(MAC_RESOURCES_DIR "${ITEM}/osx")
+          BREAK()
+        ENDIF()
+      ENDFOREACH()
+    ENDIF()
+
     SET(OBJC_FLAGS -fobjc-abi-version=2 -fobjc-legacy-dispatch -fobjc-weak)
 
     IF(IOS)

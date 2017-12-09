@@ -257,6 +257,15 @@ ENDMACRO()
 
 MACRO(INIT_BUILD_FLAGS_WINDOWS)
   IF(WIN32)
+    IF(NOT WINDOWS_RESOURCES_DIR)
+      FOREACH(ITEM ${CMAKE_MODULE_PATH})
+        IF(EXISTS "${ITEM}/windows/resources.rc")
+          SET(WINDOWS_RESOURCES_DIR "${ITEM}/windows")
+          BREAK()
+        ENDIF()
+      ENDFOREACH()
+    ENDIF()
+
     IF(MSVC)
       # From 2.8.12 (included) to 3.1.0 (excluded), the /Fd parameter to specify
       # compilation PDB was managed entirely by CMake and there was no way to access
