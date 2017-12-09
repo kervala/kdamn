@@ -19,5 +19,5 @@ ${CUSTOM_OPTIONS}
     <choice id="${MACOSX_BUNDLE_GUI_IDENTIFIER}" title="${PRODUCT_XML}" visible="false" customLocation="/Applications">
         <pkg-ref id="${MACOSX_BUNDLE_GUI_IDENTIFIER}"/>
     </choice>
-    <pkg-ref id="${MACOSX_BUNDLE_GUI_IDENTIFIER}" version="${VERSION}" onConclusion="none" installKBytes="${INSTALL_KBYTES}">#${MACOSX_BUNDLE_GUI_IDENTIFIER}.pkg</pkg-ref>
+    <pkg-ref id="${MACOSX_BUNDLE_GUI_IDENTIFIER}" version="${VERSION}" onConclusion="none" installKBytes="INSTALL_KBYTES">#${MACOSX_BUNDLE_GUI_IDENTIFIER}.pkg</pkg-ref>
 </installer-gui-script>
