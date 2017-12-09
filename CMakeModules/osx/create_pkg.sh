@@ -14,7 +14,7 @@ PKGFILE=$3
 
 if [ -z "$PKGDIR" ] || [ -z "$APPDIR" ] || [ -z "$PKGFILE" ]
 then
-  echo "Syntax: $0 <root directory of package> <root directory of .app bundle>"
+  echo "Syntax: $0 <root directory of package> <root directory of .app bundle> <full path to PKG to create>"
   exit 1
 fi
 
