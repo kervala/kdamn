@@ -57,7 +57,7 @@ then
 fi
 
 echo "Creating Payload..."
-find $APPDIR | cpio -o --format odc --owner 0:80 | gzip -c -9 > $PKGDIR/PACKAGEDIR/Payload
+find $APPDIR | cpio -o --format odc --owner 0:80 | gzip -c -9 > $PACKAGEDIR/Payload
 
 echo "Creating PKG..."
 xar --compression none -cf $PKGFILE $PKGDIR/*
