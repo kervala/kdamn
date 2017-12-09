@@ -633,9 +633,6 @@ MACRO(SET_TARGET_EXECUTABLE _TYPE name)
       # for iOS
       CREATE_IOS_PACKAGE_TARGET(${name})
       CREATE_IOS_RUN_TARGET(${name})
-
-      # for OS X
-      CREATE_MAC_PACKAGE_TARGET(${name})
     ENDIF()
   ELSE()
     INSTALL_QT_LIBRARIES()
@@ -1360,6 +1357,10 @@ MACRO(INSTALL_RESOURCES _TARGET _DIR)
 
     SET(CPACK_SOURCE_GENERATOR "ZIP")
   ELSEIF(APPLE)
+    # manual package (type: make packages)
+    CREATE_MAC_PACKAGE_TARGET(${_TARGET})
+
+    # native package
     SET(CPACK_GENERATOR "productbuild")
     SET(CPACK_SOURCE_GENERATOR "ZIP")
   ELSE()
