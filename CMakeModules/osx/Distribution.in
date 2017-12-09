@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<installer-gui-script minSpecVersion="1" authoringTool="com.apple.PackageMaker" authoringToolVersion="3.0.3" authoringToolBuild="174">
+    <pkg-ref id="${MACOSX_BUNDLE_GUI_IDENTIFIER}">
+        <bundle-version>
+            <bundle CFBundleShortVersionString="${VERSION}" CFBundleVersion="${VERSION}" id="${MACOSX_BUNDLE_GUI_IDENTIFIER}" path="${PRODUCT_FIXED}.app"/>
+        </bundle-version>
+    </pkg-ref>
+    <product id="${MACOSX_BUNDLE_GUI_IDENTIFIER}" version="${VERSION}"/>
+    <title>${PRODUCT_XML}</title>
+    <options customize="never" require-scripts="false" hostArchitectures="x86_64"/>
+    <os-version min="${CMAKE_OSX_DEPLOYMENT_TARGET}"/>
+${CUSTOM_OPTIONS}
+    <choices-outline>
+        <line choice="default">
+            <line choice="${MACOSX_BUNDLE_GUI_IDENTIFIER}"/>
+        </line>
+    </choices-outline>
+    <choice id="default" title="${PRODUCT_XML}" versStr="${VERSION}"/>
+    <choice id="${MACOSX_BUNDLE_GUI_IDENTIFIER}" title="${PRODUCT_XML}" visible="false" customLocation="/Applications">
+        <pkg-ref id="${MACOSX_BUNDLE_GUI_IDENTIFIER}"/>
+    </choice>
+    <pkg-ref id="${MACOSX_BUNDLE_GUI_IDENTIFIER}" version="${VERSION}" onConclusion="none" installKBytes="${INSTALL_KBYTES}">#${MACOSX_BUNDLE_GUI_IDENTIFIER}.pkg</pkg-ref>
+</installer-gui-script>
