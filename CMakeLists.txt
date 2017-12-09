@@ -28,6 +28,11 @@ IF(POLICY CMP0071)
   CMAKE_POLICY(SET CMP0071 NEW)
 ENDIF()
 
+# Use AppleClang for OS X compiler
+IF(POLICY CMP0025)
+  CMAKE_POLICY(SET CMP0025 NEW)
+ENDIF()
+
 # Include our generic module with all macros
 SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
 INCLUDE(common)
