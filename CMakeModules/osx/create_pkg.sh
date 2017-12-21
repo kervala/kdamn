@@ -46,7 +46,7 @@ INSTALL_KBYTES=$(($INSTALL_KBYTES/1024))
 
 sed -i "s/INSTALL_KBYTES/"$INSTALL_KBYTES"/g" $PKGDIR/Distribution
 sed -i "s/INSTALL_KBYTES/"$INSTALL_KBYTES"/g" $PACKAGEDIR/PackageInfo
-sed -i "s/NUMBER_OF_FILES/"$NUMBER_OF_FILES"/g" $PKGDIR/PackageInfo
+sed -i "s/NUMBER_OF_FILES/"$NUMBER_OF_FILES"/g" $PACKAGEDIR/PackageInfo
 
 # create Bom
 echo "Creating Bom..."
