@@ -716,22 +716,22 @@ MACRO(CREATE_MAC_PACKAGE_TARGET _TARGET)
     SET(CUSTOM_OPTIONS)
 
     IF(BG)
-      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}    <background file=\"background\" mime-type="image/png" alignment=\"bottomleft\" scaling=\"none\"/>\n")
+      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}    <background file=\"background\" mime-type=\"image/png\" alignment=\"bottomleft\" scaling=\"none\"/>\n")
     ENDIF()
 
     IF(WELCOME)
-      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}    <welcome mime-type="text/plain" file=\"Welcome.txt\"/>\n")
+      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}    <welcome mime-type=\"text/plain\" file=\"Welcome.txt\"/>\n")
     ENDIF()
 
     # TODO: support i18n
     IF(CPACK_PACKAGE_DESCRIPTION_FILE)
       CONFIGURE_FILE(${CPACK_PACKAGE_DESCRIPTION_FILE} ${PACKAGE_DIR}/Resources/en.lproj/ReadMe.txt COPYONLY)
-      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}    <readme mime-type="text/plain" file=\"ReadMe.txt\"/>\n")
+      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}    <readme mime-type=\"text/plain\" file=\"ReadMe.txt\"/>\n")
     ENDIF()
 
     IF(CPACK_RESOURCE_FILE_LICENSE)
       CONFIGURE_FILE(${CPACK_RESOURCE_FILE_LICENSE} ${PACKAGE_DIR}/Resources/en.lproj/License.txt COPYONLY)
-      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}    <license mime-type="text/plain" file=\"License.txt\"/>\n")
+      SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}    <license mime-type=\"text/plain\" file=\"License.txt\"/>\n")
     ENDIF()
 
 #    FILE(MAKE_DIRECTORY ${PACKAGE_DIR}/${MACOSX_BUNDLE_GUI_IDENTIFIER}.pkg)
