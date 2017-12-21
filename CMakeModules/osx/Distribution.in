@@ -8,12 +8,12 @@
     <product id="${MACOSX_BUNDLE_GUI_IDENTIFIER}" version="${VERSION}"/>
     <title>${PRODUCT_XML}</title>
     <options customize="never" require-scripts="false" hostArchitectures="x86_64"/>
-${CUSTOM_OPTIONS}
     <volume-check>
         <allowed-os-versions>
             <os-version min="${CMAKE_OSX_DEPLOYMENT_TARGET}.0"/>
         </allowed-os-versions>
     </volume-check>
+${CUSTOM_OPTIONS}
     <choices-outline>
         <line choice="default">
             <line choice="${MACOSX_BUNDLE_GUI_IDENTIFIER}"/>
