@@ -63,7 +63,8 @@ then
 fi
 
 echo "Creating Payload..."
-find $APPDIR | cpio -o --format odc --owner 0:80 | gzip -c -9 > $PACKAGEDIR/Payload
+cd $APPDIR
+find . | cpio -o --format odc --owner 0:80 | gzip -c -9 > $PACKAGEDIR/Payload
 
 echo "Creating PKG..."
 cd $PKGDIR
