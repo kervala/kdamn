@@ -258,7 +258,7 @@ MACRO(USE_CURRENT_WINSDK)
 
   IF(NOT WINSDK_DIR)
     # Use Windows SDK versions installed with VC++ when possible
-    IF(MSVC1411 OR MSVC1410)
+    IF(MSVC_VERSION GREATER 1909)
       # Special case, use Kits for SDK
       SET(WINSDK_VERSION "10.0")
       SET(WINSDK_DIR ${WINSDK_UCRT_DIR})

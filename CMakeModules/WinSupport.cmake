@@ -280,6 +280,7 @@ MACRO(INIT_BUILD_FLAGS_WINDOWS)
       #
       # year public private dll  registry
       #
+      # 2017 14.12  1912    140  15.0
       # 2017 14.11  1911    140  15.0
       # 2017 14.1   1910    140  15.0
       # 2015 14     1900    140  14.0
@@ -313,10 +314,16 @@ MACRO(INIT_BUILD_FLAGS_WINDOWS)
         ENDIF()
 
         # Special cases for VC++ 2017
-        IF(MSVC_VERSION EQUAL "1911")
+        IF(MSVC_VERSION EQUAL "1912")
+          SET(MSVC1412 ON)
+        ELSEIF(MSVC_VERSION EQUAL "1911")
           SET(MSVC1411 ON)
         ELSEIF(MSVC_VERSION EQUAL "1910")
           SET(MSVC1410 ON)
+        ELSEIF(MSVC_VERSION EQUAL "1900")
+          SET(MSVC1400 ON)
+        ELSE()
+          MESSAGE(FATAL_ERROR "Unknown version ${MSVC_VERSION}")
         ENDIF()
       ELSEIF(MSVC12)
         ADD_PLATFORM_FLAGS("/Gy-")
