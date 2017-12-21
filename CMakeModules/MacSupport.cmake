@@ -734,8 +734,6 @@ MACRO(CREATE_MAC_PACKAGE_TARGET _TARGET)
       SET(CUSTOM_OPTIONS "${CUSTOM_OPTIONS}    <license mime-type=\"text/plain\" file=\"License.txt\"/>\n")
     ENDIF()
 
-#    FILE(MAKE_DIRECTORY ${PACKAGE_DIR}/${MACOSX_BUNDLE_GUI_IDENTIFIER}.pkg)
-
     CONFIGURE_FILE(${MAC_RESOURCES_DIR}/Distribution.in ${PACKAGE_DIR}/Distribution)
     CONFIGURE_FILE(${MAC_RESOURCES_DIR}/PackageInfo.in ${PACKAGE_DIR}/${MACOSX_BUNDLE_GUI_IDENTIFIER}.pkg/PackageInfo)
 
