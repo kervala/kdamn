@@ -8,11 +8,14 @@
 #    |- PackageInfo
 #    |- Payload
 
+# Uncompress PKG : xar -xf <file.pkg>
 # Uncompress Payload : cpio -iv < Payload
 
 PKGDIR=$1
 APPDIR=$2
 PKGFILE=$3
+
+CURRENTDIR=$(pwd)
 
 if [ -z "$PKGDIR" ] || [ -z "$APPDIR" ] || [ -z "$PKGFILE" ]
 then
@@ -61,4 +64,7 @@ echo "Creating Payload..."
 find $APPDIR | cpio -o --format odc --owner 0:80 | gzip -c -9 > $PACKAGEDIR/Payload
 
 echo "Creating PKG..."
-xar --compression none -cf $PKGFILE $PKGDIR/*
+cd $PKGDIR
+xar --compression none -cf $PKGFILE *
+
+cd $CURRENTDIR
