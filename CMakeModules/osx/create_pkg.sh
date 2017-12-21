@@ -50,7 +50,9 @@ sed -i "s/INSTALL_KBYTES/"$INSTALL_KBYTES"/g" $PACKAGEDIR/PackageInfo
 
 # create Bom
 echo "Creating Bom..."
-mkbom -u 0 -g 0 $APPDIR $PACKAGEDIR/Bom
+cd $APPDIR
+cd ..
+mkbom -u 0 -g 0 . $PACKAGEDIR/Bom
 
 RET=$?
 
