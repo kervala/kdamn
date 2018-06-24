@@ -4,7 +4,7 @@ set COMPILER=vc12
 set UNIXDIR=D:\Projects\packaging\unix
 set CURRENTDIR=%cd%
 
-set QTVERSION=5.9.2
+set QTVERSION=5.10.1
 
 cd %UNIXDIR%
 call setenv.bat %COMPILER% amd64
