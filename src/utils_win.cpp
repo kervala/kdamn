@@ -40,6 +40,10 @@ QPixmap qt_pixmapFromWinHBITMAP(HBITMAP bitmap, int hbitmapFormat = 0);
 #include <ShellAPI.h>
 #include <sdkddkver.h>
 
+#ifdef DEBUG_NEW
+	#define new DEBUG_NEW
+#endif
+
 static QPixmap fancyPants( ICONINFO const &icon_info )
 {
 	int result;

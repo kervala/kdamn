@@ -35,6 +35,10 @@
 	#undef index
 #endif
 
+#ifdef DEBUG_NEW
+	#define new DEBUG_NEW
+#endif
+
 static void print_client_properties(Display *dpy, Window w, QAbstractItemModel *model)
 {
 	// retrieve window name
