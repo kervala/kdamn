@@ -392,13 +392,13 @@ bool OAuth2::processImage(const QString &url, const QByteArray &content)
 
 void OAuth2::onReply(QNetworkReply *reply)
 {
-	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString();
-	QString url = reply->url().toString();
+	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString().trimmed();
+	QString url = reply->url().toString().trimmed();
 	int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
-	QByteArray content = reply->readAll();
+	QByteArray content = reply->readAll().trimmed();
 	QNetworkReply::NetworkError errorCode = reply->error();
-	QString errorString = reply->errorString();
-	QString filename = reply->userData(0) ? ((StringUserData*)reply->userData(0))->text:"";
+	QString errorString = reply->errorString().trimmed();
+	QString filename = reply->userData(0) ? ((StringUserData*)reply->userData(0))->text.trimmed() :"";
 
 	// always delete QNetworkReply to avoid memory leaks
 	reply->deleteLater();
