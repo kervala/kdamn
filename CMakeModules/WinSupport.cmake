@@ -278,8 +278,9 @@ MACRO(INIT_BUILD_FLAGS_WINDOWS)
 
       # VC++ versions
       #
-      # year public private dll  registry
+      # year public private dll  registry about...
       #
+      # 2017 14.13  1913    140  15.0     15.6.1
       # 2017 14.12  1912    140  15.0
       # 2017 14.11  1911    140  15.0
       # 2017 14.1   1910    140  15.0
@@ -314,7 +315,11 @@ MACRO(INIT_BUILD_FLAGS_WINDOWS)
         ENDIF()
 
         # Special cases for VC++ 2017
-        IF(MSVC_VERSION EQUAL "1912")
+        IF(MSVC_VERSION EQUAL "1914")
+          SET(MSVC1414 ON)
+        ELSEIF(MSVC_VERSION EQUAL "1913")
+          SET(MSVC1413 ON)
+        ELSEIF(MSVC_VERSION EQUAL "1912")
           SET(MSVC1412 ON)
         ELSEIF(MSVC_VERSION EQUAL "1911")
           SET(MSVC1411 ON)
@@ -446,7 +451,7 @@ ENDMACRO()
 
 MACRO(INSTALL_PLUGIN_PDB name)
   # copy also PDB files in installation directory for Visual C++
-  IF(MSVC AND WITH_INSTALL_LIBRARIES)
+  IF(MSVC)
     # Destination PDB filename
     GET_FINAL_PDB_FULLPATH(${name} _OUTPUT_FULLPATH)
 

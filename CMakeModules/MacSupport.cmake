@@ -61,7 +61,7 @@ MACRO(INIT_MAC)
   SET(MAC_MOBILEPROVISION)
 
   # Regex filter for Mac files
-  SET(MAC_FILES_FILTER "(\\.(xib|strings|icns|plist|framework|mobileprovision)|iTunesArtwork.*\\.png|\\.lproj/.*)$")
+  SET(MAC_FILES_FILTER "(\\.(xib|strings|icns|plist|framework|mobileprovision)|iTunesArtwork.*\\.png|\\.lproj|\\.lproj/.*)$")
 ENDMACRO()
 
 MACRO(FILTER_MAC_FILES FILE)
@@ -103,7 +103,20 @@ MACRO(FILTER_MAC_FILES FILE)
       SET(_INCLUDE OFF)
     ENDIF()
 
-    IF(${FILE} MATCHES "/([a-z]+)\\.lproj/")
+    IF(${FILE} MATCHES "/([a-z]+)\\.lproj")
+      # Extract ISO code for language from source directory
+      STRING(REGEX REPLACE "^.*/([a-z]+)\\.lproj$" "\\1" _LANG ${FILE})
+
+      # Append new language if not already in the list
+      LIST(FIND MAC_LANGS "${_LANG}" _INDEX)
+      IF(_INDEX EQUAL -1)
+        LIST(APPEND MAC_LANGS ${_LANG})
+      ENDIF()
+
+      # Append file to localized resources list
+      FILE(GLOB _TMP_LPROJ_RES ${FILE}/*)
+      LIST(APPEND MAC_RESOURCES_${_LANG} ${_TMP_LPROJ_RES})
+    ELSEIF(${FILE} MATCHES "/([a-z]+)\\.lproj/")
       # Extract ISO code for language from source directory
       STRING(REGEX REPLACE "^.*/([a-z]+)\\.lproj/.*$" "\\1" _LANG ${FILE})
 

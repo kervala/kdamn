@@ -31,8 +31,10 @@ IF(ZLIB_FOUND)
 
   FIX_PACKAGE_OPTIONS(MyPNG PNG)
   FIND_PACKAGE_HELPER(PNG png.h
-    RELEASE ${_PNG_LIBS_RELEASE} libpng_static libpng png
-    DEBUG ${_PNG_LIBS_DEBUG} libpng_staticd libpngd pngd QUIET)
+    RELEASE ${_PNG_LIBS_RELEASE} libpng_static
+    DEBUG ${_PNG_LIBS_DEBUG} libpng_staticd
+    DIR ${POPPLER_DIR}
+    QUIET)
 
   IF(PNG_FOUND)
     # png.h includes zlib.h. Sigh.
@@ -52,4 +54,6 @@ IF(ZLIB_FOUND)
   SET(PNG_VERSION "${PNG_LIBPNG_VER_MAJOR}.${PNG_LIBPNG_VER_MINOR}.${PNG_LIBPNG_VER_RELEASE}")
 
   MESSAGE_VERSION_PACKAGE_HELPER(PNG ${PNG_VERSION} ${PNG_LIBRARIES})
+ELSE()
+  MESSAGE(FATAL_ERROR "Unable to find ZLIB that is required by PNG")
 ENDIF()

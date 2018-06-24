@@ -62,8 +62,17 @@ MACRO(GEN_CONFIG_H)
 ENDMACRO()
 
 MACRO(GEN_TARGET_CONFIG_H name)
+  # Look for config.h template in this order:
+  # 1. last config.h
+  # 2. same directory as CMakeLists.txt
+  # 3. same directory as root CMakeLists.txt
+  # 4. CMake modules directory
   IF(LAST_CONFIG_H_IN)
     GEN_CONFIG_H_CUSTOM(${name} ${LAST_CONFIG_H_IN} config.h)
+  ELSEIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake)
+    GEN_CONFIG_H_CUSTOM(${name} ${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake config.h)
+  ELSEIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in)
+    GEN_CONFIG_H_CUSTOM(${name} ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in config.h)
   ELSEIF(EXISTS ${CMAKE_SOURCE_DIR}/config.h.cmake)
     GEN_CONFIG_H_CUSTOM(${name} ${CMAKE_SOURCE_DIR}/config.h.cmake config.h)
   ELSEIF(EXISTS ${CMAKE_SOURCE_DIR}/config.h.in)
@@ -107,7 +116,7 @@ MACRO(GEN_CONFIG_H_CUSTOM name src dst)
   ENDIF()
 
   STRING(TOUPPER ${name} UPTARGET)
-  CONFIGURE_FILE(${src} ${CMAKE_BINARY_DIR}/${name}.dir/${dst})
+  CONFIGURE_FILE(${src} ${CMAKE_CURRENT_BINARY_DIR}/${name}.dir/${dst})
   ADD_DEFINITIONS(-DHAVE_CONFIG_H)
   SET(HAVE_CONFIG_H ON)
   SET(LAST_CONFIG_H_IN ${src})
@@ -273,7 +282,7 @@ ENDMACRO()
 MACRO(CREATE_SOURCE_GROUPS DIR FILES)
   SET(_NAMES)
   SET(_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
-  SET(_GENERATED_DIR ${CMAKE_BINARY_DIR})
+  SET(_GENERATED_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
   FOREACH(_FILE ${FILES})
     # Get only directory from filename
@@ -1160,7 +1169,7 @@ MACRO(SET_TARGET_FLAGS name)
 
   # include directory where config.h have been generated
   IF(HAVE_CONFIG_H)
-    SET(_DIR ${CMAKE_BINARY_DIR}/${name}.dir)
+    SET(_DIR ${CMAKE_CURRENT_BINARY_DIR}/${name}.dir)
     # regenerate each time we call cmake
     GEN_TARGET_CONFIG_H(${name})
     IF(CMAKE_VERSION VERSION_GREATER "2.8.10")
@@ -1209,10 +1218,6 @@ MACRO(SET_TARGET_FLAGS name)
 
   IF(NOT "${type}" STREQUAL "STATIC_LIBRARY" AND ANDROID)
     TARGET_LINK_LIBRARIES(${name} ${STL_LIBRARY})
-  ENDIF()
-
-  IF(WITH_STLPORT)
-    TARGET_LINK_LIBRARIES(${name} ${STLPORT_LIBRARIES})
   ENDIF()
 
   SET_TARGET_FLAGS_MAC(${name})
@@ -1563,7 +1568,6 @@ MACRO(SETUP_DEFAULT_OPTIONS)
   ADD_OPTION(WITH_INSTALL_LIBRARIES   "Install development files (includes and static libraries)")
   ADD_OPTION(WITH_INSTALL_RUNTIMES    "Install runtimes")
 
-  ADD_OPTION(WITH_STLPORT             "Use STLport instead of standard STL")
   ADD_OPTION(WITH_RTTI                "Enable RTTI support")
   ADD_OPTION(WITH_EXCEPTIONS          "Enable exceptions support")
   ADD_OPTION(WITH_TESTS               "Compile tests projects")
@@ -1655,6 +1659,9 @@ MACRO(INIT_BUILD_FLAGS)
   ENDIF()
 
   # Determine target CPU
+  IF(NOT TARGET_CPU AND CMAKE_SYSTEM_PROCESSOR)
+    SET(TARGET_CPU ${CMAKE_SYSTEM_PROCESSOR})
+  ENDIF()
 
   # If not specified, use the same CPU as host
   IF(NOT TARGET_CPU)
@@ -1733,27 +1740,30 @@ MACRO(INIT_BUILD_FLAGS)
     IF(TARGET_CPU STREQUAL "x86_64")
       SET(TARGET_X64 1)
       SET(TARGET_X86 1)
-    ELSEIF(TARGET_CPU STREQUAL "x86")
+    ELSEIF(TARGET_CPU MATCHES "^(x86|i?86)$")
       SET(TARGET_X86 1)
-    ELSEIF(TARGET_CPU STREQUAL "arm64")
+    ELSEIF(TARGET_CPU MATCHES "^(arm64|aarch64)$")
       SET(TARGET_ARM 1)
       SET(TARGET_ARM64 1)
     ELSEIF(TARGET_CPU STREQUAL "armv7s")
       SET(TARGET_ARM 1)
       SET(TARGET_ARMV7S 1)
-    ELSEIF(TARGET_CPU STREQUAL "armv7")
+    ELSEIF(TARGET_CPU MATCHES "^armv7")
       SET(TARGET_ARM 1)
       SET(TARGET_ARMV7 1)
     ELSEIF(TARGET_CPU STREQUAL "armv6")
       SET(TARGET_ARM 1)
       SET(TARGET_ARMV6 1)
-    ELSEIF(TARGET_CPU STREQUAL "armv5")
+    ELSEIF(TARGET_CPU MATCHES "^armv5")
       SET(TARGET_ARM 1)
       SET(TARGET_ARMV5 1)
     ELSEIF(TARGET_CPU STREQUAL "arm")
       SET(TARGET_ARM 1)
     ELSEIF(TARGET_CPU STREQUAL "mips")
       SET(TARGET_MIPS 1)
+    ELSEIF(TARGET_CPU STREQUAL "mips64")
+      SET(TARGET_MIPS 1)
+      SET(TARGET_MIPS64 1)
     ENDIF()
 
     IF(TARGET_ARM)
@@ -2153,11 +2163,6 @@ MACRO(SETUP_EXTERNAL)
     # TODO: replace all -l<lib> by absolute path to <lib> in CMAKE_THREAD_LIBS_INIT
   ENDIF()
 
-  IF(WITH_STLPORT)
-    FIND_PACKAGE(STLport REQUIRED)
-    INCLUDE_DIRECTORIES(${STLPORT_INCLUDE_DIR})
-  ENDIF()
-
   IF(MSVC)
     FIND_PACKAGE(MSVC REQUIRED)
     FIND_PACKAGE(WindowsSDK REQUIRED)
@@ -2192,6 +2197,10 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
   # RELEASE is the list of libraries to check in release mode
   # DEBUG is the list of libraries to check in debug mode
   # SUFFIXES is the PATH_SUFFIXES to check for include file
+  # QUIET don't display anything
+  # VERBOSE display more details if not found
+  # REQUIRED throw an error if not found
+  # DIR is the base directory where to look for
   #
   # The first match will be used in the specified order and next matches will be ignored
   #
@@ -2205,11 +2214,13 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
   SET(_RELEASE_LIBRARIES)
   SET(_DEBUG_LIBRARIES)
   SET(_SUFFIXES)
+  SET(_BASE_DIRECTORIES)
 
   SET(_IS_RELEASE OFF)
   SET(_IS_DEBUG OFF)
   SET(_IS_SUFFIXES OFF)
   SET(_IS_VERBOSE OFF)
+  SET(_IS_DIR OFF)
 
   IF(_PARAMS)
     FOREACH(_PARAM ${_PARAMS})
@@ -2217,26 +2228,40 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
         SET(_IS_RELEASE ON)
         SET(_IS_DEBUG OFF)
         SET(_IS_SUFFIXES OFF)
+        SET(_IS_DIR OFF)
       ELSEIF(_PARAM STREQUAL "DEBUG")
         SET(_IS_RELEASE OFF)
         SET(_IS_DEBUG ON)
         SET(_IS_SUFFIXES OFF)
+        SET(_IS_DIR OFF)
       ELSEIF(_PARAM STREQUAL "SUFFIXES")
         SET(_IS_RELEASE OFF)
         SET(_IS_DEBUG OFF)
+        SET(_IS_DIR OFF)
         SET(_IS_SUFFIXES ON)
       ELSEIF(_PARAM STREQUAL "QUIET")
         SET(_IS_RELEASE OFF)
         SET(_IS_DEBUG OFF)
         SET(_IS_SUFFIXES OFF)
+        SET(_IS_DIR OFF)
         SET(${NAME}_FIND_QUIETLY ON)
       ELSEIF(_PARAM STREQUAL "VERBOSE")
+        SET(_IS_RELEASE OFF)
+        SET(_IS_DEBUG OFF)
+        SET(_IS_SUFFIXES OFF)
+        SET(_IS_DIR OFF)
         SET(_IS_VERBOSE ON)
       ELSEIF(_PARAM STREQUAL "REQUIRED")
         SET(_IS_RELEASE OFF)
         SET(_IS_DEBUG OFF)
         SET(_IS_SUFFIXES OFF)
+        SET(_IS_DIR OFF)
         SET(${NAME}_FIND_REQUIRED ON)
+      ELSEIF(_PARAM STREQUAL "DIR")
+        SET(_IS_RELEASE OFF)
+        SET(_IS_DEBUG OFF)
+        SET(_IS_SUFFIXES OFF)
+        SET(_IS_DIR ON)
       ELSE()
         IF(_IS_RELEASE)
           LIST(APPEND _RELEASE_LIBRARIES ${_PARAM})
@@ -2244,6 +2269,8 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
           LIST(APPEND _DEBUG_LIBRARIES ${_PARAM})
         ELSEIF(_IS_SUFFIXES)
           LIST(APPEND _SUFFIXES ${_PARAM})
+        ELSEIF(_IS_DIR)
+          LIST(APPEND _BASE_DIRECTORIES ${_PARAM})
         ELSE()
           MESSAGE(STATUS "parameter ${_PARAM} with no prefix")
         ENDIF()
@@ -2301,6 +2328,19 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
     IF(_IS_VERBOSE)
       MESSAGE(STATUS "Using ${_UPNAME_FIXED}_DIR as root directory ${_TMP}")
     ENDIF()
+  ENDIF()
+
+  IF(_BASE_DIRECTORIES)
+    FOREACH(_DIR ${_BASE_DIRECTORIES})
+      IF(_DIR)
+        LIST(APPEND _INCLUDE_PATHS ${_DIR}/include ${_DIR})
+        LIST(APPEND _LIBRARY_PATHS ${_DIR}/lib${LIB_SUFFIX})
+
+        IF(_IS_VERBOSE)
+          MESSAGE(STATUS "Using ${_DIR} as root directory")
+        ENDIF()
+      ENDIF()
+    ENDFOREACH()
   ENDIF()
 
   IF(UNIX)
@@ -2382,11 +2422,6 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
       /usr/freeware/lib${LIB_SUFFIX})
   ENDIF()
 
-  IF(WITH_STLPORT)
-    LIST(APPEND _RELEASE_LIBRARIES ${_LOWNAME}_stlport ${_LOWNAME_FIXED}_stlport ${NAME}_stlport ${_NAME_FIXED}_stlport)
-    LIST(APPEND _DEBUG_LIBRARIES ${_LOWNAME}_stlportd ${_LOWNAME_FIXED}_stlportd ${NAME}_stlportd ${_NAME_FIXED}_stlportd)
-  ENDIF()
-
   LIST(APPEND _RELEASE_LIBRARIES ${_LOWNAME} ${_LOWNAME_FIXED} ${NAME} ${_NAME_FIXED})
   LIST(APPEND _DEBUG_LIBRARIES ${_LOWNAME}d ${_LOWNAME_FIXED}d ${NAME}d ${_NAME_FIXED}d)
 
@@ -2421,7 +2456,7 @@ MACRO(FIND_PACKAGE_HELPER NAME INCLUDE)
     IF(${_UPNAME_FIXED}_LIBRARY_RELEASE)
       MESSAGE(STATUS "${NAME} release library found: ${${_UPNAME_FIXED}_LIBRARY_RELEASE}")
     ELSE()
-      MESSAGE(STATUS "${NAME} release library not found")
+      MESSAGE(STATUS "${NAME} release library not found in ${_LIBRARY_PATHS};${_UNIX_LIBRARY_PATHS}")
     ENDIF()
   ENDIF()
 
@@ -2487,4 +2522,225 @@ ENDMACRO()
 
 MACRO(MESSAGE_VERSION_PACKAGE_HELPER NAME VERSION)
   MESSAGE(STATUS "Found ${NAME} ${VERSION}: ${ARGN}")
+ENDMACRO()
+
+MACRO(FIND_LIBRARY_HELPER NAME)
+  # Looks for libraries.
+  #
+  # NAME is the name of the library, lowercase and uppercase can be mixed
+  #
+  # Following parameters are optional variables and must be prefixed by:
+  #
+  # RELEASE is the list of libraries to check in release mode
+  # DEBUG is the list of libraries to check in debug mode
+  # VERBOSE display more details if not found
+  # REQUIRED throw an error if not found
+  # DIR is the base directory where to look for
+  #
+  # The first match will be used in the specified order and next matches will be ignored
+  #
+  # The following values are defined
+  # NAME_LIBRARIES   - link against these to use NAME
+
+  SET(_PARAMS ${ARGN})
+
+  SET(_RELEASE_LIBRARIES)
+  SET(_DEBUG_LIBRARIES)
+  SET(_BASE_DIRECTORIES)
+
+  SET(_IS_RELEASE OFF)
+  SET(_IS_DEBUG OFF)
+  SET(_IS_VERBOSE OFF)
+  SET(_IS_DIR OFF)
+
+  IF(_PARAMS)
+    FOREACH(_PARAM ${_PARAMS})
+      IF(_PARAM STREQUAL "RELEASE")
+        SET(_IS_RELEASE ON)
+        SET(_IS_DEBUG OFF)
+        SET(_IS_DIR OFF)
+      ELSEIF(_PARAM STREQUAL "DEBUG")
+        SET(_IS_RELEASE OFF)
+        SET(_IS_DEBUG ON)
+        SET(_IS_DIR OFF)
+      ELSEIF(_PARAM STREQUAL "VERBOSE")
+        SET(_IS_RELEASE OFF)
+        SET(_IS_DEBUG OFF)
+        SET(_IS_DIR OFF)
+        SET(_IS_VERBOSE ON)
+      ELSEIF(_PARAM STREQUAL "REQUIRED")
+        SET(_IS_RELEASE OFF)
+        SET(_IS_DEBUG OFF)
+        SET(_IS_DIR OFF)
+        SET(${NAME}_FIND_REQUIRED ON)
+      ELSEIF(_PARAM STREQUAL "DIR")
+        SET(_IS_RELEASE OFF)
+        SET(_IS_DEBUG OFF)
+        SET(_IS_DIR ON)
+      ELSE()
+        IF(_IS_RELEASE)
+          LIST(APPEND _RELEASE_LIBRARIES ${_PARAM})
+        ELSEIF(_IS_DEBUG)
+          LIST(APPEND _DEBUG_LIBRARIES ${_PARAM})
+        ELSEIF(_IS_DIR)
+          LIST(APPEND _BASE_DIRECTORIES ${_PARAM})
+        ELSE()
+          MESSAGE(STATUS "parameter ${_PARAM} with no prefix")
+        ENDIF()
+      ENDIF()
+    ENDFOREACH()
+  ENDIF()
+
+  # Fixes names if invalid characters are found
+  IF("${NAME}" MATCHES "^[a-zA-Z0-9]+$")
+    SET(_NAME_FIXED ${NAME})
+  ELSE()
+    # if invalid characters are detected, replace them by valid ones
+    STRING(REPLACE "+" "p" _NAME_FIXED ${NAME})
+  ENDIF()
+
+  # Create uppercase and lowercase versions of NAME
+  STRING(TOUPPER ${NAME} _UPNAME)
+  STRING(TOLOWER ${NAME} _LOWNAME)
+
+  STRING(TOUPPER ${_NAME_FIXED} _UPNAME_FIXED)
+  STRING(TOLOWER ${_NAME_FIXED} _LOWNAME_FIXED)
+
+  SET(_LIBRARY_PATHS)
+
+  # Check for root directories passed to CMake with -DXXX_DIR=...
+  IF(DEFINED ${_UPNAME_FIXED}_DIR)
+    SET(_TMP ${${_UPNAME_FIXED}_DIR})
+    GET_FILENAME_COMPONENT(_TMP ${_TMP} ABSOLUTE)
+    LIST(APPEND _LIBRARY_PATHS ${_TMP}/lib${LIB_SUFFIX})
+
+    IF(_IS_VERBOSE)
+      MESSAGE(STATUS "Using ${_UPNAME_FIXED}_DIR as root directory ${_TMP}")
+    ENDIF()
+  ENDIF()
+
+  IF(DEFINED ${_UPNAME}_DIR)
+    SET(_TMP ${${_UPNAME}_DIR})
+    LIST(APPEND _LIBRARY_PATHS ${_TMP}/lib${LIB_SUFFIX})
+
+    IF(_IS_VERBOSE)
+      MESSAGE(STATUS "Using ${_UPNAME_FIXED}_DIR as root directory ${_TMP}")
+    ENDIF()
+  ENDIF()
+
+  IF(_BASE_DIRECTORIES)
+    FOREACH(_DIR ${_BASE_DIRECTORIES})
+      IF(_DIR)
+        LIST(APPEND _LIBRARY_PATHS ${_DIR}/lib${LIB_SUFFIX})
+
+        IF(_IS_VERBOSE)
+          MESSAGE(STATUS "Using ${_DIR} as root directory")
+        ENDIF()
+      ENDIF()
+    ENDFOREACH()
+  ENDIF()
+
+  # Append environment variables XXX_DIR
+  LIST(APPEND _LIBRARY_PATHS
+    $ENV{${_UPNAME}_DIR}/lib${LIB_SUFFIX}
+    $ENV{${_UPNAME_FIXED}_DIR}/lib${LIB_SUFFIX})
+
+  IF(UNIX)
+    SET(_UNIX_LIBRARY_PATHS)
+
+    # Append multiarch libraries paths
+    IF(CMAKE_LIBRARY_ARCHITECTURE)
+      LIST(APPEND _UNIX_LIBRARY_PATHS
+        /usr/local/lib/${CMAKE_LIBRARY_ARCHITECTURE}
+        /lib/${CMAKE_LIBRARY_ARCHITECTURE}
+        /usr/lib/${CMAKE_LIBRARY_ARCHITECTURE})
+    ENDIF()
+
+    # Append UNIX standard libraries paths
+    LIST(APPEND _UNIX_LIBRARY_PATHS
+      /usr/local/lib
+      /usr/lib
+      /lib
+      /usr/local/X11R6/lib
+      /usr/X11R6/lib
+      /sw/lib
+      /opt/local/lib
+      /opt/csw/lib
+      /opt/lib
+      /usr/freeware/lib${LIB_SUFFIX})
+  ENDIF()
+
+  LIST(APPEND _RELEASE_LIBRARIES ${_LOWNAME} ${_LOWNAME_FIXED} ${NAME} ${_NAME_FIXED})
+  LIST(APPEND _DEBUG_LIBRARIES ${_LOWNAME}d ${_LOWNAME_FIXED}d ${NAME}d ${_NAME_FIXED}d)
+
+  # Under Windows, some libs may need the lib prefix
+  IF(WIN32)
+    SET(_LIBS ${_RELEASE_LIBRARIES})
+    FOREACH(_LIB ${_LIBS})
+      LIST(APPEND _RELEASE_LIBRARIES lib${_LIB})
+    ENDFOREACH()
+
+    SET(_LIBS ${_DEBUG_LIBRARIES})
+    FOREACH(_LIB ${_LIBS})
+      LIST(APPEND _DEBUG_LIBRARIES lib${_LIB})
+    ENDFOREACH()
+  ENDIF()
+
+  LIST(REMOVE_DUPLICATES _RELEASE_LIBRARIES)
+  LIST(REMOVE_DUPLICATES _DEBUG_LIBRARIES)
+
+  # Search for release library
+  FIND_LIBRARY(${_UPNAME_FIXED}_LIBRARY_RELEASE
+    NAMES
+    ${_RELEASE_LIBRARIES}
+    HINTS ${PKG_${_NAME_FIXED}_LIBRARY_DIRS}
+    PATHS
+    ${_LIBRARY_PATHS}
+    ${_UNIX_LIBRARY_PATHS}
+    NO_CMAKE_SYSTEM_PATH
+  )
+
+  IF(_IS_VERBOSE)
+    IF(${_UPNAME_FIXED}_LIBRARY_RELEASE)
+      MESSAGE(STATUS "${NAME} release library found: ${${_UPNAME_FIXED}_LIBRARY_RELEASE}")
+    ELSE()
+      MESSAGE(STATUS "${NAME} release library not found in ${_LIBRARY_PATHS};${_UNIX_LIBRARY_PATHS}")
+    ENDIF()
+  ENDIF()
+
+  # Search for debug library
+  FIND_LIBRARY(${_UPNAME_FIXED}_LIBRARY_DEBUG
+    NAMES
+    ${_DEBUG_LIBRARIES}
+    HINTS ${PKG_${_NAME_FIXED}_LIBRARY_DIRS}
+    PATHS
+    ${_LIBRARY_PATHS}
+    ${_UNIX_LIBRARY_PATHS}
+    NO_CMAKE_SYSTEM_PATH
+  )
+
+  IF(_IS_VERBOSE)
+    IF(${_UPNAME_FIXED}_LIBRARY_DEBUG)
+      MESSAGE(STATUS "${NAME} debug library found: ${${_UPNAME_FIXED}_LIBRARY_DEBUG}")
+    ELSE()
+      MESSAGE(STATUS "${NAME} debug library not found")
+    ENDIF()
+  ENDIF()
+
+  # Library has been found if at least only one library and include are found
+  IF(${_UPNAME_FIXED}_LIBRARY_RELEASE AND ${_UPNAME_FIXED}_LIBRARY_DEBUG)
+    # Release and debug libraries found
+    SET(${_UPNAME_FIXED}_LIBRARIES optimized ${${_UPNAME_FIXED}_LIBRARY_RELEASE} debug ${${_UPNAME_FIXED}_LIBRARY_DEBUG})
+    SET(${_UPNAME_FIXED}_LIBRARY ${${_UPNAME_FIXED}_LIBRARY_RELEASE})
+  ELSEIF(${_UPNAME_FIXED}_LIBRARY_RELEASE)
+    # Release library found
+    SET(${_UPNAME_FIXED}_LIBRARIES ${${_UPNAME_FIXED}_LIBRARY_RELEASE})
+    SET(${_UPNAME_FIXED}_LIBRARY ${${_UPNAME_FIXED}_LIBRARY_RELEASE})
+  ELSEIF(${_UPNAME_FIXED}_LIBRARY_DEBUG)
+    # Debug library found
+    SET(${_UPNAME_FIXED}_LIBRARIES ${${_UPNAME_FIXED}_LIBRARY_DEBUG})
+    SET(${_UPNAME_FIXED}_LIBRARY ${${_UPNAME_FIXED}_LIBRARY_DEBUG})
+  ENDIF()
+
+  MARK_AS_ADVANCED(${_UPNAME_FIXED}_LIBRARY_RELEASE ${_UPNAME_FIXED}_LIBRARY_DEBUG)
 ENDMACRO()
