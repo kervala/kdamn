@@ -61,13 +61,6 @@ IF(NOT EXTERNAL_PATH)
   SET(EXTERNAL_TEMP_PATH ${CMAKE_CURRENT_SOURCE_DIR}/external ${CMAKE_CURRENT_SOURCE_DIR}/../external ${CMAKE_CURRENT_SOURCE_DIR}/3rdParty ${CMAKE_CURRENT_SOURCE_DIR}/../3rdParty)
   SET(EXTERNAL_TEMP_FILE "include/zlib.h")
 
-  # If using STLport preprend external_stlport
-  IF(WITH_STLPORT)
-    SET(EXTERNAL_TEMP_PATH ${CMAKE_CURRENT_SOURCE_DIR}/external_stlport ${CMAKE_CURRENT_SOURCE_DIR}/../external_stlport ${EXTERNAL_TEMP_PATH})
-    SET(EXTERNAL_TEMP_FILE "include/stlport/string")
-    SET(EXTERNAL_NAME "external with STLport")
-  ENDIF()
-
   FIND_PATH(EXTERNAL_PATH
     HINTS
     ${EXTERNAL_TEMP_FILE}
