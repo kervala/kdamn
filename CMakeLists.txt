@@ -33,9 +33,7 @@ IF(POLICY CMP0025)
   CMAKE_POLICY(SET CMP0025 NEW)
 ENDIF()
 
-# Include our generic module with all macros
-SET(CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
-INCLUDE(common)
+INCLUDE(UseCMakeModules.cmake)
 
 # Define useful variables
 SET(VERSION_MAJOR 1)
