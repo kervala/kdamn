@@ -173,9 +173,13 @@ bool DAmn::downloadImage(DAmnImage &image, int delay)
 	++image.retries;
 
 	QByteArray ext;
-	int pos = image.remoteUrl.lastIndexOf('.');
+	int pos = image.remoteUrl.lastIndexOf(QRegExp("\\.(jpg|jpeg|jpe|gif|png|bmp|mng)"));
 
-	if (pos == -1) return false;
+	if (pos == -1)
+	{
+		qDebug() << "No image extension found in URL" << image.remoteUrl;
+		return false;
+	}
 
 	QRegExp reg(GetSupportedImageFormatsFilter());
 
