@@ -20,6 +20,8 @@
 #ifndef SYSTRAYICON_H
 #define SYSTRAYICON_H
 
+#include <QtWidgets/QtWidgets>
+
 class SystrayIcon : public QObject
 {
 	Q_OBJECT

@@ -20,6 +20,8 @@
 #ifndef COOKIES_H
 #define COOKIES_H
 
+#include <QtNetwork/QtNetwork>
+
 class Cookies : public QNetworkCookieJar
 {
 	Q_OBJECT
