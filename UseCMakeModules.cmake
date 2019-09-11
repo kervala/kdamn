@@ -1,12 +1,16 @@
 # Look in local CMakeModules, specified variable CMAKE_MODULE_PATH or environment variable CMAKE_MODULE_PATH
 SET(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/CMakeModules ${CMAKE_MODULE_PATH} $ENV{CMAKE_MODULE_PATH})
 
-IF(EXISTS ${CMAKE_SOURCE_DIR}/CMakeModules/.hg/hgrc)
-  # Don't try to include common.cmake because it could have been remotely modified
-  SET(REMOTE_CMAKE_MODULES_FOUND ON)
-ELSE()
-  SET(REMOTE_CMAKE_MODULES_FOUND OFF)
+SET(REMOTE_CMAKE_MODULES_FOUND OFF)
 
+FOREACH(PATH ${CMAKE_MODULE_PATH})
+  IF(EXISTS ${PATH}/.hg/hgrc)
+    SET(REMOTE_CMAKE_MODULES_FOUND ON)
+  ENDIF()
+ENDFOREACH()
+
+# Don't try to include common.cmake because it could have been remotely modified
+IF(NOT _FOUND)
   # Try to include common.cmake
   INCLUDE(common OPTIONAL)
 ENDIF()
