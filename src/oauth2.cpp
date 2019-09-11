@@ -68,7 +68,7 @@ void OAuth2::clear()
 	m_filesToUpload.clear();
 
 	// session
-	m_sessionId.clear();
+	m_csrfToken.clear();
 	m_validateToken.clear();
 	m_validateKey.clear();
 }
@@ -148,7 +148,7 @@ void OAuth2::emitErrorReceived(const QString &error)
 	emit errorReceived(error);
 }
 
-bool OAuth2::authorizeApplication(const QString &validateKey, const QString &validateToken, bool authorize)
+bool OAuth2::authorizeApplication(bool authorize)
 {
 #ifdef USE_QT5
 	QUrlQuery params;
@@ -156,20 +156,16 @@ bool OAuth2::authorizeApplication(const QString &validateKey, const QString &val
 	QUrl params;
 #endif
 
-	params.addQueryItem("client_id", QString::number(m_clientId));
-	params.addQueryItem("response_type", "code");
-	params.addQueryItem("redirect_uri", REDIRECT_APP);
-	params.addQueryItem("scope", "basic");
-	params.addQueryItem("state", "");
-	params.addQueryItem("authorized", authorize ? "1":"");
 	params.addQueryItem("terms_agree[]", "1");
 	params.addQueryItem("terms_agree[]", "0");
-	params.addQueryItem("validate_key", validateKey);
-
-	if (!validateToken.isEmpty())
-	{
-		params.addQueryItem("validate_token", validateToken);
-	}
+	params.addQueryItem("authorized", authorize ? "1" : "");
+	params.addQueryItem("state", "");
+	params.addQueryItem("scope", "basic");
+	params.addQueryItem("redirect_uri", REDIRECT_APP);
+	params.addQueryItem("response_type", "code");
+	params.addQueryItem("client_id", QString::number(m_clientId));
+	params.addQueryItem("validate_token", m_validateToken);
+	params.addQueryItem("validate_key", m_validateKey);
 
 	QByteArray data;
 
@@ -190,19 +186,12 @@ bool OAuth2::login()
 	QUrl params;
 #endif
 
-	params.addQueryItem("client_id", QString::number(m_clientId));
-	params.addQueryItem("response_type", "code");
-	params.addQueryItem("redirect_uri", REDIRECT_APP);
-	params.addQueryItem("scope", "basic");
-	params.addQueryItem("state", "");
-	params.addQueryItem("validate_token", m_validateToken);
-	params.addQueryItem("validate_key", m_validateKey);
-	params.addQueryItem("subdomain", "www");
-	params.addQueryItem("referrer", getAuthorizationUrl());
-	params.addQueryItem("oauth2", "1");
-	params.addQueryItem("challenge", "");
+	params.addQueryItem("referer", getAuthorizationUrl());
+	params.addQueryItem("csrf_token", m_csrfToken);
+	params.addQueryItem("challenge", "0");
 	params.addQueryItem("username", m_login);
 	params.addQueryItem("password", m_password);
+	params.addQueryItem("remember", "on");
 
 	QByteArray data;
 
@@ -226,7 +215,7 @@ bool OAuth2::logout(bool reconnect)
 		return false;
 	}
 
-	if (m_sessionId.isEmpty() || m_validateToken.isEmpty() || m_validateKey.isEmpty())
+	if (m_csrfToken.isEmpty() || m_validateToken.isEmpty() || m_validateKey.isEmpty())
 	{
 		m_reconnectAfterLogout = reconnect;
 
@@ -241,7 +230,7 @@ bool OAuth2::logout(bool reconnect)
 	QUrl params;
 #endif
 
-	params.addQueryItem("sessionid", m_sessionId);
+//	params.addQueryItem("sessionid", m_sessionId);
 	params.addQueryItem("validate_token", m_validateToken);
 	params.addQueryItem("validate_key", m_validateKey);
 
@@ -497,38 +486,40 @@ void OAuth2::redirect(const QString &url, const QString &referer, const QString 
 
 void OAuth2::processNextAction()
 {
-	if (!m_actions.isEmpty())
+	// need to be logged
+	if (!m_logged || m_actions.isEmpty()) return;
+
+	eOAuth2Action action = m_actions.front();
+
+	m_actions.pop_front();
+
+	qDebug() << "processNextAction" << action;
+
+	switch(action)
 	{
-		eOAuth2Action action = m_actions.front();
+		case ActionCheckNotes:
+		requestMessageCenterGetViews();
+		break;
 
-		m_actions.pop_front();
+		case ActionRequestAuthorization:
+		// login successful, authorize the application now
+		requestAuthorization();
+		break;
 
-		switch(action)
-		{
-			case ActionCheckNotes:
-			requestMessageCenterGetViews();
-			break;
+		case ActionLogout:
+		logout(m_reconnectAfterLogout);
+		break;
 
-			case ActionRequestAuthorization:
-			// login successful, authorize the application now
-			requestAuthorization();
-			break;
+		case ActionRequestDAmnToken:
+		requestDAmnToken();
+		break;
 
-			case ActionLogout:
-			logout(m_reconnectAfterLogout);
-			break;
+		case ActionRequestPlacebo:
+		requestPlacebo();
+		break;
 
-			case ActionRequestDAmnToken:
-			requestDAmnToken();
-			break;
-
-			case ActionRequestPlacebo:
-			requestPlacebo();
-			break;
-
-			default:
-			break;
-		}
+		default:
+		break;
 	}
 }
 
@@ -575,11 +566,11 @@ bool OAuth2::parseSessionVariables(const QByteArray &content)
 {
 	QRegExp reg;
 
-	reg.setPattern("data-sessionid=\"([0-9a-f]{32})\"");
+	reg.setPattern("name=\"csrf_token\" value=\"([0-9a-zA-Z._-]{67})\"");
 
 	if (reg.indexIn(content) > -1)
 	{
-		m_sessionId = reg.cap(1);
+		m_csrfToken = reg.cap(1);
 	}
 
 	reg.setPattern("name=\"validate_token\" value=\"([0-9a-f]{20})\"");
@@ -597,8 +588,6 @@ bool OAuth2::parseSessionVariables(const QByteArray &content)
 	}
 
 	if (!m_validateKey.isEmpty() && !m_validateToken.isEmpty()) return true;
-
-	emit errorReceived(tr("Unable to find validate token or key"));
 
 	return false;
 }
@@ -638,7 +627,7 @@ void OAuth2::processContent(const QByteArray &content, const QString &url, const
 			processJson(content, urlTemp.path(), filename);
 		}
 	}
-	if (url.startsWith(JOIN_URL) /* && redirection.startsWith(JOIN_URL) AUTHORIZE_URL */)
+	else if (url.startsWith(JOIN_URL))
 	{
 		parseSessionVariables(content);
 
@@ -660,45 +649,26 @@ void OAuth2::processContent(const QByteArray &content, const QString &url, const
 	}
 	else if (url.indexOf("/applications") > -1 && url.indexOf(QString("client_id=%1").arg(m_clientId)) > -1)
 	{
-		QRegExp reg("name=\"validate_key\" value=\"([0-9]+)\"");
-
-		if (reg.indexIn(content) > -1)
+		if (parseSessionVariables(content))
 		{
-			QString validateKey = reg.cap(1);
-
 			// TODO: ask authorization to user
-			authorizeApplication(validateKey, "", true);
+			authorizeApplication(true);
 		}
 		else
 		{
-			emit errorReceived(tr("Unable to find validate_key"));
+			emit errorReceived(tr("Unable to find validate_token or validate_key"));
 		}
 	}
 	else if (url.indexOf("/authorize_app") > -1)
 	{
-		QRegExp reg("name=\"validate_key\" value=\"([0-9]+)\"");
-
-		if (reg.indexIn(content) > -1)
+		if (parseSessionVariables(content))
 		{
-			QString validateKey = reg.cap(1);
-
-			reg.setPattern("name=\"validate_token\" value=\"([0-9a-f]+)\"");
-
-			if (reg.indexIn(content) > -1)
-			{
-				QString validateToken = reg.cap(1);
-
-				// TODO: ask authorization to user
-				authorizeApplication(validateKey, validateToken, true);
-			}
-			else
-			{
-				emit errorReceived(tr("Unable to find validate_token"));
-			}
+			// TODO: ask authorization to user
+			authorizeApplication(true);
 		}
 		else
 		{
-			emit errorReceived(tr("Unable to find validate_key"));
+			emit errorReceived(tr("Unable to find validate_token or validate_key"));
 		}
 	}
 	else if (url == NOTES_URL)
@@ -741,21 +711,20 @@ void OAuth2::processUrlChanges(const QByteArray &content, const QString &url)
 
 void OAuth2::processRedirection(const QString &redirection, const QString &url, const QString &filename)
 {
-	if (url.startsWith(OAUTH2LOGIN_URL) && redirection.startsWith(AUTHORIZE_URL))
-	{
-		m_logged = true;
-
-		emit loggedIn();
-
-		requestAuthorization();
-	}
-	else if (redirection.startsWith(REDIRECT_APP))
+	if (redirection.startsWith(REDIRECT_APP))
 	{
 #ifdef USE_QT5
 		QUrlQuery query(QUrl(redirection).query());
 
 		if (query.hasQueryItem("code"))
 		{
+			m_logged = true;
+
+			emit loggedIn();
+
+			// for later
+			requestDAmnToken();
+
 			requestAccessToken(query.queryItemValue("code"));
 		}
 		else if (query.hasQueryItem("error"))

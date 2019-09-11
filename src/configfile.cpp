@@ -125,7 +125,6 @@ bool ConfigFile::loadVersion1()
 	m_login = m_settings.value("login").toString();
 	m_password = m_settings.value("password").toString();
 	m_rememberPassword = m_settings.value("remember_password", true).toBool();
-	m_damnToken = m_settings.value("authtoken").toString();
 
 	// load rooms
 	m_settings.beginGroup("channels");
@@ -155,9 +154,6 @@ bool ConfigFile::loadVersion2()
 	m_login = m_settings.value("login").toString();
 	m_password = m_settings.value("password").toString();
 	m_rememberPassword = m_settings.value("remember_password", true).toBool();
-	m_damnToken = m_settings.value("damntoken").toString();
-	m_accessToken = m_settings.value("accesstoken").toString();
-	m_refreshToken = m_settings.value("refreshtoken").toString();
 
 	m_settings.endGroup();
 
@@ -253,9 +249,6 @@ bool ConfigFile::save()
 	m_settings.setValue("login", m_login);
 	m_settings.setValue("password", m_password);
 	m_settings.setValue("remember_password", m_rememberPassword);
-	m_settings.setValue("damntoken", m_damnToken);
-	m_settings.setValue("accesstoken", m_accessToken);
-	m_settings.setValue("refreshtoken", m_refreshToken);
 
 	m_settings.endGroup();
 
@@ -609,9 +602,6 @@ void ConfigFile::modified(bool modified)
 IMPLEMENT_QSTRING_VAR(Login, login);
 IMPLEMENT_QSTRING_VAR(Password, password);
 IMPLEMENT_BOOL_VAR(RememberPassword, rememberPassword);
-IMPLEMENT_QSTRING_VAR(DAmnToken, damnToken);
-IMPLEMENT_QSTRING_VAR(AccessToken, accessToken);
-IMPLEMENT_QSTRING_VAR(RefreshToken, refreshToken);
 IMPLEMENT_INT_VAR(AnimationFrameDelay, animationFrameDelay);
 IMPLEMENT_INT_VAR(AutoSaveDelay, autoSaveDelay);
 IMPLEMENT_INT_VAR(CheckMessagesDelay, checkMessagesDelay);

@@ -49,8 +49,5 @@ void ConnectDialog::accept()
 	ConfigFile::getInstance()->setPassword(remember ? password:"");
 	ConfigFile::getInstance()->setRememberPassword(remember);
 
-	// reset all tokens
-	ConfigFile::getInstance()->setDAmnToken("");
-
 	QDialog::accept();
 }

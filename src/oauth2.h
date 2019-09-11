@@ -27,7 +27,7 @@
 #define HTTPS_URL "https://" BASE_URL
 #define HTTP_URL "http://" BASE_URL
 #define LOGIN_URL HTTPS_URL "/users/login"
-#define OAUTH2LOGIN_URL HTTPS_URL "/join/oauth2login"
+#define OAUTH2LOGIN_URL HTTPS_URL "/_sisu/do/signin"
 #define LOGOUT_URL HTTPS_URL "/settings/force-logout"
 #define ROCKEDOUT_URL HTTPS_URL "/users/rockedout"
 #define NOTES_URL HTTPS_URL "/messages/notes/#1_0"
@@ -101,7 +101,6 @@ public:
 	void setPassword(const QString &password) { m_password = password; }
 	void setDAmnToken(const QString &token) { m_damnToken = token; }
 
-	bool login();
 	bool logout(bool reconnect);
 	bool requestAuthorization();
 	bool uploadToStash(const QStringList &filenames, const QString &room);
@@ -187,11 +186,12 @@ public slots:
 
 private:
 	// OAuth2 steps
+	bool login();
 	bool requestAccessToken(const QString &code = "");
 	bool requestPlacebo();
 	bool requestUserInfo();
 	bool requestStash(const QString &filename, const QString &room);
-	bool authorizeApplication(const QString &validateKey, const QString &validateToken, bool authorize);
+	bool authorizeApplication(bool authorize);
 
 	bool hasAccessTokenExpired() const;
 	bool mustUpdateAccessToken() const;
@@ -260,7 +260,7 @@ private:
 	bool m_reconnectAfterLogout;
 
 	// session variables
-	QString m_sessionId;
+	QString m_csrfToken;
 	QString m_validateToken;
 	QString m_validateKey;
 

@@ -298,7 +298,6 @@ void RoomsTabWidget::onRequestDAmnToken()
 	QString password = ConfigFile::getInstance()->getPassword();
 
 	// delete previous dAmn token because invalid
-	ConfigFile::getInstance()->setDAmnToken("");
 	OAuth2::getInstance()->setDAmnToken("");
 	DAmn::getInstance()->setToken("");
 
@@ -326,7 +325,6 @@ void RoomsTabWidget::onReceiveFolders()
 void RoomsTabWidget::onReceiveDAmnToken(const QString &login, const QString &authtoken)
 {
 	ConfigFile::getInstance()->setLogin(login);
-	ConfigFile::getInstance()->setDAmnToken(authtoken);
 
 	DAmn::getInstance()->setLogin(login);
 	DAmn::getInstance()->setToken(authtoken);
@@ -752,23 +750,13 @@ void RoomsTabWidget::login()
 {
 	QString log = ConfigFile::getInstance()->getLogin();
 	QString password = ConfigFile::getInstance()->getPassword();
-	QString damnToken = ConfigFile::getInstance()->getDAmnToken();
 
 	OAuth2::getInstance()->setLogin(log);
 	OAuth2::getInstance()->setPassword(password);
-	OAuth2::getInstance()->setDAmnToken(damnToken);
 
 	DAmn::getInstance()->setLogin(log);
-	DAmn::getInstance()->setToken(damnToken);
 
-	if (!DAmn::getInstance()->isConnected() && !DAmn::getInstance()->connectToServer())
-	{
-		OAuth2::getInstance()->requestDAmnToken();
-	}
-	else
-	{
-		OAuth2::getInstance()->login();
-	}
+	OAuth2::getInstance()->requestAuthorization();
 }
 
 void RoomsTabWidget::updateConfig()

@@ -111,9 +111,6 @@ public:
 DECLARE_QSTRING_VAR(Login, login);
 DECLARE_QSTRING_VAR(Password, password);
 DECLARE_BOOL_VAR(RememberPassword, rememberPassword);
-DECLARE_QSTRING_VAR(DAmnToken, damnToken);
-DECLARE_QSTRING_VAR(AccessToken, accessToken);
-DECLARE_QSTRING_VAR(RefreshToken, refreshToken);
 DECLARE_INT_VAR(AnimationFrameDelay, animationFrameDelay);
 DECLARE_INT_VAR(AutoSaveDelay, autoSaveDelay);
 DECLARE_INT_VAR(CheckMessagesDelay, checkMessagesDelay);

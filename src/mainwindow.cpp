@@ -398,18 +398,13 @@ void MainWindow::autoConnect()
 {
 	QString login = ConfigFile::getInstance()->getLogin();
 	QString password = ConfigFile::getInstance()->getPassword();
-	QString damnToken = ConfigFile::getInstance()->getDAmnToken();
 
 	OAuth2::getInstance()->setLogin(login);
 	OAuth2::getInstance()->setPassword(password);
-	OAuth2::getInstance()->setDAmnToken(damnToken);
 
-	if (!login.isEmpty() && !damnToken.isEmpty())
+	if (!login.isEmpty() && !password.isEmpty())
 	{
-		DAmn::getInstance()->setLogin(login);
-		DAmn::getInstance()->setToken(damnToken);
-
-		DAmn::getInstance()->connectToServer();
+		OAuth2::getInstance()->requestAuthorization();
 	}
 	else
 	{

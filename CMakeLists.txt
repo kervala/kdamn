@@ -37,7 +37,7 @@ INCLUDE(UseCMakeModules.cmake)
 
 # Define useful variables
 SET(VERSION_MAJOR 1)
-SET(VERSION_MINOR 4)
+SET(VERSION_MINOR 5)
 SET(VERSION_PATCH "REVISION")
 SET(AUTHOR "Kervala")
 SET(PRODUCT "kdAmn")

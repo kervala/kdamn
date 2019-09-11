@@ -60,7 +60,10 @@ bool OAuth2::mustUpdateAccessToken() const
 
 bool OAuth2::requestAuthorization()
 {
-	return get(getAuthorizationUrl(), OAUTH2LOGIN_URL);
+	// don't need to request again if already logged
+	if (m_logged) return true;
+
+	return get(getAuthorizationUrl(), HTTPS_URL);
 }
 
 bool OAuth2::requestAccessToken(const QString &code)
@@ -111,7 +114,10 @@ bool OAuth2::requestDAmnToken()
 	{
 		m_actions.push_front(ActionRequestDAmnToken);
 
-		return requestAccessToken();
+		if (m_logged) return true;
+
+		// need to request authorization because we're not yet connected
+		return requestAuthorization();
 	}
 
 	return get(QString("%1/user/damntoken?access_token=%2").arg(OAUTH2_URL).arg(m_accessToken));
