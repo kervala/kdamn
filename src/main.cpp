@@ -58,7 +58,7 @@
 int main(int argc, char *argv[])
 {
 #if defined(_MSC_VER) && defined(_DEBUG)
-	_CrtSetDbgFlag (_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
 	QApplication app(argc, argv);
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 	QApplication::setApplicationVersion(VERSION);
 	QApplication::setWindowIcon(QIcon(":/icons/icon.svg"));
 
-	ConfigFile *config = new ConfigFile();
+	ConfigFile* config = new ConfigFile();
 
 	QLocale locale = QLocale::system();
 
