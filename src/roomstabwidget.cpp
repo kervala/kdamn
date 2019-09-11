@@ -268,9 +268,6 @@ void RoomsTabWidget::onConnectServer()
 
 		++it;
 	}
-
-	// we need to log to DA site for OAuth2 and DiFi requests
-	OAuth2::getInstance()->requestAuthorization();
 }
 
 void RoomsTabWidget::onDisconnectServer(bool reconnect)
