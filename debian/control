@@ -2,13 +2,13 @@ Source: kdamn
 Priority: optional
 Maintainer: Cédric OCHS <kervala@gmail.com>
 Build-Depends: debhelper (>= 9), cmake (>= 2.8), pkg-config,
- qtbase5-dev | libqt4-dev, qttools5-dev-tools | qt4-dev-tools,
- libqt5svg5-dev | libqt4-dev, qttools5-dev | qt4-dev-tools,
- qtmultimedia5-dev | libqt4-dev, libxmu-dev
+ qtbase5-dev, qttools5-dev-tools,
+ libqt5svg5-dev, qttools5-dev,
+ qtmultimedia5-dev, libxmu-dev
 Standards-Version: 3.9.3
 Section: net
 Bugs: http://dev.kervala.net/projects/kdamn/issues
-Homepage: http://dev.kervala.net/projects/kdamn
+Homepage: http://dev.kervala.net/projects/kdamn/
 
 Package: kdamn
 Section: net
