@@ -25,13 +25,12 @@
 // deviantART URLs
 #define BASE_URL "www.deviantart.com"
 #define HTTPS_URL "https://" BASE_URL
-#define HTTP_URL "http://" BASE_URL
-#define LOGIN_URL HTTPS_URL "/users/login"
-#define OAUTH2LOGIN_URL HTTPS_URL "/_sisu/do/signin"
+#define LOGIN_URL HTTPS_URL "/join/oauth2"
 #define LOGOUT_URL HTTPS_URL "/settings/force-logout"
+#define OAUTH2LOGIN_URL HTTPS_URL "/_sisu/do/signin"
 #define ROCKEDOUT_URL HTTPS_URL "/users/rockedout"
 #define NOTES_URL HTTPS_URL "/messages/notes/#1_0"
-#define SENDNOTE_URL HTTP_URL "/messages/notes/send"
+#define SENDNOTE_URL HTTPS_URL "/messages/notes/send"
 #define OAUTH2_URL HTTPS_URL "/api/v1/oauth2"
 #define OAUTH2_TOKEN_URL HTTPS_URL "/oauth2/token"
 #define DIFI_URL HTTPS_URL "/global/difi.php"
@@ -39,6 +38,7 @@
 #define AUTHORIZE_URL HTTPS_URL "/oauth2/authorize"
 #define JOIN_URL HTTPS_URL "/join/oauth2"
 #define SESSIONS_URL HTTPS_URL "/settings/sessions"
+#define APPLICATIONS_URL HTTPS_URL "/settings/applications"
 
 struct NoteForm
 {
@@ -83,13 +83,8 @@ public:
 
 	enum eOAuth2Action
 	{
-		ActionLoginOAuth2,
-		ActionLoginWeb,
-		ActionLogout,
-		ActionCheckNotes,
 		ActionRequestAccessToken,
 		ActionRequestDAmnToken,
-		ActionRequestAuthorization,
 		ActionRequestPlacebo
 	};
 
@@ -101,8 +96,8 @@ public:
 	void setPassword(const QString &password) { m_password = password; }
 	void setDAmnToken(const QString &token) { m_damnToken = token; }
 
+	bool login();
 	bool logout(bool reconnect);
-	bool requestAuthorization();
 	bool uploadToStash(const QStringList &filenames, const QString &room);
 	bool requestDAmnToken();
 
@@ -186,17 +181,20 @@ public slots:
 
 private:
 	// OAuth2 steps
-	bool login();
+	bool doLogout();
+	bool doLogin();
+	bool requestAuthorization();
+	bool authorizeApplication();
 	bool requestAccessToken(const QString &code = "");
 	bool requestPlacebo();
 	bool requestUserInfo();
 	bool requestStash(const QString &filename, const QString &room);
-	bool authorizeApplication(bool authorize);
 
 	bool hasAccessTokenExpired() const;
 	bool mustUpdateAccessToken() const;
 
 	// site process
+	QString getLoginUrl() const;
 	QString getAuthorizationUrl() const;
 
 	void addUserAgent(QNetworkRequest &req) const;
@@ -261,6 +259,7 @@ private:
 
 	// session variables
 	QString m_csrfToken;
+	QString m_sessionId;
 	QString m_validateToken;
 	QString m_validateKey;
 

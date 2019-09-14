@@ -404,7 +404,7 @@ void MainWindow::autoConnect()
 
 	if (!login.isEmpty() && !password.isEmpty())
 	{
-		OAuth2::getInstance()->requestAuthorization();
+		OAuth2::getInstance()->login();
 	}
 	else
 	{

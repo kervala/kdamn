@@ -41,6 +41,11 @@ bool OAuth2::uploadToStash(const QStringList &filenames, const QString &room)
 	return m_filesToUpload.size() > 0 && requestPlacebo();
 }
 
+QString OAuth2::getLoginUrl() const
+{
+	return QString("%1?response_type=code&client_id=%2&redirect_uri=%3&scope=basic").arg(LOGIN_URL).arg(m_clientId).arg(REDIRECT_APP);
+}
+
 QString OAuth2::getAuthorizationUrl() const
 {
 	return QString("%1?response_type=code&client_id=%2&redirect_uri=%3&scope=basic").arg(AUTHORIZE_URL).arg(m_clientId).arg(REDIRECT_APP);
@@ -58,14 +63,6 @@ bool OAuth2::mustUpdateAccessToken() const
 	return m_accessToken.isEmpty() || hasAccessTokenExpired();
 }
 
-bool OAuth2::requestAuthorization()
-{
-	// don't need to request again if already logged
-	if (m_logged) return true;
-
-	return get(getAuthorizationUrl(), HTTPS_URL);
-}
-
 bool OAuth2::requestAccessToken(const QString &code)
 {
 	QString query;
@@ -76,7 +73,7 @@ bool OAuth2::requestAccessToken(const QString &code)
 	}
 	else
 	{
-		if (m_refreshToken.isEmpty()) return requestAuthorization();
+		if (m_refreshToken.isEmpty()) return login();
 
 		m_accessToken.clear();
 
@@ -114,10 +111,7 @@ bool OAuth2::requestDAmnToken()
 	{
 		m_actions.push_front(ActionRequestDAmnToken);
 
-		if (m_logged) return true;
-
-		// need to request authorization because we're not yet connected
-		return requestAuthorization();
+		return true;
 	}
 
 	return get(QString("%1/user/damntoken?access_token=%2").arg(OAUTH2_URL).arg(m_accessToken));
@@ -313,7 +307,8 @@ void OAuth2::processJson(const QByteArray &content, const QString &path, const Q
 			// clear cookies
 			qobject_cast<Cookies*>(m_manager->cookieJar())->clear();
 
-			requestAuthorization();
+			// relogin
+			login();
 		}
 	}
 	else if (path.endsWith("/stash/submit"))

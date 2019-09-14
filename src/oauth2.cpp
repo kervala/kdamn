@@ -68,6 +68,7 @@ void OAuth2::clear()
 	m_filesToUpload.clear();
 
 	// session
+	m_sessionId.clear();
 	m_csrfToken.clear();
 	m_validateToken.clear();
 	m_validateKey.clear();
@@ -148,7 +149,15 @@ void OAuth2::emitErrorReceived(const QString &error)
 	emit errorReceived(error);
 }
 
-bool OAuth2::authorizeApplication(bool authorize)
+bool OAuth2::requestAuthorization()
+{
+	// don't need to request again if already logged
+	if (m_logged) return true;
+
+	return get(getAuthorizationUrl(), HTTPS_URL);
+}
+
+bool OAuth2::authorizeApplication()
 {
 #ifdef USE_QT5
 	QUrlQuery params;
@@ -158,7 +167,7 @@ bool OAuth2::authorizeApplication(bool authorize)
 
 	params.addQueryItem("terms_agree[]", "1");
 	params.addQueryItem("terms_agree[]", "0");
-	params.addQueryItem("authorized", authorize ? "1" : "");
+	params.addQueryItem("authorized", "1");
 	params.addQueryItem("state", "");
 	params.addQueryItem("scope", "basic");
 	params.addQueryItem("redirect_uri", REDIRECT_APP);
@@ -179,6 +188,14 @@ bool OAuth2::authorizeApplication(bool authorize)
 }
 
 bool OAuth2::login()
+{
+	// don't need to request again if already logged
+	if (m_logged) return true;
+
+	return get(getLoginUrl(), HTTPS_URL);
+}
+
+bool OAuth2::doLogin()
 {
 #ifdef USE_QT5
 	QUrlQuery params;
@@ -215,22 +232,20 @@ bool OAuth2::logout(bool reconnect)
 		return false;
 	}
 
-	if (m_csrfToken.isEmpty() || m_validateToken.isEmpty() || m_validateKey.isEmpty())
-	{
-		m_reconnectAfterLogout = reconnect;
+	m_reconnectAfterLogout = reconnect;
 
-		m_actions.push_front(ActionLogout);
+	return get(SESSIONS_URL);
+}
 
-		return get(SESSIONS_URL);
-	}
-
+bool OAuth2::doLogout()
+{
 #ifdef USE_QT5
 	QUrlQuery params;
 #else
 	QUrl params;
 #endif
 
-//	params.addQueryItem("sessionid", m_sessionId);
+	params.addQueryItem("sessionid", m_sessionId);
 	params.addQueryItem("validate_token", m_validateToken);
 	params.addQueryItem("validate_key", m_validateKey);
 
@@ -497,19 +512,6 @@ void OAuth2::processNextAction()
 
 	switch(action)
 	{
-		case ActionCheckNotes:
-		requestMessageCenterGetViews();
-		break;
-
-		case ActionRequestAuthorization:
-		// login successful, authorize the application now
-		requestAuthorization();
-		break;
-
-		case ActionLogout:
-		logout(m_reconnectAfterLogout);
-		break;
-
 		case ActionRequestDAmnToken:
 		requestDAmnToken();
 		break;
@@ -573,6 +575,13 @@ bool OAuth2::parseSessionVariables(const QByteArray &content)
 		m_csrfToken = reg.cap(1);
 	}
 
+	reg.setPattern("data-sessionid=\"([0-9a-f]{32})\"");
+
+	if (reg.indexIn(content) > -1)
+	{
+		m_sessionId = reg.cap(1);
+	}
+
 	reg.setPattern("name=\"validate_token\" value=\"([0-9a-f]{20})\"");
 
 	if (reg.indexIn(content) > -1)
@@ -587,9 +596,7 @@ bool OAuth2::parseSessionVariables(const QByteArray &content)
 		m_validateKey = reg.cap(1);
 	}
 
-	if (!m_validateKey.isEmpty() && !m_validateToken.isEmpty()) return true;
-
-	return false;
+	return (!m_validateKey.isEmpty() || !m_validateToken.isEmpty() || !m_sessionId.isEmpty() || !m_csrfToken.isEmpty());
 }
 
 void OAuth2::processContent(const QByteArray &content, const QString &url, const QString &filename)
@@ -629,10 +636,26 @@ void OAuth2::processContent(const QByteArray &content, const QString &url, const
 	}
 	else if (url.startsWith(JOIN_URL))
 	{
-		parseSessionVariables(content);
-
-		// fill OAuth2 login form
-		login();
+		if (parseSessionVariables(content))
+		{
+			// fill OAuth2 login form
+			doLogin();
+		}
+		else
+		{
+			emit errorReceived(tr("Unable to find csrf token"));
+		}
+	}
+	else if (url == SESSIONS_URL)
+	{
+		if (parseSessionVariables(content))
+		{
+			doLogout();
+		}
+		else
+		{
+			emit errorReceived(tr("Unable to find validate_token, validate_key or seessionid"));
+		}
 	}
 	else if (url.startsWith(OAUTH2LOGIN_URL))
 	{
@@ -647,24 +670,11 @@ void OAuth2::processContent(const QByteArray &content, const QString &url, const
 			emit errorReceived(tr("Unknown error for login '%1'").arg(m_login));
 		}
 	}
-	else if (url.indexOf("/applications") > -1 && url.indexOf(QString("client_id=%1").arg(m_clientId)) > -1)
+	else if (url.startsWith(APPLICATIONS_URL))
 	{
 		if (parseSessionVariables(content))
 		{
-			// TODO: ask authorization to user
-			authorizeApplication(true);
-		}
-		else
-		{
-			emit errorReceived(tr("Unable to find validate_token or validate_key"));
-		}
-	}
-	else if (url.indexOf("/authorize_app") > -1)
-	{
-		if (parseSessionVariables(content))
-		{
-			// TODO: ask authorization to user
-			authorizeApplication(true);
+			authorizeApplication();
 		}
 		else
 		{

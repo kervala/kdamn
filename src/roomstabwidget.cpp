@@ -753,7 +753,7 @@ void RoomsTabWidget::login()
 
 	DAmn::getInstance()->setLogin(log);
 
-	OAuth2::getInstance()->requestAuthorization();
+	OAuth2::getInstance()->login();
 }
 
 void RoomsTabWidget::updateConfig()
