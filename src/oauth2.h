@@ -25,7 +25,7 @@
 // deviantART URLs
 #define BASE_URL "www.deviantart.com"
 #define HTTPS_URL "https://" BASE_URL
-#define LOGIN_URL HTTPS_URL "/join/oauth2"
+#define LOGIN_URL HTTPS_URL "/users/login"
 #define LOGOUT_URL HTTPS_URL "/settings/force-logout"
 #define OAUTH2LOGIN_URL HTTPS_URL "/_sisu/do/signin"
 #define ROCKEDOUT_URL HTTPS_URL "/users/rockedout"

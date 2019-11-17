@@ -397,6 +397,10 @@ bool OAuth2::processImage(const QString &url, const QByteArray &content)
 void OAuth2::onReply(QNetworkReply *reply)
 {
 	QString redirection = reply->attribute(QNetworkRequest::RedirectionTargetAttribute).toUrl().toString().trimmed();
+
+	// add host if relative URL
+	if (redirection.startsWith("/")) redirection = HTTPS_URL + redirection;
+
 	QString url = reply->url().toString().trimmed();
 	int statusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt();
 	QByteArray content = reply->readAll().trimmed();
@@ -634,7 +638,7 @@ void OAuth2::processContent(const QByteArray &content, const QString &url, const
 			processJson(content, urlTemp.path(), filename);
 		}
 	}
-	else if (url.startsWith(JOIN_URL))
+	else if (url.startsWith(JOIN_URL) || url.startsWith(LOGIN_URL))
 	{
 		if (parseSessionVariables(content))
 		{
